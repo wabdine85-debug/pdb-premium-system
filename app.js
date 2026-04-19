@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
-import { env } from './config/env.js';
+import { env } from './env.js';
 import memberRoutes from './routes/member.routes.js';
 import treatmentsRouter from "./routes/treatments.js";
 import bookingsRouter from "./routes/bookings.js";
