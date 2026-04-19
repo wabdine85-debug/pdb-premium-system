@@ -2,10 +2,10 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
-import { env } from './env.js';
-import memberRoutes from './routes/member.routes.js';
-import treatmentsRouter from "./routes/treatments.js";
-import bookingsRouter from "./routes/bookings.js";
+import { env } from './src/config/env.js';
+import memberRoutes from './src/routes/member.routes.js';
+import treatmentsRouter from "./src/routes/treatments.js";
+import bookingsRouter from "./src/routes/bookings.js";
 
 const app = express();
 
