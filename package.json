@@ -1,0 +1,31 @@
+{
+  "name": "premium-system",
+  "version": "1.0.0",
+  "description": "PDB Premium Membership Limit System",
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "dev": "node --watch src/server.js",
+    "start": "node src/server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.6",
+    "dayjs": "^1.11.13",
+    "dotenv": "^16.6.1",
+    "express": "^4.22.1",
+    "helmet": "^8.0.0",
+    "morgan": "^1.10.0",
+    "pg": "^8.20.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wabdine85-debug/pdb-premium-system.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/wabdine85-debug/pdb-premium-system/issues"
+  },
+  "homepage": "https://github.com/wabdine85-debug/pdb-premium-system#readme"
+}
