@@ -1,4 +1,4 @@
-import { pool } from '../db/pool.js';
+import { pool } from '../config/pool.js';
 
 export async function findMemberByShopifyId(shopifyCustomerId) {
   const result = await pool.query(
