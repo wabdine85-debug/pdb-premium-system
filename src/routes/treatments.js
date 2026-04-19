@@ -1,5 +1,5 @@
 import express from "express";
-import { pool } from "../db/pool.js";
+import { pool } from "../config/pool.js";
 import { getEntitlements } from "../services/entitlement.service.js";
 import { findMemberByShopifyId } from "../repositories/member.repository.js";
 
