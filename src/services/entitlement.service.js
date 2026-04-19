@@ -1,4 +1,4 @@
-import { pool } from '../db/pool.js';
+import { pool } from '../config/pool.js';
 import { PACKAGE_RULES } from '../utils/packageRules.js';
 import { getBookingMonth } from '../utils/dates.js';
 
