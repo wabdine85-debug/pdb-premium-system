@@ -49,22 +49,22 @@ router.post("/create", async (req, res) => {
       });
     }
 
-    const entitlements = await getEntitlements(member);
+   const entitlements = await getEntitlements(member);
+
+const remainingForCategory =
+  entitlements.remaining?.[treatment.category_key] ?? 0;
 
 if (!entitlements.allowedCategories.includes(treatment.category_key)) {
-  const remainingForCategory =
-    entitlements.remaining?.[treatment.category_key] ?? 0;
-
-  if (remainingForCategory <= 0) {
-    return res.status(403).json({
-      ok: false,
-      error: "LIMIT_REACHED"
-    });
-  }
-
   return res.status(403).json({
     ok: false,
     error: "TREATMENT_NOT_ALLOWED"
+  });
+}
+
+if (remainingForCategory <= 0) {
+  return res.status(403).json({
+    ok: false,
+    error: "LIMIT_REACHED"
   });
 }
 
