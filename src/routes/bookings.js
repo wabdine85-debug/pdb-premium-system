@@ -54,21 +54,23 @@ const entitlements = await getEntitlements(member);
 const remainingForCategory =
   entitlements.remaining?.[treatment.category_key] ?? 0;
 
-// 1. Kategorie existiert grundsätzlich im Paket?
-const categoryExistsInPackage =
-  Object.prototype.hasOwnProperty.call(
-    entitlements.remaining,
-    treatment.category_key
-  );
+// ERLAUBTE KATEGORIEN PRO PAKET (hart definiert)
+const PACKAGE_CATEGORIES = {
+  pure: ["pure"],
+  define: ["pure", "define"],
+  beyond: ["beyond"]
+};
 
-if (!categoryExistsInPackage) {
+const allowedForPackage =
+  PACKAGE_CATEGORIES[member.package_key] || [];
+
+if (!allowedForPackage.includes(treatment.category_key)) {
   return res.status(403).json({
     ok: false,
     error: "TREATMENT_NOT_ALLOWED"
   });
 }
 
-// 2. Kategorie gehört zum Paket, aber kein Kontingent mehr
 if (remainingForCategory <= 0) {
   return res.status(403).json({
     ok: false,
