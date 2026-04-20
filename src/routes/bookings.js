@@ -49,25 +49,32 @@ router.post("/create", async (req, res) => {
       });
     }
 
-   const entitlements = await getEntitlements(member);
+const entitlements = await getEntitlements(member);
 
 const remainingForCategory =
   entitlements.remaining?.[treatment.category_key] ?? 0;
 
-if (!entitlements.allowedCategories.includes(treatment.category_key)) {
+// 1. Kategorie existiert grundsätzlich im Paket?
+const categoryExistsInPackage =
+  Object.prototype.hasOwnProperty.call(
+    entitlements.remaining,
+    treatment.category_key
+  );
+
+if (!categoryExistsInPackage) {
   return res.status(403).json({
     ok: false,
     error: "TREATMENT_NOT_ALLOWED"
   });
 }
 
+// 2. Kategorie gehört zum Paket, aber kein Kontingent mehr
 if (remainingForCategory <= 0) {
   return res.status(403).json({
     ok: false,
     error: "LIMIT_REACHED"
   });
 }
-
     const token = crypto.randomUUID();
 
     await pool.query(
