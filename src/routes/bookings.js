@@ -169,12 +169,20 @@ router.post("/consume", async (req, res) => {
   const client = await pool.connect();
 
   try {
-    const { token } = req.body || {};
+    const { token, shopify_customer_id } = req.body || {};
+    const shopifyCustomerId = String(shopify_customer_id || "").trim();
 
     if (!token) {
       return res.status(400).json({
         ok: false,
         error: "TOKEN_REQUIRED"
+      });
+    }
+
+    if (!shopifyCustomerId) {
+      return res.status(400).json({
+        ok: false,
+        error: "SHOPIFY_CUSTOMER_ID_REQUIRED"
       });
     }
 
