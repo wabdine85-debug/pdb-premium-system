@@ -27,9 +27,9 @@ router.post("/create", async (req, res) => {
     }
 
     const result = await pool.query(
-      `SELECT id, treatment_key, category_key FROM treatments WHERE treatment_key = $1 LIMIT 1`,
-      [treatment_key]
-    );
+  `SELECT id, treatment_key, category_key, salonized_url FROM treatments WHERE treatment_key = $1 LIMIT 1`,
+  [treatment_key]
+);
 
     const treatment = result.rows[0];
 
@@ -87,12 +87,13 @@ if (!entitlements.allowedCategories.includes(treatment.category_key)) {
       ok: true,
       token,
       member: {
-        id: member.id,
-        shopify_customer_id: member.shopify_customer_id,
-        package_key: member.package_key
-      },
+      id: member.id,
+      shopify_customer_id: member.shopify_customer_id,
+      package_key: member.package_key
+  },
       entitlements,
-      treatment
+      treatment,
+      booking_url: treatment.salonized_url || null
     });
 
   } catch (error) {
