@@ -15,7 +15,16 @@ router.get("/allowed", async (req, res) => {
         ORDER BY title ASC
     `);
 
-const member = await findMemberByShopifyId("123456");
+const shopifyCustomerId = String(req.query.shopify_customer_id || "").trim();
+
+if (!shopifyCustomerId) {
+  return res.status(400).json({
+    ok: false,
+    error: "SHOPIFY_CUSTOMER_ID_REQUIRED"
+  });
+}
+
+const member = await findMemberByShopifyId(shopifyCustomerId);
         if (!member) {
   return res.status(404).json({
     ok: false,
