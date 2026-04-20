@@ -10,10 +10,19 @@ router.post("/create", async (req, res) => {
   try {
     const { treatment_key } = req.body;
 
+    const shopifyCustomerId = String(req.body.shopify_customer_id || "").trim();
+
     if (!treatment_key) {
       return res.status(400).json({
         ok: false,
         error: "TREATMENT_KEY_REQUIRED"
+      });
+    }
+
+    if (!shopifyCustomerId) {
+      return res.status(400).json({
+        ok: false,
+        error: "SHOPIFY_CUSTOMER_ID_REQUIRED"
       });
     }
 
@@ -31,7 +40,7 @@ router.post("/create", async (req, res) => {
       });
     }
 
-    const member = await findMemberByShopifyId("123456");
+    const member = await findMemberByShopifyId(shopifyCustomerId);
 
     if (!member) {
       return res.status(404).json({
@@ -285,7 +294,7 @@ router.post("/consume", async (req, res) => {
 
     const updatedToken = updatedResult.rows[0];
 
-    const member = await findMemberByShopifyId("123456");
+    const member = await findMemberByShopifyId(shopifyCustomerId);
 
     if (!member) {
       return res.status(404).json({
