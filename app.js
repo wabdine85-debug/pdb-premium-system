@@ -8,6 +8,11 @@ import treatmentsRouter from "./src/routes/treatments.js";
 import bookingsRouter from "./src/routes/bookings.js";
 
 const app = express();
+app.use((req, res, next) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  next();
+});
 
 app.use(helmet());
 app.use(cors({ origin: env.frontendOrigin, credentials: true }));
