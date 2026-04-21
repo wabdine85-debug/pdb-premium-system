@@ -3,6 +3,8 @@ import { pool } from "../config/pool.js";
 import { getEntitlements } from "../services/entitlement.service.js";
 import { findMemberByShopifyId, createMember, updateMemberByShopifyId } from "../repositories/member.repository.js";
 
+
+
 const router = express.Router();
 
 function resolvePackageFromTags(tags = []) {
@@ -22,6 +24,14 @@ router.get("/allowed", async (req, res) => {
     `);
 
     const shopifyCustomerId = String(req.query.shopify_customer_id || "").trim();
+    const proxyCustomerId = String(req.query.logged_in_customer_id || "").trim();
+
+if (!proxyCustomerId || proxyCustomerId !== shopifyCustomerId) {
+  return res.status(403).json({
+    ok: false,
+    error: "INVALID_CUSTOMER"
+  });
+}
     const email = String(req.query.email || "").trim();
     const firstName = String(req.query.firstName || "").trim();
     const lastName = String(req.query.lastName || "").trim();
