@@ -4,16 +4,21 @@ import { getEntitlements } from '../services/entitlement.service.js';
 export async function getMe(req, res) {
   try {
     console.log('SHOPIFY_PROXY_QUERY', req.query);
-    
-    const fakeCustomer = {
-  id: 7562346135816,
-  email: 'test@pdb.de',
-  firstName: 'Test',
-  lastName: 'User',
-  tags: ['premium-pure']
-};
 
-    const member = await getOrCreateMember(fakeCustomer);
+    const shopifyCustomerId = req.query.logged_in_customer_id;
+
+    if (!shopifyCustomerId) {
+      return res.status(401).json({ error: 'CUSTOMER_NOT_LOGGED_IN' });
+    }
+
+    const member = await getOrCreateMember({
+      id: shopifyCustomerId,
+      email: 'test@pdb.de',
+      firstName: 'Test',
+      lastName: 'User',
+      tags: ['premium-pure']
+    });
+
     const entitlements = await getEntitlements(member);
 
     res.json({
