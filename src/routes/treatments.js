@@ -38,10 +38,11 @@ const allowedTreatments = rows.filter(t => allowedCategories.includes(t.category
 return res.json({
   ok: true,
   member: {
-    id: member.id,
-    shopify_customer_id: member.shopify_customer_id,
-    package_key: member.package_key
-  },
+  id: member.id,
+  shopify_customer_id: member.shopify_customer_id,
+  package_key: member.package_key,
+  status: member.status
+},
   entitlements,
   treatments: allowedTreatments
 });
