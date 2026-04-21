@@ -13,6 +13,19 @@ app.use(helmet());
 app.use(cors({ origin: env.frontendOrigin, credentials: true }));
 app.use(express.json());
 app.use(morgan('dev'));
+
+// ✅ HIER EINFÜGEN (Block 1)
+app.get('/api', (req, res) => {
+  res.json({ ok: true, message: 'API läuft' });
+});
+
+// ✅ HIER EINFÜGEN (Block 2)
+app.get('/api/*', (req, res, next) => {
+  res.set('Content-Type', 'application/json');
+  next();
+});
+
+// 👉 DEIN CODE BLEIBT
 app.use('/api/member', memberRoutes);
 app.use("/api/treatments", treatmentsRouter);
 app.use("/api/bookings", bookingsRouter);
