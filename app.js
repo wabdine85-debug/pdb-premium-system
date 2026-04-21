@@ -10,8 +10,7 @@ import bookingsRouter from "./src/routes/bookings.js";
 const app = express();
 app.use((req, res, next) => {
   if (req.headers['x-shopify-shop-domain']) {
-    // Shopify Proxy Request → URL korrigieren
-    req.url = req.url.replace('/apps/pdb', '');
+    req.url = req.url.replace('/apps/pdb', '/api');
   }
   next();
 });
