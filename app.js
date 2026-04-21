@@ -32,7 +32,7 @@ app.get('/api/*', (req, res, next) => {
   next();
 });
 
-app.use('/api/member', memberRoutes);
+app.use('/member', memberRoutes);
 app.use("/api/treatments", treatmentsRouter);
 app.use("/api/bookings", bookingsRouter);
 
