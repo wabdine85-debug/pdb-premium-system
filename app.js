@@ -32,22 +32,15 @@ app.get('/api/*', (req, res, next) => {
   next();
 });
 
-app.use('/member', memberRoutes);
-app.use('/allowed', treatmentsRouter);
-app.use("/api/treatments", treatmentsRouter);
-app.use("/api/bookings", bookingsRouter);
+app.use('/api/member', memberRoutes);
+app.use('/api/treatments', treatmentsRouter);
+app.use('/api/bookings', bookingsRouter);
 
 // Test Route
 app.get('/ping', (_req, res) => {
   res.json({ ok: true, service: 'premium-system' });
 });
 
-// ✅ GANZ UNTEN
-app.use('/api/*', (req, res) => {
-  res.json({
-    ok: true,
-    path: req.originalUrl
-  });
-});
+
 
 export default app;
