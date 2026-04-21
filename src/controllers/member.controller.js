@@ -43,12 +43,12 @@ export async function getAllowed(req, res) {
     }
 
     const member = await getOrCreateMember({
-      id: shopifyCustomerId,
-      email: 'test@pdb.de',
-      firstName: 'Test',
-      lastName: 'User',
-      tags: ['premium-pure']
-    });
+  id: shopifyCustomerId,
+  email: req.query.email || null,
+  firstName: req.query.firstName || null,
+  lastName: req.query.lastName || null,
+  tags: req.query.tags ? String(req.query.tags).split(',').map(t => t.trim()).filter(Boolean) : []
+});
 
     const entitlements = await getEntitlements(member);
 
