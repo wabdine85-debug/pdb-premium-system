@@ -33,6 +33,7 @@ app.get('/api/*', (req, res, next) => {
 });
 
 app.use('/member', memberRoutes);
+app.use('/allowed', treatmentsRouter);
 app.use("/api/treatments", treatmentsRouter);
 app.use("/api/bookings", bookingsRouter);
 
