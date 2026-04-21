@@ -25,10 +25,14 @@ app.get('/api/*', (req, res, next) => {
   next();
 });
 
-// 👉 DEIN CODE BLEIBT
 app.use('/api/member', memberRoutes);
 app.use("/api/treatments", treatmentsRouter);
 app.use("/api/bookings", bookingsRouter);
+
+// ✅ HIER EINFÜGEN
+app.use('/api/member/me', (req, res) => {
+  res.json({ ok: true, proxy: 'hit /api/member/me' });
+});
 
 // Test Route
 app.get('/ping', (_req, res) => {
