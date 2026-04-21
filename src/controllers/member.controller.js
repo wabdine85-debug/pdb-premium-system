@@ -3,14 +3,13 @@ import { getEntitlements } from '../services/entitlement.service.js';
 
 export async function getMe(req, res) {
   try {
-    // TEST: Fake Shopify Customer (später ersetzen wir das!)
     const fakeCustomer = {
-      id: 123456,
-      email: 'test@test.de',
-      firstName: 'Test',
-      lastName: 'User',
-      tags: ['premium-define']
-    };
+  id: 7562346135816,
+  email: 'test@pdb.de',
+  firstName: 'Test',
+  lastName: 'User',
+  tags: ['premium-pure']
+};
 
     const member = await getOrCreateMember(fakeCustomer);
     const entitlements = await getEntitlements(member);
