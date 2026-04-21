@@ -3,6 +3,8 @@ import { getEntitlements } from '../services/entitlement.service.js';
 
 export async function getMe(req, res) {
   try {
+    console.log('SHOPIFY_PROXY_QUERY', req.query);
+    
     const fakeCustomer = {
   id: 7562346135816,
   email: 'test@pdb.de',
