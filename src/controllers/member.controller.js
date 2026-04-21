@@ -8,7 +8,7 @@ export async function getMe(req, res) {
   email: 'test@pdb.de',
   firstName: 'Test',
   lastName: 'User',
-  tags: ['premium-pure']
+  tags: ['premium-define']
 };
 
     const member = await getOrCreateMember(fakeCustomer);
