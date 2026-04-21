@@ -11,13 +11,13 @@ export async function getMe(req, res) {
       return res.status(401).json({ error: 'CUSTOMER_NOT_LOGGED_IN' });
     }
 
-    const member = await getOrCreateMember({
-      id: shopifyCustomerId,
-      email: 'test@pdb.de',
-      firstName: 'Test',
-      lastName: 'User',
-      tags: ['premium-pure']
-    });
+    cconst member = await getOrCreateMember({
+  id: shopifyCustomerId,
+  email: null,
+  firstName: null,
+  lastName: null,
+  tags: []
+});
 
     const entitlements = await getEntitlements(member);
 
