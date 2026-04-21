@@ -1,6 +1,7 @@
 import {
   findMemberByShopifyId,
-  createMember
+  createMember,
+  updateMemberByShopifyId
 } from '../repositories/member.repository.js';
 
 /**
@@ -15,10 +16,9 @@ export async function getOrCreateMember(customer) {
     tags
   } = customer;
 
-  let member = await findMemberByShopifyId(id);
-
-  // Paket aus Shopify Tags erkennen
   const packageKey = resolvePackageFromTags(tags);
+
+  let member = await findMemberByShopifyId(id);
 
   if (!member) {
     member = await createMember({
@@ -28,7 +28,16 @@ export async function getOrCreateMember(customer) {
       lastName,
       packageKey
     });
+
+    return member;
   }
+
+  member = await updateMemberByShopifyId(id, {
+    email,
+    firstName,
+    lastName,
+    packageKey
+  });
 
   return member;
 }
