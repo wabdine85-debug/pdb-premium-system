@@ -346,5 +346,53 @@ router.post("/consume", async (req, res) => {
     client.release();
   }
 });
+router.get("/redirect/:token", async (req, res) => {
+  try {
+    const { token } = req.params;
 
+    if (!token) {
+      return res.status(400).send("TOKEN_REQUIRED");
+    }
+
+    const tokenResult = await pool.query(
+      `
+      SELECT
+        bt.id,
+        bt.token,
+        bt.expires_at,
+        bt.used_at,
+        t.salonized_url
+      FROM booking_tokens bt
+      JOIN treatments t
+        ON t.id = bt.treatment_id
+      WHERE bt.token = $1
+      LIMIT 1
+      `,
+      [token]
+    );
+
+    const bookingToken = tokenResult.rows[0];
+
+    if (!bookingToken) {
+      return res.status(404).send("TOKEN_NOT_FOUND");
+    }
+
+    if (bookingToken.used_at) {
+      return res.status(400).send("TOKEN_ALREADY_USED");
+    }
+
+    if (new Date(bookingToken.expires_at).getTime() < Date.now()) {
+      return res.status(410).send("TOKEN_EXPIRED");
+    }
+
+    if (!bookingToken.salonized_url) {
+      return res.status(404).send("BOOKING_URL_NOT_FOUND");
+    }
+
+    return res.redirect(bookingToken.salonized_url);
+  } catch (error) {
+    console.error("redirect route error:", error);
+    return res.status(500).send("REDIRECT_ERROR");
+  }
+});
 export default router;
