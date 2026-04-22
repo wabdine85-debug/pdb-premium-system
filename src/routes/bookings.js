@@ -326,7 +326,7 @@ router.post("/consume", async (req, res) => {
     return res.json({
       ok: true,
       bookingToken: updatedToken,
-      booking_url: updatedToken.salonized_url || null,
+      booking_url: `https://pdb-premium-system.onrender.com/api/bookings/redirect/${updatedToken.token}`,
       member: {
         id: member.id,
         shopify_customer_id: member.shopify_customer_id,
