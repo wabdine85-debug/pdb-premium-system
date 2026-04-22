@@ -378,8 +378,8 @@ router.get("/redirect/:token", async (req, res) => {
     }
 
     if (bookingToken.used_at) {
-      return res.status(400).send("TOKEN_ALREADY_USED");
-    }
+  return res.redirect(bookingToken.salonized_url);
+}
 
     if (new Date(bookingToken.expires_at).getTime() < Date.now()) {
       return res.status(410).send("TOKEN_EXPIRED");
