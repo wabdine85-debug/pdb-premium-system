@@ -53,11 +53,17 @@ export async function getAllowed(req, res) {
     const entitlements = await getEntitlements(member);
 
     const result = await pool.query(`
-      SELECT id, treatment_key, title, category_key, salonized_url
-      FROM treatments
-      WHERE is_active = true
-      ORDER BY id ASC
-    `);
+  SELECT
+    id,
+    treatment_key,
+    title,
+    category_key,
+    salonized_url,
+    '/products/' || treatment_key AS premium_product_url
+  FROM treatments
+  WHERE is_active = true
+  ORDER BY id ASC
+`);
 
     const treatments = result.rows.filter(t =>
       entitlements.allowedCategories.includes(t.category_key)
