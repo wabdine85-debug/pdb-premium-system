@@ -32,15 +32,17 @@ export async function getOrCreateMember(customer) {
     return member;
   }
 
+  // Nur updaten wenn echte Daten vorhanden sind
+if (email || firstName || lastName || packageKey) {
   member = await updateMemberByShopifyId(id, {
-    email,
-    firstName,
-    lastName,
-    packageKey
+    email: email || member.email,
+    firstName: firstName || member.first_name,
+    lastName: lastName || member.last_name,
+    packageKey: packageKey || member.package_key
   });
-
-  return member;
 }
+
+return member;
 
 /**
  * Shopify Tags → Paket
