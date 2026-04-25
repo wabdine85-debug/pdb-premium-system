@@ -29,10 +29,10 @@ router.get("/allowed", async (req, res) => {
       ORDER BY title ASC
     `);
 
-    const shopifyCustomerId = String(req.query.shopify_customer_id || "").trim();
     const proxyCustomerId = String(req.query.logged_in_customer_id || "").trim();
+const shopifyCustomerId = String(req.query.shopify_customer_id || proxyCustomerId || "").trim();
 
-if (!proxyCustomerId || proxyCustomerId !== shopifyCustomerId) {
+if (!proxyCustomerId) {
   return res.status(403).json({
     ok: false,
     error: "INVALID_CUSTOMER"
