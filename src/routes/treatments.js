@@ -17,7 +17,13 @@ function resolvePackageFromTags(tags = []) {
 router.get("/allowed", async (req, res) => {
   try {
     const { rows } = await pool.query(`
-      SELECT id, treatment_key, title, category_key, salonized_url
+      SELECT
+  id,
+  treatment_key,
+  title,
+  category_key,
+  salonized_url,
+  '/products/' || treatment_key AS premium_product_url
       FROM treatments
       WHERE is_active = true
       ORDER BY title ASC
