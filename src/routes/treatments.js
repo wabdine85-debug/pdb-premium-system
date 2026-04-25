@@ -54,32 +54,23 @@ if (!proxyCustomerId) {
     }
 
     const packageKey = resolvePackageFromTags(tags);
+let member = await findMemberByShopifyId(shopifyCustomerId);
 
-    if (!email || !firstName || !lastName || !packageKey) {
-      return res.status(400).json({
-        ok: false,
-        error: "CUSTOMER_DATA_INCOMPLETE"
-      });
-    }
+if (!member) {
+  return res.status(404).json({
+    ok: false,
+    error: "MEMBER_NOT_FOUND"
+  });
+}
 
-    let member = await findMemberByShopifyId(shopifyCustomerId);
-
-    if (!member) {
-      member = await createMember({
-        shopifyCustomerId,
-        email,
-        firstName,
-        lastName,
-        packageKey
-      });
-    } else {
-      member = await updateMemberByShopifyId(shopifyCustomerId, {
-        email,
-        firstName,
-        lastName,
-        packageKey
-      });
-    }
+if (email || firstName || lastName || packageKey) {
+  member = await updateMemberByShopifyId(shopifyCustomerId, {
+    email: email || member.email,
+    firstName: firstName || member.first_name,
+    lastName: lastName || member.last_name,
+    packageKey: packageKey || member.package_key
+  });
+}
 
     const entitlements = await getEntitlements(member);
     const allowedCategories = entitlements.allowedCategories;
