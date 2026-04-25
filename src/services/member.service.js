@@ -43,6 +43,7 @@ if (email || firstName || lastName || packageKey) {
 }
 
 return member;
+}
 
 /**
  * Shopify Tags → Paket
