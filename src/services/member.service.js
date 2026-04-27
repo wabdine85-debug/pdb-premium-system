@@ -16,40 +16,40 @@ export async function getOrCreateMember(customer) {
     tags
   } = customer;
 
-  const packageKey = resolvePackageFromTags(tags);
-  if (!packageKey) {
-  throw new Error('PREMIUM_TAG_REQUIRED');
-}
-
   const safeEmail = email || `shopify-${id}@premium.local`;
-const safeFirstName = firstName || '';
-const safeLastName = lastName || '';
+  const safeFirstName = firstName || '';
+  const safeLastName = lastName || '';
 
   let member = await findMemberByShopifyId(id);
 
+  const packageKey = resolvePackageFromTags(tags);
+
+  if (!member && !packageKey) {
+    throw new Error('PREMIUM_TAG_REQUIRED');
+  }
+
   if (!member) {
     member = await createMember({
-  shopifyCustomerId: id,
-  email: safeEmail,
-  firstName: safeFirstName,
-  lastName: safeLastName,
-  packageKey
-});
+      shopifyCustomerId: id,
+      email: safeEmail,
+      firstName: safeFirstName,
+      lastName: safeLastName,
+      packageKey
+    });
 
     return member;
   }
 
-  // Nur updaten wenn echte Daten vorhanden sind
-if (email || firstName || lastName || packageKey) {
-  member = await updateMemberByShopifyId(id, {
-    email: email || member.email,
-    firstName: firstName || member.first_name,
-    lastName: lastName || member.last_name,
-    packageKey: packageKey || member.package_key
-  });
-}
+  if (email || firstName || lastName || packageKey) {
+    member = await updateMemberByShopifyId(id, {
+      email: email || member.email,
+      firstName: firstName || member.first_name,
+      lastName: lastName || member.last_name,
+      packageKey: packageKey || member.package_key
+    });
+  }
 
-return member;
+  return member;
 }
 
 /**
