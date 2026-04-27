@@ -18,16 +18,20 @@ export async function getOrCreateMember(customer) {
 
   const packageKey = resolvePackageFromTags(tags);
 
+  const safeEmail = email || `shopify-${id}@premium.local`;
+const safeFirstName = firstName || '';
+const safeLastName = lastName || '';
+
   let member = await findMemberByShopifyId(id);
 
   if (!member) {
     member = await createMember({
-      shopifyCustomerId: id,
-      email,
-      firstName,
-      lastName,
-      packageKey
-    });
+  shopifyCustomerId: id,
+  email: safeEmail,
+  firstName: safeFirstName,
+  lastName: safeLastName,
+  packageKey
+});
 
     return member;
   }
