@@ -17,6 +17,9 @@ export async function getOrCreateMember(customer) {
   } = customer;
 
   const packageKey = resolvePackageFromTags(tags);
+  if (!packageKey) {
+  throw new Error('PREMIUM_TAG_REQUIRED');
+}
 
   const safeEmail = email || `shopify-${id}@premium.local`;
 const safeFirstName = firstName || '';
