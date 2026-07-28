@@ -20,6 +20,8 @@ function resolvePackageFromTags(tags = []) {
 
 router.get("/allowed", async (req, res) => {
   try {
+    res.set("Cache-Control", "private, no-store, no-cache, must-revalidate");
+
     const { rows } = await pool.query(`
       SELECT
   id,
