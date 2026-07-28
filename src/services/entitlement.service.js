@@ -5,11 +5,35 @@ import { getBookingMonth } from '../utils/dates.js';
 /**
  * Berechnet, was der Kunde diesen Monat noch darf
  */
-export async function getEntitlements(member) {
-  const bookingMonth = getBookingMonth();
+export async function getEntitlements(member, db = pool) {
+  return getEntitlementsForMonth(member, getBookingMonth(), db);
+}
+
+/**
+ * Berechnet das Kontingent für einen konkreten Kalendermonat.
+ */
+export async function getEntitlementsForMonth(member, bookingMonth, db = pool) {
+  const rules = PACKAGE_RULES[member?.package_key];
+
+  if (!member || !rules) {
+    return {
+      month: bookingMonth,
+      usage: {
+        pure: 0,
+        define: 0,
+        beyond: 0
+      },
+      remaining: {
+        pure: 0,
+        define: 0,
+        beyond: 0
+      },
+      allowedCategories: []
+    };
+  }
 
   // Alle Buchungen im aktuellen Monat holen
-  const result = await pool.query(
+  const result = await db.query(
     `
     SELECT t.category_key
     FROM bookings b
@@ -33,9 +57,6 @@ export async function getEntitlements(member) {
   for (const b of bookings) {
     usage[b.category_key]++;
   }
-
-  // Limits aus Regeln holen
-  const rules = PACKAGE_RULES[member.package_key];
 
   const remaining = {
     pure: Math.max(0, rules.limits.pure - usage.pure),

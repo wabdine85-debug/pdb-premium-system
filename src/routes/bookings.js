@@ -1,7 +1,16 @@
 import express from "express";
 import { pool } from "../config/pool.js";
 import { findMemberByShopifyId } from "../repositories/member.repository.js";
-import { getEntitlements } from "../services/entitlement.service.js";
+import {
+  getEntitlements,
+  getEntitlementsForMonth
+} from "../services/entitlement.service.js";
+import { getAllowedCategoriesForPackage } from "../utils/packageRules.js";
+import {
+  getBookingMonthForAppointmentDate,
+  getNextBookingMonth,
+  isCurrentOrNextBookingMonth
+} from "../utils/dates.js";
 import crypto from "crypto";
 
 const router = express.Router();
@@ -49,20 +58,8 @@ router.post("/create", async (req, res) => {
       });
     }
 
-const entitlements = await getEntitlements(member);
-
-const remainingForCategory =
-  entitlements.remaining?.[treatment.category_key] ?? 0;
-
-// ERLAUBTE KATEGORIEN PRO PAKET (hart definiert)
-const PACKAGE_CATEGORIES = {
-  pure: ["pure"],
-  define: ["pure", "define"],
-  beyond: ["beyond"]
-};
-
 const allowedForPackage =
-  PACKAGE_CATEGORIES[member.package_key] || [];
+  getAllowedCategoriesForPackage(member.package_key);
 
 if (!allowedForPackage.includes(treatment.category_key)) {
   return res.status(403).json({
@@ -71,7 +68,19 @@ if (!allowedForPackage.includes(treatment.category_key)) {
   });
 }
 
-if (remainingForCategory <= 0) {
+const [entitlements, nextMonthEntitlements] = await Promise.all([
+  getEntitlements(member),
+  getEntitlementsForMonth(member, getNextBookingMonth())
+]);
+
+const availableBookingMonths = [entitlements, nextMonthEntitlements]
+  .filter(
+    monthlyEntitlements =>
+      (monthlyEntitlements.remaining?.[treatment.category_key] ?? 0) > 0
+  )
+  .map(monthlyEntitlements => monthlyEntitlements.month);
+
+if (availableBookingMonths.length === 0) {
   return res.status(403).json({
     ok: false,
     error: "LIMIT_REACHED"
@@ -101,6 +110,8 @@ if (remainingForCategory <= 0) {
       package_key: member.package_key
   },
       entitlements,
+      nextMonthEntitlements,
+      available_booking_months: availableBookingMonths,
       treatment,
       booking_url: treatment.salonized_url || null
     });
@@ -174,12 +185,138 @@ router.get("/token/:token", async (req, res) => {
   }
 });
 
+router.post("/validate-slot", async (req, res) => {
+  try {
+    const { token, appointment_date } = req.body || {};
+    const shopifyCustomerId = String(
+      req.body?.shopify_customer_id || ""
+    ).trim();
+    const bookingMonth = getBookingMonthForAppointmentDate(appointment_date);
+
+    if (!token) {
+      return res.status(400).json({ ok: false, error: "TOKEN_REQUIRED" });
+    }
+
+    if (!shopifyCustomerId) {
+      return res.status(400).json({
+        ok: false,
+        error: "SHOPIFY_CUSTOMER_ID_REQUIRED"
+      });
+    }
+
+    if (!bookingMonth) {
+      return res.status(400).json({
+        ok: false,
+        error: "APPOINTMENT_DATE_INVALID"
+      });
+    }
+
+    if (!isCurrentOrNextBookingMonth(bookingMonth)) {
+      return res.status(403).json({
+        ok: false,
+        error: "APPOINTMENT_MONTH_NOT_ALLOWED"
+      });
+    }
+
+    const result = await pool.query(
+      `
+      SELECT
+        bt.expires_at,
+        bt.used_at,
+        t.category_key,
+        m.id AS member_id,
+        m.shopify_customer_id,
+        m.package_key,
+        m.status,
+        NOW() > bt.expires_at AS is_expired
+      FROM booking_tokens bt
+      JOIN treatments t
+        ON t.id = bt.treatment_id
+      JOIN members m
+        ON m.id = bt.member_id
+      WHERE bt.token = $1
+      LIMIT 1
+      `,
+      [token]
+    );
+
+    const bookingToken = result.rows[0];
+
+    if (!bookingToken) {
+      return res.status(404).json({ ok: false, error: "TOKEN_NOT_FOUND" });
+    }
+
+    if (bookingToken.is_expired) {
+      return res.status(410).json({ ok: false, error: "TOKEN_EXPIRED" });
+    }
+
+    if (bookingToken.used_at) {
+      return res.status(400).json({
+        ok: false,
+        error: "TOKEN_ALREADY_USED"
+      });
+    }
+
+    if (String(bookingToken.shopify_customer_id) !== shopifyCustomerId) {
+      return res.status(403).json({
+        ok: false,
+        error: "TOKEN_CUSTOMER_MISMATCH"
+      });
+    }
+
+    if (bookingToken.status !== "active") {
+      return res.status(403).json({
+        ok: false,
+        error: "MEMBER_NOT_ACTIVE"
+      });
+    }
+
+    const allowedForPackage = getAllowedCategoriesForPackage(
+      bookingToken.package_key
+    );
+
+    if (!allowedForPackage.includes(bookingToken.category_key)) {
+      return res.status(403).json({
+        ok: false,
+        error: "TREATMENT_NOT_ALLOWED"
+      });
+    }
+
+    const member = {
+      id: bookingToken.member_id,
+      package_key: bookingToken.package_key
+    };
+    const entitlements = await getEntitlementsForMonth(member, bookingMonth);
+    const remainingForCategory =
+      entitlements.remaining?.[bookingToken.category_key] ?? 0;
+
+    if (remainingForCategory <= 0) {
+      return res.status(403).json({ ok: false, error: "LIMIT_REACHED" });
+    }
+
+    return res.json({
+      ok: true,
+      booking_month: bookingMonth,
+      entitlements
+    });
+  } catch (error) {
+    console.error("POST /api/bookings/validate-slot error:", error);
+    return res.status(500).json({
+      ok: false,
+      error: "INTERNAL_SERVER_ERROR"
+    });
+  }
+});
+
 router.post("/consume", async (req, res) => {
   const client = await pool.connect();
 
   try {
-    const { token, shopify_customer_id } = req.body || {};
+    const { token, shopify_customer_id, appointment_date } = req.body || {};
     const shopifyCustomerId = String(shopify_customer_id || "").trim();
+    const requestedBookingMonth = appointment_date
+      ? getBookingMonthForAppointmentDate(appointment_date)
+      : null;
 
     if (!token) {
       return res.status(400).json({
@@ -195,6 +332,23 @@ router.post("/consume", async (req, res) => {
       });
     }
 
+    if (appointment_date && !requestedBookingMonth) {
+      return res.status(400).json({
+        ok: false,
+        error: "APPOINTMENT_DATE_INVALID"
+      });
+    }
+
+    if (
+      requestedBookingMonth &&
+      !isCurrentOrNextBookingMonth(requestedBookingMonth)
+    ) {
+      return res.status(403).json({
+        ok: false,
+        error: "APPOINTMENT_MONTH_NOT_ALLOWED"
+      });
+    }
+
     await client.query("BEGIN");
 
     const tokenResult = await client.query(
@@ -206,12 +360,23 @@ router.post("/consume", async (req, res) => {
         bt.token,
         bt.expires_at,
         bt.used_at,
-        t.salonized_url
+        t.category_key,
+        t.salonized_url,
+        m.id AS verified_member_id,
+        m.shopify_customer_id,
+        m.email,
+        m.first_name,
+        m.last_name,
+        m.package_key,
+        m.status
       FROM booking_tokens bt
       JOIN treatments t
         ON t.id = bt.treatment_id
+      JOIN members m
+        ON m.id = bt.member_id
       WHERE bt.token = $1
       LIMIT 1
+      FOR UPDATE OF bt, m
       `,
       [token]
     );
@@ -252,13 +417,68 @@ router.post("/consume", async (req, res) => {
       });
     }
 
-    const bookingMonthResult = await client.query(
-      `
-      SELECT date_trunc('month', NOW())::date AS booking_month
-      `
-    );
+    if (String(bookingToken.shopify_customer_id) !== shopifyCustomerId) {
+      await client.query("ROLLBACK");
+      return res.status(403).json({
+        ok: false,
+        error: "TOKEN_CUSTOMER_MISMATCH"
+      });
+    }
 
-    const bookingMonth = bookingMonthResult.rows[0].booking_month;
+    const member = {
+      id: bookingToken.verified_member_id,
+      shopify_customer_id: bookingToken.shopify_customer_id,
+      email: bookingToken.email,
+      first_name: bookingToken.first_name,
+      last_name: bookingToken.last_name,
+      package_key: bookingToken.package_key,
+      status: bookingToken.status
+    };
+
+    if (member.status !== "active") {
+      await client.query("ROLLBACK");
+      return res.status(403).json({
+        ok: false,
+        error: "MEMBER_NOT_ACTIVE"
+      });
+    }
+
+    const allowedForPackage = getAllowedCategoriesForPackage(member.package_key);
+
+    if (!allowedForPackage.includes(bookingToken.category_key)) {
+      await client.query("ROLLBACK");
+      return res.status(403).json({
+        ok: false,
+        error: "TREATMENT_NOT_ALLOWED"
+      });
+    }
+
+    let bookingMonth = requestedBookingMonth;
+
+    if (!bookingMonth) {
+      const bookingMonthResult = await client.query(
+        `
+        SELECT date_trunc('month', NOW())::date AS booking_month
+        `
+      );
+      bookingMonth = String(bookingMonthResult.rows[0].booking_month);
+    }
+
+    const entitlementsBeforeConsume = await getEntitlementsForMonth(
+      member,
+      bookingMonth,
+      client
+    );
+    const remainingForCategory =
+      entitlementsBeforeConsume.remaining?.[bookingToken.category_key] ?? 0;
+
+    if (remainingForCategory <= 0) {
+      await client.query("ROLLBACK");
+      return res.status(403).json({
+        ok: false,
+        error: "LIMIT_REACHED"
+      });
+    }
 
     await client.query(
       `
@@ -312,16 +532,9 @@ router.post("/consume", async (req, res) => {
 
     const updatedToken = updatedResult.rows[0];
 
-    const member = await findMemberByShopifyId(shopifyCustomerId);
-
-    if (!member) {
-      return res.status(404).json({
-        ok: false,
-        error: "MEMBER_NOT_FOUND"
-      });
-    }
-
-    const entitlements = await getEntitlements(member);
+    const entitlements = requestedBookingMonth
+      ? await getEntitlementsForMonth(member, requestedBookingMonth)
+      : await getEntitlements(member);
 
     return res.json({
       ok: true,

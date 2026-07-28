@@ -21,3 +21,15 @@ export const PACKAGE_RULES = {
     }
   }
 };
+
+export function getAllowedCategoriesForPackage(packageKey) {
+  const rules = PACKAGE_RULES[packageKey];
+
+  if (!rules) {
+    return [];
+  }
+
+  return Object.entries(rules.limits)
+    .filter(([, limit]) => limit > 0)
+    .map(([categoryKey]) => categoryKey);
+}

@@ -59,7 +59,8 @@ export async function getAllowed(req, res) {
     title,
     category_key,
     salonized_url,
-    '/products/' || treatment_key AS premium_product_url
+    COALESCE(shopify_product_handle, treatment_key) AS shopify_product_handle,
+    '/products/' || COALESCE(shopify_product_handle, treatment_key) AS premium_product_url
   FROM treatments
   WHERE is_active = true
   ORDER BY id ASC

@@ -1,6 +1,10 @@
 import express from "express";
 import { pool } from "../config/pool.js";
-import { getEntitlements } from "../services/entitlement.service.js";
+import {
+  getEntitlements,
+  getEntitlementsForMonth
+} from "../services/entitlement.service.js";
+import { getNextBookingMonth } from "../utils/dates.js";
 import { findMemberByShopifyId, createMember, updateMemberByShopifyId } from "../repositories/member.repository.js";
 
 
@@ -23,7 +27,8 @@ router.get("/allowed", async (req, res) => {
   title,
   category_key,
   salonized_url,
-  '/products/' || treatment_key AS premium_product_url
+  COALESCE(shopify_product_handle, treatment_key) AS shopify_product_handle,
+  '/products/' || COALESCE(shopify_product_handle, treatment_key) AS premium_product_url
       FROM treatments
       WHERE is_active = true
       ORDER BY title ASC
@@ -72,8 +77,16 @@ if (email || firstName || lastName || packageKey) {
   });
 }
 
-    const entitlements = await getEntitlements(member);
-    const allowedCategories = entitlements.allowedCategories;
+    const [entitlements, nextMonthEntitlements] = await Promise.all([
+      getEntitlements(member),
+      getEntitlementsForMonth(member, getNextBookingMonth())
+    ]);
+    const allowedCategories = [
+      ...new Set([
+        ...entitlements.allowedCategories,
+        ...nextMonthEntitlements.allowedCategories
+      ])
+    ];
     const allowedTreatments = rows.filter(t =>
       allowedCategories.includes(t.category_key)
     );
@@ -90,6 +103,7 @@ if (email || firstName || lastName || packageKey) {
         status: member.status
       },
       entitlements,
+      nextMonthEntitlements,
       treatments: allowedTreatments
     });
   } catch (error) {
