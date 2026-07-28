@@ -1,6 +1,10 @@
 import { getOrCreateMember } from '../services/member.service.js';
-import { getEntitlements } from '../services/entitlement.service.js';
+import {
+  getEntitlements,
+  getEntitlementsForMonth
+} from '../services/entitlement.service.js';
 import { pool } from '../config/pool.js';
+import { getNextBookingMonth } from '../utils/dates.js';
 
 export async function getMe(req, res) {
   try {
@@ -34,6 +38,8 @@ export async function getMe(req, res) {
 
 export async function getAllowed(req, res) {
   try {
+    res.set('Cache-Control', 'private, no-store, no-cache, must-revalidate');
+
     console.log('SHOPIFY_PROXY_QUERY_ALLOWED', req.query);
 
     const shopifyCustomerId = req.query.logged_in_customer_id;
@@ -50,7 +56,10 @@ export async function getAllowed(req, res) {
   tags: req.query.tags ? String(req.query.tags).split(',').map(t => t.trim()).filter(Boolean) : []
 });
 
-    const entitlements = await getEntitlements(member);
+    const [entitlements, nextMonthEntitlements] = await Promise.all([
+      getEntitlements(member),
+      getEntitlementsForMonth(member, getNextBookingMonth())
+    ]);
 
     const result = await pool.query(`
   SELECT
@@ -66,14 +75,21 @@ export async function getAllowed(req, res) {
   ORDER BY id ASC
 `);
 
+    const allowedCategories = [
+      ...new Set([
+        ...entitlements.allowedCategories,
+        ...nextMonthEntitlements.allowedCategories
+      ])
+    ];
     const treatments = result.rows.filter(t =>
-      entitlements.allowedCategories.includes(t.category_key)
+      allowedCategories.includes(t.category_key)
     );
 
     res.json({
       ok: true,
       member,
       entitlements,
+      nextMonthEntitlements,
       treatments
     });
   } catch (err) {
