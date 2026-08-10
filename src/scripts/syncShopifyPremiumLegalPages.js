@@ -24,6 +24,7 @@ const pages = [
         <li><strong>BEYOND:</strong> 199,00 € monatlich; 1 Behandlung aus BEYOND.</li>
         <li><strong>PRIVATE:</strong> 399,00 € monatlich; 1 vollständiges Protokoll aus PRIVATE.</li>
       </ul>
+      <p>Bei PRIVATE umfasst ein Monatsanspruch grundsätzlich eine 90-minütige Sitzung des gewählten Protokolls. Das Protokoll „Body Sculpt Intensive“ umfasst abweichend vier separate Sitzungen zu je 90 Minuten innerhalb desselben Anspruchsmonats; nach der ersten Buchung bleibt dieses Protokoll für den laufenden Monat festgelegt.</p>
       <p>Die Einrichtungsgebühr beträgt einmalig 39,00 €. Die Gesamtkosten der Mindestlaufzeit betragen einschließlich Einrichtungsgebühr: PURE 1.827,00 €, DEFINE 2.067,00 €, BEYOND 2.427,00 € und PRIVATE 4.827,00 €. Maßgeblich ist die beim Vertragsschluss angezeigte Leistungsbeschreibung.</p>
       <h2>3. Laufzeit und Kündigung</h2>
       <p>Die Mindestlaufzeit beträgt zwölf Monate ab Vertragsbeginn. Währenddessen ist die ordentliche Kündigung ausgeschlossen. Danach läuft der Vertrag auf unbestimmte Zeit weiter und kann jederzeit mit einer Frist von einem Monat gekündigt werden. Das Recht zur außerordentlichen Kündigung aus wichtigem Grund bleibt unberührt. Für online abschließbare Mitgliedschaften steht im Mitgliederbereich eine Kündigungsschaltfläche bereit.</p>
