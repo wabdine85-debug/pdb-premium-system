@@ -21,13 +21,13 @@ export async function getOrCreateMember(customer) {
   const safeFirstName = firstName || '';
   const safeLastName = lastName || '';
 
-  let member = await findMemberByShopifyId(id);
-
   const packageKey = resolvePackageFromTags(tags);
 
-  if (!member && !packageKey) {
+  if (!packageKey) {
     throw new Error('PREMIUM_TAG_REQUIRED');
   }
+
+  let member = await findMemberByShopifyId(id);
 
   if (!member) {
     member = await createMember({

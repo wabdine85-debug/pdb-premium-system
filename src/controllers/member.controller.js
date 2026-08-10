@@ -5,6 +5,12 @@ import {
 } from '../services/entitlement.service.js';
 import { pool } from '../config/pool.js';
 import { getNextBookingMonth } from '../utils/dates.js';
+import { getShopifyCustomer } from '../services/shopifyAdmin.service.js';
+
+async function getVerifiedMember(shopifyCustomerId) {
+  const customer = await getShopifyCustomer(shopifyCustomerId);
+  return getOrCreateMember(customer);
+}
 
 export async function getMe(req, res) {
   try {
@@ -14,13 +20,7 @@ export async function getMe(req, res) {
       return res.status(401).json({ error: 'CUSTOMER_NOT_LOGGED_IN' });
     }
 
-    const member = await getOrCreateMember({
-      id: shopifyCustomerId,
-      email: req.query.email || null,
-      firstName: req.query.firstName || null,
-      lastName: req.query.lastName || null,
-      tags: req.query.tags ? String(req.query.tags).split(',').map(tag => tag.trim()).filter(Boolean) : []
-    });
+    const member = await getVerifiedMember(shopifyCustomerId);
 
     const entitlements = await getEntitlements(member);
 
@@ -30,7 +30,8 @@ export async function getMe(req, res) {
     });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Server error' });
+    const status = err.message === 'PREMIUM_TAG_REQUIRED' ? 403 : 500;
+    res.status(status).json({ error: err.message === 'PREMIUM_TAG_REQUIRED' ? err.message : 'Server error' });
   }
 }
 
@@ -44,13 +45,7 @@ export async function getAllowed(req, res) {
       return res.status(401).json({ ok: false, error: 'CUSTOMER_NOT_LOGGED_IN' });
     }
 
-    const member = await getOrCreateMember({
-  id: shopifyCustomerId,
-  email: req.query.email || null,
-  firstName: req.query.firstName || null,
-  lastName: req.query.lastName || null,
-  tags: req.query.tags ? String(req.query.tags).split(',').map(t => t.trim()).filter(Boolean) : []
-});
+    const member = await getVerifiedMember(shopifyCustomerId);
 
     const [entitlements, nextMonthEntitlements] = await Promise.all([
       getEntitlements(member),
@@ -90,6 +85,10 @@ export async function getAllowed(req, res) {
     });
   } catch (err) {
     console.error('getAllowed error:', err);
-    res.status(500).json({ ok: false, error: 'SERVER_ERROR' });
+    const status = err.message === 'PREMIUM_TAG_REQUIRED' ? 403 : 500;
+    res.status(status).json({
+      ok: false,
+      error: err.message === 'PREMIUM_TAG_REQUIRED' ? err.message : 'SERVER_ERROR'
+    });
   }
 }

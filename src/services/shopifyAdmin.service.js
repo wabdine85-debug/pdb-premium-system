@@ -42,6 +42,32 @@ async function graphql(query, variables) {
   return body.data;
 }
 
+export async function getShopifyCustomer(customerId) {
+  const id = `gid://shopify/Customer/${customerId}`;
+  const data = await graphql(
+    `query GetPremiumCustomer($id: ID!) {
+      customer(id: $id) {
+        id
+        defaultEmailAddress { emailAddress }
+        firstName
+        lastName
+        tags
+      }
+    }`,
+    { id }
+  );
+
+  if (!data.customer) throw new Error('SHOPIFY_CUSTOMER_NOT_FOUND');
+
+  return {
+    id: customerId,
+    email: data.customer.defaultEmailAddress?.emailAddress || null,
+    firstName: data.customer.firstName || null,
+    lastName: data.customer.lastName || null,
+    tags: data.customer.tags || []
+  };
+}
+
 export async function setPremiumCustomerTag(customerId, packageKey) {
   const id = `gid://shopify/Customer/${customerId}`;
   const tagsToRemove = ['premium-pure', 'premium-define', 'premium-beyond', 'premium-private'];

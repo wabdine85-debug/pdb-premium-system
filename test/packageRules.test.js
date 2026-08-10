@@ -9,6 +9,7 @@ import {
 } from "../src/utils/packageRules.js";
 import { resolvePackageFromTags } from "../src/utils/packageTags.js";
 import { treatments } from "../src/data/treatments.data.js";
+import { getOrCreateMember } from "../src/services/member.service.js";
 
 test("PRIVATE is a supported package with one monthly PRIVATE entitlement", () => {
   assert.deepEqual(PACKAGE_KEYS, ["pure", "define", "beyond", "private"]);
@@ -25,6 +26,19 @@ test("PRIVATE Shopify tag has precedence over lower package tags", () => {
   assert.equal(
     resolvePackageFromTags(["premium-pure", "premium-private"]),
     "private"
+  );
+});
+
+test("PRIVATE requires the exact Shopify tag", () => {
+  assert.equal(resolvePackageFromTags(["premium-private"]), "private");
+  assert.equal(resolvePackageFromTags(["premium-private "]), null);
+  assert.equal(resolvePackageFromTags(["PREMIUM-PRIVATE"]), null);
+});
+
+test("member access is denied when Shopify supplies no premium tag", async () => {
+  await assert.rejects(
+    getOrCreateMember({ id: "test-customer", tags: [] }),
+    /PREMIUM_TAG_REQUIRED/
   );
 });
 

@@ -5,6 +5,8 @@ import {
   getEntitlementsForMonth,
   getTreatmentEntitlementsForMonth
 } from "../src/services/entitlement.service.js";
+import { treatments } from "../src/data/treatments.data.js";
+import { getPrivateProtocolSessionLimit } from "../src/utils/privateProtocolRules.js";
 
 function createFakeDb(bookings) {
   return {
@@ -77,4 +79,15 @@ test("Body Sculpt grants four sessions while locking the monthly protocol", asyn
   assert.equal(bodyEntitlements.privateProtocol.sessionLimit, 4);
   assert.equal(otherEntitlements.remaining.private, 0);
   assert.equal(otherEntitlements.privateProtocol.locked, true);
+});
+
+test("all other PRIVATE protocols allow exactly one session", () => {
+  const privateTreatments = treatments.filter(
+    (treatment) => treatment.category_key === "private"
+  );
+
+  for (const treatment of privateTreatments) {
+    const expected = treatment.treatment_key === "private-body-sculpt-intensive" ? 4 : 1;
+    assert.equal(getPrivateProtocolSessionLimit(treatment.treatment_key), expected);
+  }
 });
