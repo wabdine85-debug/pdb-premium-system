@@ -6,10 +6,21 @@ import {
 import { pool } from '../config/pool.js';
 import { getNextBookingMonth } from '../utils/dates.js';
 import { getShopifyCustomer } from '../services/shopifyAdmin.service.js';
+import { findMemberByShopifyId } from '../repositories/member.repository.js';
 
 async function getVerifiedMember(shopifyCustomerId) {
-  const customer = await getShopifyCustomer(shopifyCustomerId);
-  return getOrCreateMember(customer);
+  try {
+    const customer = await getShopifyCustomer(shopifyCustomerId);
+    return getOrCreateMember(customer);
+  } catch (error) {
+    if (!String(error.message || '').startsWith('SHOPIFY_')) throw error;
+
+    const existingMember = await findMemberByShopifyId(shopifyCustomerId);
+    if (!existingMember) throw error;
+
+    console.warn('Shopify customer verification unavailable; using existing local membership record.');
+    return existingMember;
+  }
 }
 
 export async function getMe(req, res) {
