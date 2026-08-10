@@ -6,19 +6,14 @@ import {
 } from "../services/entitlement.service.js";
 import { getNextBookingMonth } from "../utils/dates.js";
 import { findMemberByShopifyId, createMember, updateMemberByShopifyId } from "../repositories/member.repository.js";
+import { resolvePackageFromTags } from "../utils/packageTags.js";
+import { requireShopifyCustomer, verifyShopifyAppProxy } from "../middleware/shopifyAppProxy.js";
 
 
 
 const router = express.Router();
 
-function resolvePackageFromTags(tags = []) {
-  if (tags.includes("premium-beyond")) return "beyond";
-  if (tags.includes("premium-define")) return "define";
-  if (tags.includes("premium-pure")) return "pure";
-  return null;
-}
-
-router.get("/allowed", async (req, res) => {
+router.get("/allowed", verifyShopifyAppProxy, requireShopifyCustomer, async (req, res) => {
   try {
     res.set("Cache-Control", "private, no-store, no-cache, must-revalidate");
 
@@ -36,7 +31,7 @@ router.get("/allowed", async (req, res) => {
       ORDER BY title ASC
     `);
 
-    const proxyCustomerId = String(req.query.logged_in_customer_id || "").trim();
+    const proxyCustomerId = req.shopifyProxy.customerId;
 const shopifyCustomerId = String(req.query.shopify_customer_id || proxyCustomerId || "").trim();
 
 if (!proxyCustomerId) {

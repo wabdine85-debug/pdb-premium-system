@@ -1,0 +1,1271 @@
+{%- liquid
+  assign isModal = false
+  if template == 'product.modal'
+    assign isModal = true
+  endif
+-%}
+
+{%- render 'product-template',
+  product: product,
+  section_id: section.id,
+  blocks: section.blocks,
+  image_position: section.settings.image_position,
+  image_container_width: section.settings.image_size,
+  product_zoom_enable: section.settings.product_zoom_enable,
+  sku_enable: section.settings.sku_enable,
+  isModal: isModal,
+  thumbnail_position: section.settings.thumbnail_position,
+  thumbnail_height: section.settings.thumbnail_height,
+  thumbnail_arrows: section.settings.thumbnail_arrows,
+  mobile_layout: section.settings.mobile_layout,
+  video_looping: section.settings.enable_video_looping,
+  video_style: section.settings.product_video_style,
+  context: 'main-product',
+-%}
+<script>
+  var pdbTags = {{ product.tags | json }};
+  var pdbTreatmentTag = pdbTags.find(function(tag) {
+    return tag.indexOf('premium-treatment:') === 0;
+  });
+
+  window.PDB_PREMIUM_PRODUCT = {
+    isPremiumDummy: pdbTags.indexOf('premium-dummy') !== -1,
+    treatmentKey: pdbTreatmentTag ? pdbTreatmentTag.replace('premium-treatment:', '') : null
+  };
+
+  console.log('PDB PREMIUM PRODUCT:', window.PDB_PREMIUM_PRODUCT);
+
+
+  // 👉 AUTO APNTLY POPUP + LOADING OVERLAY
+if (window.PDB_PREMIUM_PRODUCT.isPremiumDummy) {
+
+  var overlay = document.createElement("div");
+  overlay.id = "pdb-premium-loading-overlay";
+  overlay.innerHTML = `
+    <div class="pdb-premium-loading-box">
+      <div class="pdb-premium-spinner"></div>
+      <h3 id="pdb-premium-loading-title">Dein Premium-Termin wird vorbereitet</h3>
+      <p id="pdb-premium-loading-copy">Der Buchungskalender öffnet sich automatisch.</p>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  var style = document.createElement("style");
+  style.innerHTML = `
+        #pdb-premium-loading-overlay{
+      position:fixed;
+      inset:0;
+      background:
+        radial-gradient(circle at 18% 18%, rgba(217,191,169,.20), transparent 28%),
+        radial-gradient(circle at 84% 20%, rgba(255,255,255,.08), transparent 24%),
+        linear-gradient(135deg,#050505 0%,#11100f 54%,#1d1713 100%);
+      z-index:9990;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      text-align:center;
+      overflow:hidden;
+      pointer-events:none;
+    }
+
+    #pdb-premium-loading-overlay::before{
+      content:"";
+      position:absolute;
+      inset:-30%;
+      background:
+        linear-gradient(115deg, transparent 0%, rgba(217,191,169,.12) 45%, transparent 58%),
+        linear-gradient(65deg, transparent 0%, rgba(255,255,255,.06) 48%, transparent 62%);
+      animation:pdbPremiumSweep 8s ease-in-out infinite;
+    }
+
+    .pdb-premium-loading-box{
+      position:relative;
+      z-index:1;
+      max-width:380px;
+      margin:0 18px;
+      padding:30px 24px;
+      border-radius:26px;
+      background:rgba(12,12,12,.78);
+      border:1px solid rgba(217,191,169,.26);
+      box-shadow:0 24px 70px rgba(0,0,0,.42);
+      color:#fff;
+      backdrop-filter:blur(12px);
+    }
+
+    #pdb-premium-loading-overlay.pdb-booking-open .pdb-premium-loading-box{
+      opacity:0;
+      transform:translateY(10px);
+      pointer-events:none;
+      transition:.25s ease;
+    }
+
+    .pdb-premium-loading-box h3{
+      margin:0 0 10px;
+      color:#fff;
+      font-size:24px;
+      line-height:1.2;
+    }
+
+    .pdb-premium-loading-box p{
+      margin:0;
+      color:rgba(255,255,255,.72);
+      font-size:15px;
+      line-height:1.7;
+    }
+
+    .pdb-premium-spinner{
+      width:44px;
+      height:44px;
+      border:2px solid rgba(217,191,169,.35);
+      border-top-color:#d9bfa9;
+      border-radius:50%;
+      margin:0 auto 16px;
+      animation:pdbSpin .8s linear infinite;
+    }
+        iframe[src*="chat"],
+    iframe[id*="chat"],
+    iframe[class*="chat"],
+    div[id*="chat"],
+    div[class*="chat"],
+    button[id*="chat"],
+    button[class*="chat"],
+    [class*="whatsapp"],
+    [id*="whatsapp"],
+    [class*="crisp"],
+    [id*="crisp"],
+    [class*="tidio"],
+    [id*="tidio"],
+    [class*="gorgias"],
+    [id*="gorgias"]{
+      display:none!important;
+      opacity:0!important;
+      visibility:hidden!important;
+      pointer-events:none!important;
+    }
+    #wisy-toggle{
+      display:none!important;
+      opacity:0!important;
+      visibility:hidden!important;
+      pointer-events:none!important;
+    }
+
+    @keyframes pdbSpin{
+      to{ transform:rotate(360deg); }
+    }
+
+    @keyframes pdbPremiumSweep{
+      0%,100%{
+        transform:translate3d(-4%,0,0) rotate(0deg);
+        opacity:.45;
+      }
+      50%{
+        transform:translate3d(4%,2%,0) rotate(6deg);
+        opacity:.9;
+      }
+    }
+
+  `;
+  document.head.appendChild(style);
+
+  var tries = 0;
+
+  var interval = setInterval(function () {
+    var btn = document.getElementById("apntly-book-button");
+
+    if (btn) {
+      clearInterval(interval);
+
+      setTimeout(function () {
+        btn.click();
+
+        setTimeout(function () {
+  var loading = document.getElementById("pdb-premium-loading-overlay");
+  if (loading) loading.classList.add("pdb-booking-open");
+}, 1200);
+
+
+      }, 600);
+    }
+
+    tries++;
+
+    if (tries > 20) {
+      clearInterval(interval);
+      var loading = document.getElementById("pdb-premium-loading-overlay");
+      if (loading) loading.remove();
+    }
+
+  }, 300);
+}
+
+</script>
+
+<script>
+  window.PDB_CUSTOMER = {
+    isLoggedIn: {% if customer %}true{% else %}false{% endif %},
+    shopifyCustomerId: "{{ customer.id | default: '' }}",
+    email: "{{ customer.email | default: '' }}"
+  };
+
+  console.log("PDB CUSTOMER:", window.PDB_CUSTOMER);
+</script>
+
+<script>
+  async function pdbCreatePremiumToken() {
+    if (!window.PDB_PREMIUM_PRODUCT?.isPremiumDummy) return;
+    if (!window.PDB_PREMIUM_PRODUCT?.treatmentKey) return;
+    if (!window.PDB_CUSTOMER?.shopifyCustomerId) return;
+
+    console.log("PDB TOKEN TEST start");
+
+    var response = await fetch("/apps/pdb/bookings/create", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        treatment_key: window.PDB_PREMIUM_PRODUCT.treatmentKey,
+        shopify_customer_id: window.PDB_CUSTOMER.shopifyCustomerId
+      })
+    });
+
+    var data = await response.json();
+    console.log("PDB TOKEN TEST result:", data);
+  }
+
+ // pdbCreatePremiumToken();
+</script>
+
+
+<script>
+  var PDB_PREMIUM_API_BASE = "/apps/pdb";
+  var pdbPremiumConsumeStarted = false;
+  var pdbAllowApntlyOpenOnce = false;
+  var pdbPremiumBookingContext = null;
+
+  function pdbNormalizeBookingMonth(value) {
+    var match = String(value || "").match(/^(\d{4})-(\d{2})(?:-\d{2})?$/);
+
+    if (!match) {
+      return null;
+    }
+
+    var year = Number(match[1]);
+    var month = Number(match[2]);
+
+    if (month < 1 || month > 12) {
+      return null;
+    }
+
+    return match[1] + "-" + match[2] + "-01";
+  }
+
+  function pdbBookingMonthToDate(value) {
+    var normalized = pdbNormalizeBookingMonth(value);
+
+    if (!normalized) {
+      return null;
+    }
+
+    var parts = normalized.split("-");
+    return new Date(Number(parts[0]), Number(parts[1]) - 1, 1, 12, 0, 0);
+  }
+
+  function pdbFormatBookingMonth(value) {
+    var date = pdbBookingMonthToDate(value);
+
+    if (!date) {
+      return "";
+    }
+
+    return new Intl.DateTimeFormat("de-DE", {
+      month: "long",
+      year: "numeric",
+      timeZone: "Europe/Berlin"
+    }).format(date);
+  }
+
+  function pdbGetAppointmentMonth(value) {
+    return pdbNormalizeBookingMonth(value);
+  }
+
+  function pdbBuildPremiumBookingContext(data) {
+    var currentMonth = pdbNormalizeBookingMonth(
+      data && data.entitlements && data.entitlements.month
+    );
+    var availableMonths = Array.isArray(data && data.available_booking_months)
+      ? data.available_booking_months.map(pdbNormalizeBookingMonth).filter(Boolean)
+      : [];
+    var targetMonth = availableMonths[0] || currentMonth;
+
+    return {
+      currentMonth: currentMonth,
+      targetMonth: targetMonth,
+      currentMonthExhausted: !!(
+        currentMonth &&
+        targetMonth &&
+        currentMonth !== targetMonth &&
+        availableMonths.indexOf(currentMonth) === -1
+      )
+    };
+  }
+
+  function pdbUpdatePremiumLoadingMessage(context) {
+    if (!context || !context.currentMonthExhausted) {
+      return;
+    }
+
+    var currentLabel = pdbFormatBookingMonth(context.currentMonth);
+    var targetLabel = pdbFormatBookingMonth(context.targetMonth);
+    var title = document.getElementById("pdb-premium-loading-title");
+    var copy = document.getElementById("pdb-premium-loading-copy");
+
+    if (title) {
+      title.textContent = "Dein nächster buchbarer Monat ist " + targetLabel;
+    }
+
+    if (copy) {
+      copy.textContent =
+        "Dein Kontingent für " + currentLabel +
+        " ist bereits genutzt. Bitte wähle im Kalender einen Termin im " + targetLabel + ".";
+    }
+  }
+
+  function pdbSetApntlyStartMonth(context) {
+    if (!context || !context.currentMonthExhausted) {
+      return false;
+    }
+
+    var targetDate = pdbBookingMonthToDate(context.targetMonth);
+
+    if (!targetDate) {
+      return false;
+    }
+
+    var attempts = 0;
+    var timer = setInterval(function () {
+      attempts += 1;
+
+      try {
+        var client = window.appointlyClient;
+        var modalData = client && client.apntlyBookingModalData;
+        var selector =
+          client && client.config && client.config.booking
+            ? client.config.booking.popUpSelector
+            : null;
+        var frame = selector ? document.getElementById(selector) : null;
+        var frameDocument = frame && frame.contentDocument;
+        var heading = frameDocument && frameDocument.querySelector(".main-heading");
+
+        if (!client || !modalData || !heading) {
+          if (attempts >= 30) {
+            clearInterval(timer);
+          }
+          return;
+        }
+
+        modalData.selectedDate = targetDate;
+
+        if (typeof client.onSelectionChange === "function") {
+          client.onSelectionChange();
+        }
+
+        setTimeout(function () {
+          try {
+            var datePicker =
+              client.window &&
+              client.window.apntlyBookingModal &&
+              client.window.apntlyBookingModal.$refs
+                ? client.window.apntlyBookingModal.$refs.datep
+                : null;
+            var calendar =
+              datePicker && datePicker.$refs
+                ? datePicker.$refs.calendar
+                : null;
+
+            if (datePicker && typeof datePicker.move === "function") {
+              datePicker.move(targetDate, { transition: "none", force: true });
+            } else if (calendar && typeof calendar.move === "function") {
+              calendar.move(targetDate, { transition: "none", force: true });
+            }
+          } catch (error) {
+            console.warn("PDB: Apntly-Startmonat konnte nicht verschoben werden.");
+          }
+        }, 0);
+
+        clearInterval(timer);
+      } catch (error) {
+        if (attempts >= 30) {
+          clearInterval(timer);
+        }
+      }
+    }, 100);
+
+    return true;
+  }
+
+  function pdbShowApntlyMonthNotice(context) {
+    if (!context || !context.currentMonthExhausted) {
+      return;
+    }
+
+    var currentLabel = pdbFormatBookingMonth(context.currentMonth);
+    var targetLabel = pdbFormatBookingMonth(context.targetMonth);
+    var attempts = 0;
+    var timer = setInterval(function () {
+      attempts += 1;
+
+      try {
+        var client = window.appointlyClient;
+        var selector =
+          client && client.config && client.config.booking
+            ? client.config.booking.popUpSelector
+            : null;
+        var frame = selector ? document.getElementById(selector) : null;
+        var frameDocument = frame && frame.contentDocument;
+        var heading = frameDocument && frameDocument.querySelector(".main-heading");
+
+        if (!heading) {
+          if (attempts >= 30) {
+            clearInterval(timer);
+          }
+          return;
+        }
+
+        var existingNotice = frameDocument.getElementById("pdb-premium-calendar-notice");
+
+        if (!existingNotice) {
+          var notice = frameDocument.createElement("div");
+          notice.id = "pdb-premium-calendar-notice";
+          notice.setAttribute("role", "status");
+          notice.style.cssText =
+            "margin:0 0 16px;padding:13px 14px;border:1px solid rgba(217,191,169,.55);" +
+            "border-radius:12px;background:#f8f3ef;color:#2d2926;font-size:13px;line-height:1.55;";
+
+          var strong = frameDocument.createElement("strong");
+          strong.style.cssText = "display:block;margin-bottom:3px;color:#171717;font-size:14px;";
+          strong.textContent = currentLabel + " bereits genutzt";
+
+          var message = frameDocument.createElement("span");
+          message.textContent = "Bitte wähle einen Termin im " + targetLabel + ".";
+
+          notice.appendChild(strong);
+          notice.appendChild(message);
+          heading.insertAdjacentElement("afterend", notice);
+        }
+
+        clearInterval(timer);
+      } catch (error) {
+        if (attempts >= 30) {
+          clearInterval(timer);
+        }
+      }
+    }, 100);
+  }
+
+  function pdbGetSelectedAppointmentDate() {
+    var cartItems =
+      window.appointlyClient &&
+      window.appointlyClient.apntlyBookingModalData &&
+      window.appointlyClient.apntlyBookingModalData.cartItems;
+    var bookingTimestamp =
+      Array.isArray(cartItems) &&
+      cartItems[0] &&
+      cartItems[0].timeSlot &&
+      Number(cartItems[0].timeSlot.bookingTimestamp);
+
+    if (!bookingTimestamp || !Number.isFinite(bookingTimestamp)) {
+      return null;
+    }
+
+    if (bookingTimestamp < 1000000000000) {
+      bookingTimestamp = bookingTimestamp * 1000;
+    }
+
+    var parts = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Europe/Berlin",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit"
+    }).formatToParts(new Date(bookingTimestamp));
+    var values = {};
+
+    parts.forEach(function (part) {
+      values[part.type] = part.value;
+    });
+
+    if (!values.year || !values.month || !values.day) {
+      return null;
+    }
+
+    return values.year + "-" + values.month + "-" + values.day;
+  }
+
+  async function pdbValidateSelectedPremiumSlot() {
+    var token = sessionStorage.getItem("pdb_premium_token");
+    var appointmentDate = pdbGetSelectedAppointmentDate();
+
+    if (!token || !appointmentDate) {
+      alert("Der gewählte Termin konnte nicht sicher geprüft werden. Bitte starte die Buchung erneut.");
+      return false;
+    }
+
+    try {
+      var response = await fetch(PDB_PREMIUM_API_BASE + "/bookings/validate-slot", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          token: token,
+          shopify_customer_id: window.PDB_CUSTOMER.shopifyCustomerId,
+          appointment_date: appointmentDate
+        })
+      });
+      var data = await response.json();
+
+      if (data.ok) {
+        sessionStorage.setItem("pdb_premium_appointment_date", appointmentDate);
+        return true;
+      }
+
+      if (data.error === "APPOINTMENT_MONTH_NOT_ALLOWED") {
+        alert("Premium-Termine können nur für den aktuellen oder den nächsten Monat gebucht werden.");
+      } else if (data.error === "LIMIT_REACHED") {
+        var selectedMonth = pdbGetAppointmentMonth(appointmentDate);
+        var selectedLabel = pdbFormatBookingMonth(selectedMonth);
+        var targetLabel = pdbFormatBookingMonth(
+          pdbPremiumBookingContext && pdbPremiumBookingContext.targetMonth
+        );
+
+        if (selectedLabel && targetLabel && selectedMonth !== pdbPremiumBookingContext.targetMonth) {
+          alert(
+            "Dein Kontingent für " + selectedLabel +
+            " ist bereits genutzt. Bitte wähle einen Termin im " + targetLabel + "."
+          );
+        } else {
+          alert("Dein Premium-Kontingent für den gewählten Terminmonat ist bereits aufgebraucht.");
+        }
+      } else if (data.error === "TOKEN_EXPIRED") {
+        alert("Die Buchungsfreigabe ist abgelaufen. Bitte starte die Buchung erneut.");
+      } else {
+        alert("Der gewählte Premium-Termin konnte nicht bestätigt werden.");
+      }
+
+      return false;
+    } catch (error) {
+      console.error("PDB Terminprüfung fehlgeschlagen:", error);
+      alert("Der gewählte Termin konnte technisch nicht geprüft werden. Bitte versuche es erneut.");
+      return false;
+    }
+  }
+
+  async function pdbConsumeConfirmedPremiumAppointment() {
+    if (pdbPremiumConsumeStarted) return;
+
+    var token = sessionStorage.getItem("pdb_premium_token");
+    var appointmentDate = pdbGetSelectedAppointmentDate();
+
+    if (!token || !appointmentDate) {
+      alert("Der Termin wurde gebucht, aber das Premium-Kontingent konnte nicht aktualisiert werden. Bitte kontaktiere uns.");
+      return;
+    }
+
+    pdbPremiumConsumeStarted = true;
+
+    try {
+      var response = await fetch(PDB_PREMIUM_API_BASE + "/bookings/consume", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          token: token,
+          shopify_customer_id: window.PDB_CUSTOMER.shopifyCustomerId,
+          appointment_date: appointmentDate
+        })
+      });
+      var data = await response.json();
+
+      if (!data.ok) {
+        throw new Error(data.error || "PREMIUM_CONSUME_FAILED");
+      }
+
+      sessionStorage.removeItem("pdb_premium_token");
+      sessionStorage.removeItem("pdb_premium_treatment_key");
+      sessionStorage.removeItem("pdb_shopify_customer_id");
+      sessionStorage.removeItem("pdb_premium_appointment_date");
+    } catch (error) {
+      pdbPremiumConsumeStarted = false;
+      console.error("PDB Kontingent-Aktualisierung fehlgeschlagen:", error);
+      alert("Der Termin wurde gebucht, aber das Premium-Kontingent konnte nicht aktualisiert werden. Bitte kontaktiere uns.");
+    }
+  }
+
+  function pdbInstallApntlyPremiumHooks() {
+    var client = window.appointlyClient;
+
+    if (!client) {
+      return false;
+    }
+
+    if (client.pdbPremiumHooksInstalled) {
+      return true;
+    }
+
+    if (
+      typeof client.onBookNowClicked !== "function" ||
+      typeof client.customerDetailsQuestionsButtonClicked !== "function" ||
+      typeof client.freeBookingCompletedEvent !== "function"
+    ) {
+      return false;
+    }
+
+    var originalBookNowClicked = client.onBookNowClicked.bind(client);
+    var originalCustomerDetailsSubmit =
+      client.customerDetailsQuestionsButtonClicked.bind(client);
+    var originalFreeBookingCompleted =
+      client.freeBookingCompletedEvent.bind(client);
+
+    client.onBookNowClicked = async function () {
+      if (
+        window.PDB_PREMIUM_PRODUCT &&
+        window.PDB_PREMIUM_PRODUCT.isPremiumDummy
+      ) {
+        var isAllowed = await pdbValidateSelectedPremiumSlot();
+        if (!isAllowed) return;
+      }
+
+      return originalBookNowClicked();
+    };
+
+    client.customerDetailsQuestionsButtonClicked = async function () {
+      if (
+        window.PDB_PREMIUM_PRODUCT &&
+        window.PDB_PREMIUM_PRODUCT.isPremiumDummy
+      ) {
+        var isAllowed = await pdbValidateSelectedPremiumSlot();
+        if (!isAllowed) return;
+      }
+
+      return originalCustomerDetailsSubmit();
+    };
+
+    client.freeBookingCompletedEvent = function (event) {
+      originalFreeBookingCompleted(event);
+
+      if (
+        window.PDB_PREMIUM_PRODUCT &&
+        window.PDB_PREMIUM_PRODUCT.isPremiumDummy
+      ) {
+        pdbConsumeConfirmedPremiumAppointment();
+      }
+    };
+
+    client.pdbPremiumHooksInstalled = true;
+    return true;
+  }
+
+  function pdbAttachApntlyClick() {
+    var btn = document.getElementById('apntly-book-button');
+
+    if (!btn) {
+      console.log("PDB: Apntly Button noch nicht da");
+      setTimeout(pdbAttachApntlyClick, 500);
+      return;
+    }
+
+    if (btn.dataset.pdbPremiumAttached === "true") {
+      return;
+    }
+
+    btn.dataset.pdbPremiumAttached = "true";
+    console.log("PDB: Apntly Button gefunden");
+
+    btn.addEventListener("click", async function pdbPremiumClickHandler(e) {
+      if (!window.PDB_PREMIUM_PRODUCT?.isPremiumDummy) return;
+
+      if (pdbAllowApntlyOpenOnce) {
+        pdbAllowApntlyOpenOnce = false;
+        return;
+      }
+
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+
+      if (
+  !window.PDB_CUSTOMER ||
+  !window.PDB_CUSTOMER.shopifyCustomerId ||
+  window.PDB_CUSTOMER.shopifyCustomerId === ""
+) {
+  console.log("PDB LOGIN BLOCK:", window.PDB_CUSTOMER);
+  alert("Bitte öffnen Sie diese Buchung über Ihren Premium-Mitgliederbereich.");
+  window.location.href = "/pages/premium#pdb-member-booking";
+  return;
+}
+
+      if (!pdbInstallApntlyPremiumHooks()) {
+        alert("Die sichere Premium-Terminprüfung konnte nicht geladen werden. Bitte lade die Seite neu.");
+        return;
+      }
+
+      console.log("PDB CLICK → Token wird erstellt");
+
+      var response = await fetch(PDB_PREMIUM_API_BASE + "/bookings/create", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          treatment_key: window.PDB_PREMIUM_PRODUCT.treatmentKey,
+          shopify_customer_id: window.PDB_CUSTOMER.shopifyCustomerId
+        })
+      });
+
+      var data = await response.json();
+      console.log("PDB TOKEN:", data);
+
+      if (!data.ok) {
+        if (data.error === "LIMIT_REACHED") {
+          alert("Dein Premium-Kontingent für den aktuellen und den nächsten Monat ist bereits aufgebraucht.");
+          return;
+        }
+
+        if (data.error === "TREATMENT_NOT_ALLOWED") {
+          alert("Diese Behandlung ist in deinem Premium-Paket nicht enthalten.");
+          return;
+        }
+
+        if (data.error === "MEMBER_NOT_FOUND") {
+          alert("Deine Premium-Mitgliedschaft wurde nicht gefunden. Bitte kontaktiere uns.");
+          return;
+        }
+
+        alert("Die Premium-Buchung konnte nicht gestartet werden.");
+        return;
+      }
+
+      if (data.token) {
+        sessionStorage.setItem("pdb_premium_token", data.token);
+        sessionStorage.setItem("pdb_premium_treatment_key", window.PDB_PREMIUM_PRODUCT.treatmentKey);
+        sessionStorage.setItem("pdb_shopify_customer_id", window.PDB_CUSTOMER.shopifyCustomerId);
+        console.log("PDB TOKEN gespeichert:", data.token);
+      }
+
+      pdbPremiumBookingContext = pdbBuildPremiumBookingContext(data);
+      pdbUpdatePremiumLoadingMessage(pdbPremiumBookingContext);
+
+      pdbAllowApntlyOpenOnce = true;
+      setTimeout(function () {
+        btn.click();
+        pdbSetApntlyStartMonth(pdbPremiumBookingContext);
+        pdbShowApntlyMonthNotice(pdbPremiumBookingContext);
+      }, 150);
+
+    }, true);
+  }
+
+  pdbAttachApntlyClick();
+</script>
+
+{% schema %}
+{
+  "name": "t:sections.main-product.name",
+  "settings": [
+    {
+      "type": "checkbox",
+      "id": "sku_enable",
+      "label": "t:sections.main-product.settings.sku_enable.label"
+    },
+    {
+      "type": "header",
+      "content": "t:sections.main-product.settings.header_media"
+    },
+    {
+      "type": "paragraph",
+      "content": "t:sections.main-product.settings.content"
+    },
+    {
+      "type": "select",
+      "id": "image_position",
+      "label": "t:sections.main-product.settings.image_position.label",
+      "default": "left",
+      "options": [
+        {
+          "value": "left",
+          "label": "t:sections.main-product.settings.image_position.options.left.label"
+        },
+        {
+          "value": "right",
+          "label": "t:sections.main-product.settings.image_position.options.right.label"
+        }
+      ]
+    },
+    {
+      "type": "select",
+      "id": "image_size",
+      "label": "t:sections.main-product.settings.image_size.label",
+      "default": "medium",
+      "options": [
+        {
+          "value": "small",
+          "label": "t:sections.main-product.settings.image_size.options.small.label"
+        },
+        {
+          "value": "medium",
+          "label": "t:sections.main-product.settings.image_size.options.medium.label"
+        },
+        {
+          "value": "large",
+          "label": "t:sections.main-product.settings.image_size.options.large.label"
+        }
+      ]
+    },
+    {
+      "type": "checkbox",
+      "id": "product_zoom_enable",
+      "label": "t:sections.main-product.settings.product_zoom_enable.label",
+      "default": true
+    },
+    {
+      "type": "select",
+      "id": "thumbnail_position",
+      "label": "t:sections.main-product.settings.thumbnail_position.label",
+      "default": "beside",
+      "options": [
+        {
+          "value": "beside",
+          "label": "t:sections.main-product.settings.thumbnail_position.options.beside.label"
+        },
+        {
+          "value": "below",
+          "label": "t:sections.main-product.settings.thumbnail_position.options.below.label"
+        }
+      ]
+    },
+    {
+      "type": "select",
+      "id": "thumbnail_height",
+      "label": "t:sections.main-product.settings.thumbnail_height.label",
+      "info": "t:sections.main-product.settings.thumbnail_height.info",
+      "default": "flexible",
+      "options": [
+        {
+          "value": "fixed",
+          "label": "t:sections.main-product.settings.thumbnail_height.options.fixed.label"
+        },
+        {
+          "value": "flexible",
+          "label": "t:sections.main-product.settings.thumbnail_height.options.flexible.label"
+        }
+      ]
+    },
+    {
+      "type": "checkbox",
+      "id": "thumbnail_arrows",
+      "label": "t:sections.main-product.settings.thumbnail_arrows.label"
+    },
+    {
+      "type": "select",
+      "id": "mobile_layout",
+      "label": "t:sections.main-product.settings.mobile_layout.label",
+      "default": "partial",
+      "options": [
+        {
+          "value": "partial",
+          "label": "t:sections.main-product.settings.mobile_layout.options.partial.label"
+        },
+        {
+          "value": "full",
+          "label": "t:sections.main-product.settings.mobile_layout.options.full.label"
+        }
+      ]
+    },
+    {
+      "type": "checkbox",
+      "id": "enable_video_looping",
+      "label": "t:sections.main-product.settings.enable_video_looping.label",
+      "default": true
+    },
+    {
+      "type": "select",
+      "id": "product_video_style",
+      "label": "t:sections.main-product.settings.product_video_style.label",
+      "default": "muted",
+      "options": [
+        {
+          "value": "muted",
+          "label": "t:sections.main-product.settings.product_video_style.options.muted.label"
+        },
+        {
+          "value": "unmuted",
+          "label": "t:sections.main-product.settings.product_video_style.options.unmuted.label"
+        }
+      ],
+      "info": "t:sections.main-product.settings.product_video_style.info"
+    }
+  ],
+  "blocks": [{
+  "type": "@app"
+},
+{
+  "type": "price",
+  "name": "t:product_block.price.name",
+  "limit": 1
+},
+{
+  "type": "quantity_selector",
+  "name": "t:product_block.quantity_selector.name",
+  "limit": 1
+},
+{
+  "type": "complementary_products",
+  "name": "Complementary products",
+  "limit": 1,
+  "settings": [
+    {
+      "type": "paragraph",
+      "content": "t:sections.product-complementary.settings.paragraph.content"
+    },
+    {
+      "type": "text",
+      "id": "product_complementary_heading",
+      "label": "t:sections.product-complementary.settings.product_complementary_heading.label",
+      "default": "Pairs well with"
+    },
+    {
+      "type": "range",
+      "id": "complementary_count",
+      "label": "t:sections.product-complementary.settings.complementary_count.label",
+      "default": 4,
+      "min": 2,
+      "max": 10,
+      "step": 1
+    },
+    {
+      "type": "range",
+      "id": "per_slide",
+      "label": "t:sections.product-complementary.settings.per_slide.label",
+      "default": 2,
+      "min": 2,
+      "max": 4,
+      "step": 1
+    },
+    {
+      "type": "select",
+      "id": "control_type",
+      "label": "t:sections.product-complementary.settings.control_type.label",
+      "options": [
+        {
+          "value": "dots",
+          "label": "t:sections.product-complementary.settings.control_type.options.dots.label"
+        },
+        {
+          "value": "arrows",
+          "label": "t:sections.product-complementary.settings.control_type.options.arrows.label"
+        }
+      ],
+      "default": "dots"
+    },
+    {
+      "type": "header",
+      "content": "t:sections.product-complementary.settings.header.content"
+    },
+    {
+      "type": "select",
+      "id": "image_style",
+      "label": "t:sections.product-complementary.settings.image_style.label",
+      "options": [
+        {
+          "value": "default",
+          "label": "t:sections.product-complementary.settings.image_style.options.default.label"
+        },
+        {
+          "value": "circle",
+          "label": "t:sections.product-complementary.settings.image_style.options.circle.label"
+        }
+      ],
+      "default": "default"
+    }
+  ]
+},
+{
+  "type": "size_chart",
+  "name": "t:product_block.size_chart.name",
+  "limit": 1,
+  "settings": [
+    {
+      "type": "page",
+      "id": "size_chart",
+      "label": "t:product_block.size_chart.settings.page.label"
+    }
+  ]
+},
+{
+  "type": "variant_picker",
+  "name": "Variant picker",
+  "limit": 1,
+  "settings": [
+    {
+      "type": "checkbox",
+      "id": "variant_labels",
+      "label": "t:product_block.variant_picker.settings.variant_labels.label",
+      "default": true
+    },
+    {
+      "type": "select",
+      "id": "picker_type",
+      "label": "t:product_block.variant_picker.settings.picker_type.label",
+      "options": [
+        {
+          "value": "button",
+          "label": "t:product_block.variant_picker.settings.picker_type.options.button.label"
+        },
+        {
+          "value": "dropdown",
+          "label": "t:product_block.variant_picker.settings.picker_type.options.dropdown.label"
+        }
+      ],
+      "default": "button"
+    },
+    {
+      "type": "checkbox",
+      "id": "product_dynamic_variants_enable",
+      "label": "t:product_block.variant_picker.settings.product_dynamic_variants_enable.label",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "color_swatches",
+      "label": "Enable color swatches",
+      "info": "Requires type to be set to 'Buttons'. [Learn how to set up swatches](https://archetypethemes.co/blogs/impulse/how-do-i-set-up-color-swatches)"
+    }
+  ]
+},
+{
+  "type": "description",
+  "name": "t:product_block.description.name",
+  "limit": 1,
+  "settings": [
+    {
+      "type": "checkbox",
+      "id": "is_tab",
+      "label": "t:product_block.description.settings.is_tab.label"
+    }
+  ]
+},
+{
+  "type": "buy_buttons",
+  "name": "t:product_block.buy_buttons.name",
+  "limit": 1,
+  "settings": [
+    {
+      "type": "checkbox",
+      "id": "show_dynamic_checkout",
+      "label": "t:product_block.buy_buttons.settings.show_dynamic_checkout.label",
+      "info": "t:product_block.buy_buttons.settings.show_dynamic_checkout.info",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "surface_pickup_enable",
+      "label": "t:product_block.buy_buttons.settings.surface_pickup_enable.label",
+      "info": "t:product_block.buy_buttons.settings.surface_pickup_enable.info",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "show_gift_card_recipient",
+      "default": false,
+      "label": "t:common.gift_card.show_gift_card_recipient.label",
+      "info": "t:common.gift_card.show_gift_card_recipient.info"
+    }
+  ]
+},
+{
+  "type": "inventory_status",
+  "name": "t:product_block.inventory_status.name",
+  "limit": 1,
+  "settings": [
+    {
+      "type": "range",
+      "id": "inventory_threshold",
+      "label": "t:product_block.inventory_status.settings.inventory_threshold.label",
+      "default": 0,
+      "min": 0,
+      "max": 20,
+      "step": 2
+    },
+    {
+      "type": "checkbox",
+      "id": "inventory_transfers_enable",
+      "label": "t:product_block.inventory_status.settings.inventory_transfers_enable.label",
+      "info": "t:product_block.inventory_status.settings.inventory_transfers_enable.info",
+      "default": false
+    }
+  ]
+},
+{
+  "type": "sales_point",
+  "name": "t:product_block.sales_point.name",
+  "settings": [
+    {
+      "type": "select",
+      "id": "icon",
+      "label": "t:product_block.sales_point.settings.icon.label",
+      "default": "globe",
+      "options": [
+        {
+          "value": "checkmark",
+          "label": "t:product_block.sales_point.settings.icon.options.checkmark.label"
+        },
+        {
+          "value": "gift",
+          "label": "t:product_block.sales_point.settings.icon.options.gift.label"
+        },
+        {
+          "value": "globe",
+          "label": "t:product_block.sales_point.settings.icon.options.globe.label"
+        },
+        {
+          "value": "heart",
+          "label": "t:product_block.sales_point.settings.icon.options.heart.label"
+        },
+        {
+          "value": "leaf",
+          "label": "t:product_block.sales_point.settings.icon.options.leaf.label"
+        },
+        {
+          "value": "lock",
+          "label": "t:product_block.sales_point.settings.icon.options.lock.label"
+        },
+        {
+          "value": "package",
+          "label": "t:product_block.sales_point.settings.icon.options.package.label"
+        },
+        {
+          "value": "phone",
+          "label": "t:product_block.sales_point.settings.icon.options.phone.label"
+        },
+        {
+          "value": "ribbon",
+          "label": "t:product_block.sales_point.settings.icon.options.ribbon.label"
+        },
+        {
+          "value": "shield",
+          "label": "t:product_block.sales_point.settings.icon.options.shield.label"
+        },
+        {
+          "value": "tag",
+          "label": "t:product_block.sales_point.settings.icon.options.tag.label"
+        },
+        {
+          "value": "truck",
+          "label": "t:product_block.sales_point.settings.icon.options.truck.label"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "id": "text",
+      "label": "t:product_block.sales_point.settings.text.label",
+      "default": "Free worldwide shipping"
+    }
+  ]
+},
+{
+  "type": "text",
+  "name": "t:product_block.text.name",
+  "settings": [
+    {
+      "type": "text",
+      "id": "text",
+      "default": "Text block",
+      "label": "t:product_block.text.settings.text.label"
+    }
+  ]
+},
+{
+  "type": "trust_badge",
+  "name": "t:product_block.trust_badge.name",
+  "settings": [
+    {
+      "type": "image_picker",
+      "id": "trust_image",
+      "label": "t:product_block.trust_badge.settings.trust_image.label"
+    }
+  ]
+},
+{
+  "type": "tab",
+  "name": "t:product_block.tab.name",
+  "settings": [
+    {
+      "type": "text",
+      "id": "title",
+      "label": "t:product_block.tab.settings.title.label",
+      "default": "Shipping information"
+    },
+    {
+      "type": "richtext",
+      "id": "content",
+      "label": "t:product_block.tab.settings.content.label",
+      "default": "<p>Use collapsible tabs for more detailed information that will help customers make a purchasing decision.</p><p>Ex: Shipping and return policies, size guides, and other common questions.</p>"
+    },
+    {
+      "type": "page",
+      "id": "page",
+      "label": "t:product_block.tab.settings.page.label"
+    }
+  ]
+},
+{
+  "type": "share",
+  "name": "t:product_block.share_on_social.name",
+  "limit": 1,
+  "settings": [
+    {
+      "type": "paragraph",
+      "content": "t:product_block.share_on_social.settings.content"
+    }
+  ]
+},
+{
+  "type": "separator",
+  "name": "t:product_block.separator.name"
+},
+{
+  "type": "contact",
+  "name": "t:product_block.contact_form.name",
+  "limit": 1,
+  "settings": [
+    {
+      "type": "paragraph",
+      "content": "t:product_block.contact_form.settings.content"
+    },
+    {
+      "type": "text",
+      "id": "title",
+      "label": "t:product_block.contact_form.settings.title.label",
+      "default": "Ask a question"
+    },
+    {
+      "type": "checkbox",
+      "id": "phone",
+      "label": "t:product_block.contact_form.settings.phone.label"
+    }
+  ]
+},
+{
+  "type": "custom",
+  "name": "t:product_block.html.name",
+  "settings": [
+    {
+      "type": "liquid",
+      "id": "code",
+      "label": "t:product_block.html.settings.code.label",
+      "default": "<h4>Custom code block</h4><p>Use this advanced section to add custom HTML, app scripts, or liquid.</p>",
+      "info": "t:product_block.html.settings.code.info"
+    }
+  ]
+}
+]
+}
+{% endschema %}

@@ -6,6 +6,7 @@ import { env } from './src/config/env.js';
 import memberRoutes from './src/routes/member.routes.js';
 import treatmentsRouter from "./src/routes/treatments.js";
 import bookingsRouter from "./src/routes/bookings.js";
+import contractsRouter from './src/routes/contracts.js';
 
 const app = express();
 app.use((req, res, next) => {
@@ -37,6 +38,7 @@ app.use('/api/member', memberRoutes);
 app.use('/api', treatmentsRouter);
 app.use('/api/treatments', treatmentsRouter);
 app.use('/api/bookings', bookingsRouter);
+app.use('/api/contracts', contractsRouter);
 
 // Test Route
 app.get('/ping', (_req, res) => {

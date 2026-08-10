@@ -3,6 +3,7 @@ import {
   createMember,
   updateMemberByShopifyId
 } from '../repositories/member.repository.js';
+import { resolvePackageFromTags } from '../utils/packageTags.js';
 
 /**
  * Holt oder erstellt ein Mitglied basierend auf Shopify-Daten
@@ -50,15 +51,4 @@ export async function getOrCreateMember(customer) {
   }
 
   return member;
-}
-
-/**
- * Shopify Tags → Paket
- */
-function resolvePackageFromTags(tags = []) {
-  if (tags.includes('premium-beyond')) return 'beyond';
-  if (tags.includes('premium-define')) return 'define';
-  if (tags.includes('premium-pure')) return 'pure';
-
-  return null;
 }

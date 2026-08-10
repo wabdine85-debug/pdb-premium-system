@@ -1,6 +1,10 @@
 import { pool } from '../config/pool.js';
-import { PACKAGE_RULES } from '../utils/packageRules.js';
+import {
+  PACKAGE_RULES,
+  createEmptyCategoryCounts
+} from '../utils/packageRules.js';
 import { getBookingMonth } from '../utils/dates.js';
+import { getPrivateProtocolSessionLimit } from '../utils/privateProtocolRules.js';
 
 /**
  * Berechnet, was der Kunde diesen Monat noch darf
@@ -18,16 +22,8 @@ export async function getEntitlementsForMonth(member, bookingMonth, db = pool) {
   if (!member || !rules) {
     return {
       month: bookingMonth,
-      usage: {
-        pure: 0,
-        define: 0,
-        beyond: 0
-      },
-      remaining: {
-        pure: 0,
-        define: 0,
-        beyond: 0
-      },
+      usage: createEmptyCategoryCounts(),
+      remaining: createEmptyCategoryCounts(),
       allowedCategories: []
     };
   }
@@ -35,7 +31,7 @@ export async function getEntitlementsForMonth(member, bookingMonth, db = pool) {
   // Alle Buchungen im aktuellen Monat holen
   const result = await db.query(
     `
-    SELECT t.category_key
+    SELECT t.category_key, t.treatment_key
     FROM bookings b
     JOIN treatments t ON t.id = b.treatment_id
     WHERE b.member_id = $1
@@ -48,21 +44,44 @@ export async function getEntitlementsForMonth(member, bookingMonth, db = pool) {
   const bookings = result.rows;
 
   // Zählen nach Kategorie
-  const usage = {
-    pure: 0,
-    define: 0,
-    beyond: 0
-  };
+  const usage = createEmptyCategoryCounts();
 
   for (const b of bookings) {
-    usage[b.category_key]++;
+    if (Object.hasOwn(usage, b.category_key)) {
+      usage[b.category_key]++;
+    }
   }
 
-  const remaining = {
-    pure: Math.max(0, rules.limits.pure - usage.pure),
-    define: Math.max(0, rules.limits.define - usage.define),
-    beyond: Math.max(0, rules.limits.beyond - usage.beyond)
-  };
+  const remaining = Object.fromEntries(
+    Object.entries(rules.limits).map(([categoryKey, limit]) => [
+      categoryKey,
+      Math.max(0, limit - (usage[categoryKey] || 0))
+    ])
+  );
+
+  let privateProtocol = null;
+
+  if (member.package_key === 'private') {
+    const privateBookings = bookings.filter(
+      (booking) => booking.category_key === 'private'
+    );
+    const selectedTreatmentKey = privateBookings[0]?.treatment_key || null;
+
+    if (selectedTreatmentKey) {
+      const sessionLimit = getPrivateProtocolSessionLimit(selectedTreatmentKey);
+      const usedSessions = privateBookings.filter(
+        (booking) => booking.treatment_key === selectedTreatmentKey
+      ).length;
+
+      remaining.private = Math.max(0, sessionLimit - usedSessions);
+      privateProtocol = {
+        treatmentKey: selectedTreatmentKey,
+        sessionLimit,
+        usedSessions,
+        remainingSessions: remaining.private
+      };
+    }
+  }
 
   // Erlaubte Kategorien bestimmen
   const allowedCategories = Object.keys(remaining).filter(
@@ -73,6 +92,51 @@ export async function getEntitlementsForMonth(member, bookingMonth, db = pool) {
     month: bookingMonth,
     usage,
     remaining,
-    allowedCategories
+    allowedCategories,
+    privateProtocol
+  };
+}
+
+export async function getTreatmentEntitlementsForMonth(
+  member,
+  treatment,
+  bookingMonth,
+  db = pool
+) {
+  const entitlements = await getEntitlementsForMonth(member, bookingMonth, db);
+
+  if (
+    member?.package_key !== 'private' ||
+    treatment?.category_key !== 'private'
+  ) {
+    return entitlements;
+  }
+
+  const selectedTreatmentKey = entitlements.privateProtocol?.treatmentKey;
+  const isLockedToAnotherProtocol = Boolean(
+    selectedTreatmentKey && selectedTreatmentKey !== treatment.treatment_key
+  );
+  const sessionLimit = getPrivateProtocolSessionLimit(treatment.treatment_key);
+  const usedSessions = selectedTreatmentKey
+    ? entitlements.privateProtocol.usedSessions
+    : 0;
+  const remainingSessions = isLockedToAnotherProtocol
+    ? 0
+    : Math.max(0, sessionLimit - usedSessions);
+
+  return {
+    ...entitlements,
+    remaining: {
+      ...entitlements.remaining,
+      private: remainingSessions
+    },
+    allowedCategories: remainingSessions > 0 ? ['private'] : [],
+    privateProtocol: {
+      treatmentKey: selectedTreatmentKey || treatment.treatment_key,
+      sessionLimit,
+      usedSessions,
+      remainingSessions,
+      locked: isLockedToAnotherProtocol
+    }
   };
 }

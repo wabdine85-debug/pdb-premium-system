@@ -1,7 +1,7 @@
 import { pool } from '../config/pool.js';
 
-export async function findMemberByShopifyId(shopifyCustomerId) {
-  const result = await pool.query(
+export async function findMemberByShopifyId(shopifyCustomerId, db = pool) {
+  const result = await db.query(
     `SELECT * FROM members WHERE shopify_customer_id = $1 LIMIT 1`,
     [shopifyCustomerId]
   );
@@ -15,8 +15,8 @@ export async function createMember({
   firstName,
   lastName,
   packageKey
-}) {
-  const result = await pool.query(
+}, db = pool) {
+  const result = await db.query(
     `
     INSERT INTO members (
       shopify_customer_id,
@@ -43,9 +43,10 @@ export async function updateMemberByShopifyId(
     firstName,
     lastName,
     packageKey
-  }
+  },
+  db = pool
 ) {
-  const result = await pool.query(
+  const result = await db.query(
     `
     UPDATE members
     SET

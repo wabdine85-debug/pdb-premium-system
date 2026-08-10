@@ -1,0 +1,3551 @@
+<section class="pdb-premium-v4">
+  <style>
+    .pdb-premium-v4{
+      --pdb-bg:#ffffff;
+      --pdb-text:#171717;
+      --pdb-muted:#666666;
+      --pdb-soft:#f8f4ef;
+      --pdb-soft-2:#fcfaf8;
+      --pdb-line:rgba(0,0,0,0.08);
+      --pdb-accent:#d9bfa9;
+      --pdb-accent-dark:#b89578;
+      --pdb-gold:linear-gradient(135deg,#ead8c8 0%,#d8b79a 48%,#b58c6d 100%);
+      --pdb-dark:linear-gradient(135deg,#161616 0%,#23201e 55%,#312b27 100%);
+      --pdb-shadow:0 20px 50px rgba(0,0,0,0.08);
+      --pdb-shadow-soft:0 12px 30px rgba(0,0,0,0.05);
+      --pdb-max:1340px;
+      background:var(--pdb-bg)!important;
+      color:var(--pdb-text)!important;
+      width:100%!important;
+      display:block!important;
+      position:relative!important;
+      overflow:hidden!important;
+      font-family:inherit!important;
+    }
+    .pdb-premium-v4 *{box-sizing:border-box!important}
+    .pdb-premium-v4 a{text-decoration:none;color:inherit}
+    .pdb-premium-v4 img{max-width:100%;display:block}
+    .pdb-premium-v4 .pdb-wrap{max-width:var(--pdb-max);margin:0 auto;padding:0 22px;position:relative;z-index:2}
+    .pdb-premium-v4 .pdb-section{padding:74px 0;position:relative}
+    .pdb-premium-v4 .pdb-grid{display:grid;gap:22px}
+
+    .pdb-premium-v4 h1,
+    .pdb-premium-v4 h2,
+    .pdb-premium-v4 h3,
+    .pdb-premium-v4 h4{
+      margin:0 0 14px;
+      color:var(--pdb-text);
+      line-height:1.08;
+      letter-spacing:-0.025em;
+    }
+    .pdb-premium-v4 h1{font-size:clamp(38px,6.2vw,70px)}
+    .pdb-premium-v4 h2{font-size:clamp(28px,4vw,46px)}
+    .pdb-premium-v4 h3{font-size:clamp(20px,2.6vw,28px)}
+    .pdb-premium-v4 h4{font-size:18px}
+    .pdb-premium-v4 p{
+      margin:0 0 14px;
+      color:var(--pdb-muted);
+      font-size:16px;
+      line-height:1.8;
+    }
+    .pdb-premium-v4 .pdb-lead{font-size:18px;color:#4a4a4a}
+    .pdb-premium-v4 .pdb-center-head{max-width:860px;margin:0 auto 30px;text-align:center}
+    .pdb-premium-v4 .pdb-center-head p{margin-left:auto;margin-right:auto}
+    .pdb-premium-v4 .pdb-eyebrow{
+      display:inline-flex;
+      align-items:center;
+      gap:10px;
+      min-height:34px;
+      padding:8px 14px;
+      border-radius:999px;
+      font-size:12px;
+      letter-spacing:.18em;
+      text-transform:uppercase;
+      font-weight:700;
+      color:#6f5946;
+      background:rgba(255,255,255,.82);
+      border:1px solid rgba(0,0,0,.06);
+      backdrop-filter:blur(8px);
+      margin-bottom:14px;
+    }
+    .pdb-premium-v4 .pdb-eyebrow:before{
+      content:"";
+      width:7px;height:7px;border-radius:999px;
+      background:var(--pdb-accent);
+      box-shadow:0 0 0 6px rgba(217,191,169,.18);
+    }
+
+    .pdb-premium-v4 .pdb-anchor{position:relative;top:-120px;display:block;visibility:hidden}
+    .pdb-premium-v4 .pdb-hidden{display:none!important}
+
+    .pdb-premium-v4 .pdb-hero{padding:26px 0 42px}
+    .pdb-premium-v4 .pdb-hero-shell{
+      position:relative;
+      border-radius:36px;
+      overflow:hidden;
+      background:
+        radial-gradient(circle at 8% 14%, rgba(217,191,169,.26), transparent 24%),
+        radial-gradient(circle at 92% 18%, rgba(217,191,169,.18), transparent 24%),
+        radial-gradient(circle at 72% 86%, rgba(0,0,0,.03), transparent 20%),
+        linear-gradient(135deg,#fffdfa 0%,#f9f2eb 55%,#f6eee8 100%);
+      border:1px solid rgba(0,0,0,.05);
+      box-shadow:var(--pdb-shadow);
+      padding:42px 38px;
+    }
+    .pdb-premium-v4 .pdb-hero-shell:before{
+      content:"";
+      position:absolute;
+      width:460px;height:460px;border-radius:999px;
+      right:-160px;top:-180px;
+      background:radial-gradient(circle, rgba(217,191,169,.20) 0%, rgba(217,191,169,0) 70%);
+      pointer-events:none;
+    }
+    .pdb-premium-v4 .pdb-hero-grid{
+      display:grid;
+      grid-template-columns:1.12fr .88fr;
+      gap:28px;
+      align-items:center;
+    }
+    .pdb-premium-v4 .pdb-hero-copy{max-width:780px}
+    .pdb-premium-v4 .pdb-hero-sub{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:14px;
+      margin:24px 0 26px;
+    }
+    .pdb-premium-v4 .pdb-mini-stat{
+      padding:16px;
+      border-radius:18px;
+      background:rgba(255,255,255,.72);
+      border:1px solid rgba(0,0,0,.06);
+      box-shadow:0 10px 26px rgba(0,0,0,.04);
+    }
+    .pdb-premium-v4 .pdb-mini-stat strong{
+      display:block;
+      font-size:22px;
+      line-height:1;
+      margin-bottom:8px;
+      color:#202020;
+    }
+    .pdb-premium-v4 .pdb-mini-stat span{
+      display:block;
+      color:#646464;
+      font-size:14px;
+      line-height:1.6;
+    }
+    .pdb-premium-v4 .pdb-chip-row{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      margin:18px 0 0;
+    }
+    .pdb-premium-v4 .pdb-chip{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      min-height:38px;
+      padding:10px 14px;
+      border-radius:999px;
+      background:rgba(255,255,255,.74);
+      border:1px solid rgba(0,0,0,.06);
+      font-size:13px;
+      font-weight:600;
+      color:#4d4d4d;
+    }
+    .pdb-premium-v4 .pdb-chip:before{
+      content:"✦";
+      font-size:10px;
+      color:var(--pdb-accent-dark)
+    }
+    .pdb-premium-v4 .pdb-actions{
+      display:flex;
+      flex-wrap:wrap;
+      gap:12px;
+      margin-top:22px
+    }
+    .pdb-premium-v4 .pdb-btn,
+    .pdb-premium-v4 .pdb-btn-secondary{
+      min-height:52px;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      padding:14px 22px;
+      border-radius:14px;
+      font-size:13px;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      font-weight:800;
+      transition:.25s ease;
+      text-align:center
+    }
+    .pdb-premium-v4 .pdb-btn{
+      background:var(--pdb-gold);
+      color:#fff!important;
+      box-shadow:0 18px 40px rgba(181,140,109,.25);
+    }
+    .pdb-premium-v4 .pdb-btn:hover{transform:translateY(-2px)}
+    .pdb-premium-v4 .pdb-btn-secondary{
+      background:#fff;
+      border:1px solid rgba(0,0,0,.08);
+      color:#353535!important;
+    }
+    .pdb-premium-v4 .pdb-btn-secondary:hover{transform:translateY(-2px)}
+
+    .pdb-premium-v4 .pdb-hero-visual{
+      position:relative;
+      min-height:100%;
+      display:grid;
+      gap:16px;
+    }
+    .pdb-premium-v4 .pdb-glass-card{
+      position:relative;
+      overflow:hidden;
+      border-radius:28px;
+      padding:24px;
+      background:rgba(255,255,255,.80);
+      border:1px solid rgba(0,0,0,.06);
+      box-shadow:0 18px 42px rgba(0,0,0,.06);
+      backdrop-filter:blur(10px);
+    }
+    .pdb-premium-v4 .pdb-glass-card:before{
+      content:"";
+      position:absolute;
+      inset:0 auto auto 0;
+      width:100%;
+      height:3px;
+      background:var(--pdb-gold);
+    }
+    .pdb-premium-v4 .pdb-tier-stack{
+      display:grid;
+      gap:12px;
+      margin-top:16px;
+    }
+    .pdb-premium-v4 .pdb-tier-strip{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      padding:14px 16px;
+      border-radius:18px;
+      background:#fff;
+      border:1px solid rgba(0,0,0,.06)
+    }
+    .pdb-premium-v4 .pdb-tier-strip strong{font-size:16px;color:#1f1f1f}
+    .pdb-premium-v4 .pdb-tier-strip span{font-size:13px;color:#666}
+    .pdb-premium-v4 .pdb-tier-badge{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-width:66px;
+      height:34px;
+      padding:0 12px;
+      border-radius:999px;
+      background:rgba(217,191,169,.18);
+      font-size:11px;
+      font-weight:800;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      color:#6e5644
+    }
+    .pdb-premium-v4 .pdb-note{
+      margin-top:14px;
+      font-size:13px;
+      color:#8a8a8a;
+      line-height:1.7;
+    }
+
+    .pdb-premium-v4 .pdb-benefit-grid{grid-template-columns:repeat(4,1fr)}
+    .pdb-premium-v4 .pdb-benefit{
+      border-radius:24px;
+      padding:24px;
+      background:#fff;
+      border:1px solid var(--pdb-line);
+      box-shadow:var(--pdb-shadow-soft);
+      min-height:100%;
+    }
+    .pdb-premium-v4 .pdb-icon{
+      width:54px;
+      height:54px;
+      border-radius:16px;
+      display:grid;
+      place-items:center;
+      background:linear-gradient(180deg, rgba(217,191,169,.22), rgba(217,191,169,.08));
+      border:1px solid rgba(185,144,111,.16);
+      margin-bottom:16px;
+      font-size:20px;
+    }
+
+    .pdb-premium-v4 .pdb-plan-grid{
+      grid-template-columns:repeat(4,minmax(0,1fr));
+      align-items:stretch
+    }
+    .pdb-premium-v4 .pdb-plan{
+      position:relative;
+      display:flex;
+      flex-direction:column;
+      border-radius:30px;
+      background:#fff;
+      border:1px solid rgba(0,0,0,.07);
+      box-shadow:0 18px 40px rgba(0,0,0,.05);
+      overflow:hidden;
+      min-height:100%;
+    }
+    .pdb-premium-v4 .pdb-plan.featured{
+      transform:translateY(-8px);
+      border-color:rgba(185,144,111,.24);
+      box-shadow:0 24px 48px rgba(185,144,111,.18);
+    }
+    .pdb-premium-v4 .pdb-plan.featured:before{
+      content:"";
+      position:absolute;
+      inset:0 0 auto 0;
+      height:4px;
+      background:var(--pdb-gold)
+    }
+    .pdb-premium-v4 .pdb-plan-mark{
+      position:absolute;
+      top:16px;
+      right:16px;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-height:32px;
+      padding:8px 12px;
+      border-radius:999px;
+      background:#111;
+      color:#fff;
+      font-size:10px;
+      letter-spacing:.12em;
+      text-transform:uppercase;
+      font-weight:800
+    }
+    .pdb-premium-v4 .pdb-plan-head{padding:28px 24px 16px}
+    .pdb-premium-v4 .pdb-plan-sub{font-size:14px;color:#767676;margin-bottom:14px}
+    .pdb-premium-v4 .pdb-plan-price{
+      display:flex;
+      align-items:flex-end;
+      gap:8px;
+      margin-bottom:14px
+    }
+    .pdb-premium-v4 .pdb-plan-price strong{
+      font-size:48px;
+      line-height:1;
+      color:#171717;
+      letter-spacing:-.04em
+    }
+    .pdb-premium-v4 .pdb-plan-price span{
+      font-size:14px;
+      color:#6e6e6e;
+      padding-bottom:8px
+    }
+    .pdb-premium-v4 .pdb-plan-copy{font-size:15px;line-height:1.75}
+    .pdb-premium-v4 .pdb-plan-body{
+      padding:0 24px 24px;
+      display:flex;
+      flex-direction:column;
+      gap:18px;
+      flex:1 1 auto
+    }
+    .pdb-premium-v4 .pdb-list{
+      list-style:none;
+      padding:0;
+      margin:0;
+      display:grid;
+      gap:12px
+    }
+    .pdb-premium-v4 .pdb-list li{
+      position:relative;
+      padding-left:28px;
+      font-size:15px;
+      line-height:1.7;
+      color:#404040
+    }
+    .pdb-premium-v4 .pdb-list li:before{
+      content:"✓";
+      position:absolute;
+      left:0;
+      top:0;
+      color:var(--pdb-accent-dark);
+      font-weight:800
+    }
+    .pdb-premium-v4 .pdb-tag-row{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px
+    }
+    .pdb-premium-v4 .pdb-tag{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-height:30px;
+      padding:6px 10px;
+      border-radius:999px;
+      font-size:10px;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      font-weight:800;
+      background:rgba(217,191,169,.16);
+      color:#67503e
+    }
+    .pdb-premium-v4 .pdb-plan-cta{margin-top:auto}
+    .pdb-premium-v4 .pdb-plan-cta .pdb-btn,
+    .pdb-premium-v4 .pdb-plan-cta .pdb-btn-secondary{width:100%}
+
+    .pdb-premium-v4 .pdb-plan.private{
+      color:#f8f3ed;
+      border-color:rgba(217,191,169,.34);
+      background:
+        radial-gradient(circle at 100% 0,rgba(217,191,169,.16),transparent 30%),
+        linear-gradient(145deg,#121110 0%,#24201d 100%);
+      box-shadow:0 28px 60px rgba(18,17,16,.24)
+    }
+    .pdb-premium-v4 .pdb-plan.private h3,
+    .pdb-premium-v4 .pdb-plan.private .pdb-plan-price strong,
+    .pdb-premium-v4 .pdb-plan.private .pdb-list li{color:#fff}
+    .pdb-premium-v4 .pdb-plan.private p,
+    .pdb-premium-v4 .pdb-plan.private .pdb-plan-sub,
+    .pdb-premium-v4 .pdb-plan.private .pdb-plan-price span{color:rgba(255,255,255,.68)}
+    .pdb-premium-v4 .pdb-plan.private .pdb-eyebrow{
+      color:#f0d7c2;
+      background:rgba(255,255,255,.07);
+      border-color:rgba(255,255,255,.12)
+    }
+    .pdb-premium-v4 .pdb-plan.private .pdb-tag{
+      color:#f0d7c2;
+      background:rgba(217,191,169,.14)
+    }
+    .pdb-premium-v4 .pdb-plan.private .pdb-btn{
+      background:#f3e4d8;
+      color:#191614!important;
+      box-shadow:none
+    }
+    .pdb-premium-v4 .pdb-price-future{
+      display:block;
+      margin:-4px 0 14px;
+      color:#795e49;
+      font-size:12px;
+      font-weight:800;
+      letter-spacing:.02em
+    }
+    .pdb-premium-v4 .pdb-plan-choice.is-selected{
+      outline:3px solid rgba(185,144,111,.24);
+      outline-offset:3px
+    }
+
+    .pdb-premium-v4 .pdb-contract-shell{
+      margin-top:34px;
+      border-radius:30px;
+      padding:30px;
+      background:#fff;
+      border:1px solid rgba(0,0,0,.08);
+      box-shadow:var(--pdb-shadow)
+    }
+    .pdb-premium-v4 .pdb-contract-head{
+      display:grid;
+      grid-template-columns:minmax(0,1fr) auto;
+      gap:24px;
+      align-items:end;
+      padding-bottom:22px;
+      border-bottom:1px solid var(--pdb-line)
+    }
+    .pdb-premium-v4 .pdb-contract-total{text-align:right}
+    .pdb-premium-v4 .pdb-contract-total strong{display:block;font-size:24px;color:#171717}
+    .pdb-premium-v4 .pdb-contract-total span{font-size:12px;color:#777}
+    .pdb-premium-v4 .pdb-contract-form{display:grid;gap:22px;margin-top:24px}
+    .pdb-premium-v4 .pdb-contract-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+    .pdb-premium-v4 .pdb-contract-field.full{grid-column:1/-1}
+    .pdb-premium-v4 .pdb-contract-field label{
+      display:block;
+      margin-bottom:7px;
+      color:#242424;
+      font-size:12px;
+      font-weight:800;
+      letter-spacing:.05em;
+      text-transform:uppercase
+    }
+    .pdb-premium-v4 .pdb-contract-field input,
+    .pdb-premium-v4 .pdb-contract-field select{
+      width:100%;
+      min-height:50px;
+      margin:0;
+      padding:12px 14px;
+      border:1px solid rgba(0,0,0,.14);
+      border-radius:12px;
+      background:#fff;
+      color:#171717;
+      font:inherit
+    }
+    .pdb-premium-v4 .pdb-contract-field input:focus,
+    .pdb-premium-v4 .pdb-contract-field select:focus{
+      outline:3px solid rgba(217,191,169,.26);
+      border-color:#b89578
+    }
+    .pdb-premium-v4 .pdb-contract-checks{display:grid;gap:12px}
+    .pdb-premium-v4 .pdb-contract-check{
+      display:grid;
+      grid-template-columns:22px 1fr;
+      gap:10px;
+      align-items:start;
+      color:#3e3e3e;
+      font-size:14px;
+      line-height:1.55
+    }
+    .pdb-premium-v4 .pdb-contract-check input{width:18px;height:18px;margin:2px 0 0}
+    .pdb-premium-v4 .pdb-contract-check a{text-decoration:underline;text-underline-offset:2px}
+    .pdb-premium-v4 .pdb-contract-status{
+      display:none;
+      padding:16px 18px;
+      border-radius:14px;
+      background:#f8f4ef;
+      border:1px solid rgba(0,0,0,.08);
+      color:#262626;
+      font-size:14px;
+      line-height:1.6
+    }
+    .pdb-premium-v4 .pdb-contract-status.is-visible{display:block}
+    .pdb-premium-v4 .pdb-contract-status.is-error{background:#fff5f3;border-color:#e7b9b0;color:#7b2d22}
+    .pdb-premium-v4 .pdb-contract-login{text-align:center;padding:28px 18px}
+    .pdb-premium-v4 .pdb-contract-security{
+      display:flex;
+      gap:10px;
+      align-items:flex-start;
+      color:#676767;
+      font-size:12px;
+      line-height:1.55
+    }
+    .pdb-premium-v4 .pdb-contract-security:before{content:"◈";color:#98765d;font-size:16px}
+    .pdb-premium-v4 .pdb-contract-mandate{
+      padding:18px;
+      border:1px solid #dfd4ca;
+      border-radius:16px;
+      background:#fbf8f5;
+      color:#4e4741;
+      font-size:13px;
+      line-height:1.6;
+    }
+    .pdb-premium-v4 .pdb-contract-mandate strong{display:block;color:#171717;margin-bottom:5px}
+    .pdb-premium-v4 .pdb-order-summary{
+      display:grid;
+      gap:9px;
+      padding:18px;
+      border:1px solid #dfd4ca;
+      border-radius:16px;
+      background:#fbf8f5;
+      color:#4e4741;
+      font-size:13px;
+      line-height:1.5
+    }
+    .pdb-premium-v4 .pdb-order-summary h3{margin:0 0 3px;color:#171717;font-size:16px}
+    .pdb-premium-v4 .pdb-order-row{display:flex;justify-content:space-between;gap:18px}
+    .pdb-premium-v4 .pdb-order-row strong{text-align:right;color:#171717}
+    .pdb-premium-v4 .pdb-order-row.total{padding-top:9px;border-top:1px solid #dfd4ca}
+
+    .pdb-premium-v4 .pdb-steps{grid-template-columns:repeat(3,1fr)}
+    .pdb-premium-v4 .pdb-step{
+      padding:24px;
+      border-radius:24px;
+      background:var(--pdb-soft-2);
+      border:1px solid var(--pdb-line);
+      min-height:100%;
+    }
+    .pdb-premium-v4 .pdb-step-no{
+      width:46px;
+      height:46px;
+      border-radius:14px;
+      display:grid;
+      place-items:center;
+      background:#fff;
+      border:1px solid rgba(0,0,0,.06);
+      box-shadow:0 10px 22px rgba(0,0,0,.05);
+      font-size:18px;
+      font-weight:800;
+      color:#8b6a52;
+      margin-bottom:14px
+    }
+
+    .pdb-premium-v4 .pdb-cats{display:grid;gap:18px}
+    .pdb-premium-v4 .pdb-cat{
+      border-radius:26px;
+      background:#fff;
+      border:1px solid rgba(0,0,0,.07);
+      box-shadow:0 12px 32px rgba(0,0,0,.04);
+      overflow:hidden
+    }
+    .pdb-premium-v4 .pdb-cat.active{box-shadow:0 18px 40px rgba(0,0,0,.05)}
+    .pdb-premium-v4 .pdb-cat-btn{
+      width:100%;
+      border:0;
+      background:linear-gradient(180deg,#fff,#fcfaf8);
+      text-align:left;
+      cursor:pointer;
+      padding:22px 22px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:16px
+    }
+    .pdb-premium-v4 .pdb-cat-btn-left{display:flex;align-items:center;gap:14px}
+    .pdb-premium-v4 .pdb-cat-btn h3{margin:0 0 4px}
+    .pdb-premium-v4 .pdb-cat-btn p{margin:0;font-size:14px}
+    .pdb-premium-v4 .pdb-cat-letter{
+      width:52px;
+      height:52px;
+      border-radius:16px;
+      display:grid;
+      place-items:center;
+      background:linear-gradient(180deg, rgba(217,191,169,.22), rgba(217,191,169,.08));
+      border:1px solid rgba(185,144,111,.16);
+      font-size:18px;
+      font-weight:800;
+      color:#7b604c
+    }
+    .pdb-premium-v4 .pdb-cat-arrow{
+      width:42px;
+      height:42px;
+      border-radius:14px;
+      display:grid;
+      place-items:center;
+      background:#fff;
+      border:1px solid rgba(0,0,0,.08);
+      font-size:18px;
+      transition:.25s ease;
+      flex:0 0 auto
+    }
+    .pdb-premium-v4 .pdb-cat.active .pdb-cat-arrow{transform:rotate(45deg)}
+    .pdb-premium-v4 .pdb-cat-panel{display:none;padding:0 22px 22px}
+    .pdb-premium-v4 .pdb-cat.active .pdb-cat-panel{display:block}
+    .pdb-premium-v4 .pdb-treatment-grid{
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:16px
+    }
+    .pdb-premium-v4 .pdb-treatment{
+      padding:18px;
+      border-radius:18px;
+      background:var(--pdb-soft-2);
+      border:1px solid rgba(0,0,0,.06);
+      min-height:100%
+    }
+    .pdb-premium-v4 .pdb-treatment p{
+      font-size:14px;
+      line-height:1.72
+    }
+    .pdb-premium-v4 .pdb-tier-pill-row{display:flex;flex-wrap:wrap;gap:8px}
+    .pdb-premium-v4 .pdb-tier-pill{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-height:28px;
+      padding:6px 10px;
+      border-radius:999px;
+      font-size:10px;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      font-weight:800
+    }
+    .pdb-premium-v4 .pdb-tier-pill.pure{background:rgba(217,191,169,.16);color:#67503e}
+    .pdb-premium-v4 .pdb-tier-pill.define{background:rgba(17,17,17,.08);color:#282828}
+    .pdb-premium-v4 .pdb-tier-pill.beyond{background:linear-gradient(135deg,#191919,#3a312c);color:#fff}
+    .pdb-premium-v4 .pdb-tier-pill.private{background:#111;color:#f0d7c2;border:1px solid rgba(217,191,169,.35)}
+
+    .pdb-premium-v4 .pdb-compare-wrap{
+      overflow-x:auto;
+      border-radius:26px;
+      border:1px solid rgba(0,0,0,.07);
+      background:#fff;
+      box-shadow:0 14px 34px rgba(0,0,0,.04)
+    }
+    .pdb-premium-v4 table{width:100%;border-collapse:collapse;min-width:640px}
+    .pdb-premium-v4 th,
+    .pdb-premium-v4 td{
+      padding:18px;
+      border-bottom:1px solid rgba(0,0,0,.06);
+      text-align:left;
+      vertical-align:middle;
+      font-size:15px;
+      line-height:1.65
+    }
+    .pdb-premium-v4 thead th{
+      background:#fbf8f4;
+      font-size:13px;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      color:#5c5c5c
+    }
+    .pdb-premium-v4 tbody tr:last-child td{border-bottom:0}
+    .pdb-premium-v4 .pdb-check{font-weight:800;color:#7c614c}
+    .pdb-premium-v4 .pdb-dash{font-weight:800;color:#b2b2b2}
+
+    .pdb-premium-v4 .pdb-ideal-grid{grid-template-columns:repeat(2,1fr)}
+    .pdb-premium-v4 .pdb-ideal{
+      padding:26px;
+      border-radius:26px;
+      background:#fff;
+      border:1px solid rgba(0,0,0,.07);
+      box-shadow:0 12px 30px rgba(0,0,0,.04)
+    }
+
+    .pdb-premium-v4 .pdb-faqs{display:grid;gap:16px}
+    .pdb-premium-v4 .pdb-faq{
+      border-radius:18px;
+      border:1px solid rgba(0,0,0,.07);
+      background:#fff;
+      overflow:hidden;
+      box-shadow:0 8px 22px rgba(0,0,0,.035)
+    }
+    .pdb-premium-v4 .pdb-faq summary{
+      list-style:none;
+      cursor:pointer;
+      padding:20px 22px;
+      padding-right:58px;
+      font-size:17px;
+      font-weight:700;
+      color:#1d1d1d;
+      position:relative
+    }
+    .pdb-premium-v4 .pdb-faq summary::-webkit-details-marker{display:none}
+    .pdb-premium-v4 .pdb-faq summary:after{
+      content:"+";
+      position:absolute;
+      right:18px;
+      top:50%;
+      transform:translateY(-50%);
+      width:32px;
+      height:32px;
+      border-radius:10px;
+      display:grid;
+      place-items:center;
+      background:var(--pdb-soft);
+      color:#6f5a48;
+      font-size:20px;
+      line-height:1
+    }
+    .pdb-premium-v4 .pdb-faq[open] summary:after{content:"–"}
+    .pdb-premium-v4 .pdb-faq-content{padding:0 22px 20px}
+
+    .pdb-premium-v4 .pdb-legal{
+      padding:24px;
+      border-radius:24px;
+      background:var(--pdb-soft-2);
+      border:1px solid rgba(0,0,0,.07)
+    }
+
+    .pdb-premium-v4 .pdb-final{
+      border-radius:34px;
+      padding:36px 30px;
+      overflow:hidden;
+      position:relative;
+      background:
+        radial-gradient(circle at 16% 16%, rgba(217,191,169,.20), transparent 24%),
+        linear-gradient(135deg,#fffdfa 0%,#f8f2eb 60%,#f6eee7 100%);
+      border:1px solid rgba(0,0,0,.05);
+      box-shadow:var(--pdb-shadow)
+    }
+
+        .pdb-premium-v4 .pdb-btn-member{
+      position:relative;
+      display:inline-flex;
+      -webkit-animation:pdbMemberBounce 1.5s ease-in-out infinite;
+      animation:pdbMemberBounce 1.5s ease-in-out infinite;
+      -webkit-transform:translateZ(0);
+      transform:translateZ(0);
+      will-change:transform, box-shadow;
+      box-shadow:0 10px 26px rgba(185,144,111,.18);
+    }
+
+    .pdb-premium-v4 .pdb-btn-member::before{
+      content:"";
+      position:absolute;
+      inset:-4px;
+      border-radius:18px;
+      border:1px solid rgba(217,191,169,.30);
+      pointer-events:none;
+      -webkit-animation:pdbMemberGlow 1.5s ease-in-out infinite;
+      animation:pdbMemberGlow 1.5s ease-in-out infinite;
+    }
+
+    @-webkit-keyframes pdbMemberBounce{
+      0%,100%{
+        -webkit-transform:translateY(0) scale(1);
+        transform:translateY(0) scale(1);
+        box-shadow:0 10px 26px rgba(185,144,111,.18);
+      }
+      50%{
+        -webkit-transform:translateY(-4px) scale(1.03);
+        transform:translateY(-4px) scale(1.03);
+        box-shadow:0 18px 38px rgba(185,144,111,.28);
+      }
+    }
+
+    @keyframes pdbMemberBounce{
+      0%,100%{
+        -webkit-transform:translateY(0) scale(1);
+        transform:translateY(0) scale(1);
+        box-shadow:0 10px 26px rgba(185,144,111,.18);
+      }
+      50%{
+        -webkit-transform:translateY(-4px) scale(1.03);
+        transform:translateY(-4px) scale(1.03);
+        box-shadow:0 18px 38px rgba(185,144,111,.28);
+      }
+    }
+
+    @-webkit-keyframes pdbMemberGlow{
+      0%,100%{
+        opacity:.25;
+        -webkit-transform:scale(1);
+        transform:scale(1);
+      }
+      50%{
+        opacity:.75;
+        -webkit-transform:scale(1.05);
+        transform:scale(1.05);
+      }
+    }
+
+    @keyframes pdbMemberGlow{
+      0%,100%{
+        opacity:.25;
+        -webkit-transform:scale(1);
+        transform:scale(1);
+      }
+      50%{
+        opacity:.75;
+        -webkit-transform:scale(1.05);
+        transform:scale(1.05);
+      }
+    }
+
+
+
+    .pdb-premium-v4 .pdb-small-note{
+      font-size:13px;
+      color:#8a8a8a;
+      margin-top:12px
+    }
+
+
+    .pdb-premium-v4 .pdb-member-gate{
+      border-radius:32px;
+      padding:34px 28px;
+      background:
+        radial-gradient(circle at 16% 16%, rgba(217,191,169,.18), transparent 24%),
+        linear-gradient(135deg,#fffdfa 0%,#f8f2eb 60%,#f6eee7 100%);
+      border:1px solid rgba(0,0,0,.05);
+      box-shadow:var(--pdb-shadow);
+      position:relative;
+      overflow:hidden;
+    }
+    .pdb-premium-v4 .pdb-member-gate-grid{
+      display:grid;
+      grid-template-columns:1.05fr .95fr;
+      gap:22px;
+      align-items:start;
+    }
+    .pdb-premium-v4 .pdb-member-gate-card{
+      padding:22px;
+      border-radius:22px;
+      background:rgba(255,255,255,.82);
+      border:1px solid rgba(0,0,0,.06);
+      box-shadow:0 12px 30px rgba(0,0,0,.05);
+      backdrop-filter:blur(8px);
+      min-height:100%;
+
+      max-height:80vh;
+      display:flex;
+      flex-direction:column;
+    }
+
+
+    .pdb-premium-v4 #pdb-premium-booking-app{
+
+      min-height:0;
+      overflow-y:auto;
+      margin-top:12px;
+      padding-right:6px;
+    }
+
+    .pdb-premium-v4 .pdb-booking-scroll {
+  max-height: 500px;
+  overflow-y: auto;
+  margin-top: 14px;
+  padding-right: 6px;
+}
+    .pdb-premium-v4 .pdb-member-gate-stack{
+      display:grid;
+      gap:14px;
+    }
+
+    .pdb-premium-v4 .pdb-member-booking-card-wrap{
+  width:100%;
+  max-width:560px;
+  margin:18px auto 0;
+  display:grid;
+  gap:14px;
+  justify-self:center;
+}
+
+.pdb-premium-v4 .pdb-member-booking-card-wrap .pdb-member-booking-card{
+  width:100%;
+}
+
+.pdb-premium-v4 .pdb-member-gate-card{
+  overflow:hidden;
+}
+
+.pdb-premium-v4 .pdb-member-gate-stack{
+  min-height:0;
+  overflow-y:auto;
+  padding-right:6px;
+}
+
+.pdb-premium-v4 .pdb-booking-scroll{
+  max-height:320px;
+  overflow-y:auto;
+}
+
+.pdb-premium-v4 .pdb-member-booking-card-wrap{
+  width:100%;
+  max-width:100%;
+  margin:14px 0 0;
+  display:grid;
+  gap:14px;
+}
+    .pdb-premium-v4 .pdb-member-booking-card{
+      padding:18px;
+      border-radius:18px;
+      background:#fff;
+      border:1px solid rgba(0,0,0,.07);
+      box-shadow:0 10px 24px rgba(0,0,0,.04);
+    }
+    .pdb-premium-v4 .pdb-member-booking-card h3{
+      margin:0 0 8px;
+      font-size:20px;
+    }
+    .pdb-premium-v4 .pdb-member-booking-card p{
+      margin:0 0 12px;
+      font-size:14px;
+      line-height:1.7;
+    }
+    .pdb-premium-v4 .pdb-member-info{
+      font-size:14px;
+      color:#6b6b6b;
+      line-height:1.7;
+      margin-top:12px;
+    }
+    .pdb-premium-v4 .pdb-member-list{
+      list-style:none;
+      padding:0;
+      margin:14px 0 0;
+      display:grid;
+      gap:10px;
+    }
+    .pdb-premium-v4 .pdb-member-list li{
+      position:relative;
+      padding-left:24px;
+      font-size:14px;
+      line-height:1.7;
+      color:#434343;
+    }
+    .pdb-premium-v4 .pdb-member-list li:before{
+      content:"✓";
+      position:absolute;
+      left:0;
+      top:0;
+      color:var(--pdb-accent-dark);
+      font-weight:800;
+    }
+
+    .pdb-premium-v4 .pdb-member-badge{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding:7px 12px;
+  margin-bottom:14px;
+  border-radius:999px;
+  background:rgba(217,191,169,0.14);
+  border:1px solid rgba(217,191,169,0.35);
+  color:#8f6f55;
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:0.14em;
+  text-transform:uppercase;
+}
+
+    @media (max-width:1160px){
+      .pdb-premium-v4 .pdb-member-gate-grid{grid-template-columns:1fr}
+    }
+
+/* === OPTIMIERUNG: MEMBER LAYOUT FINAL === */
+
+.pdb-premium-v4 .pdb-member-gate-grid{
+  grid-template-columns:1.1fr .9fr;
+  gap:26px;
+}
+
+.pdb-premium-v4 .pdb-member-gate-stack{
+  gap:18px;
+}
+
+.pdb-premium-v4 .pdb-member-booking-card{
+  transition:all .25s ease;
+}
+
+.pdb-premium-v4 .pdb-member-booking-card:hover{
+  transform:translateY(-4px);
+  box-shadow:0 18px 40px rgba(0,0,0,.06);
+}
+
+.pdb-premium-v4 .pdb-member-booking-card h3{
+  font-size:21px;
+}
+
+.pdb-premium-v4 .pdb-member-booking-card p{
+  font-size:15px;
+  color:#444;
+}
+
+.pdb-premium-v4 .pdb-member-badge{
+  font-size:12px;
+  letter-spacing:.08em;
+}
+
+/* Buttons etwas hochwertiger */
+.pdb-premium-v4 .pdb-btn,
+.pdb-premium-v4 .pdb-btn-secondary{
+  transition:all .25s ease;
+}
+
+.pdb-premium-v4 .pdb-btn:hover,
+.pdb-premium-v4 .pdb-btn-secondary:hover{
+  transform:translateY(-2px);
+  box-shadow:0 10px 24px rgba(0,0,0,.08);
+}
+
+
+@media (max-width:1160px){
+  .pdb-premium-v4 .pdb-hero-grid,
+  .pdb-premium-v4 .pdb-ideal-grid{grid-template-columns:1fr}
+
+  .pdb-premium-v4 .pdb-benefit-grid,
+  .pdb-premium-v4 .pdb-plan-grid,
+  .pdb-premium-v4 .pdb-steps,
+  .pdb-premium-v4 .pdb-treatment-grid{grid-template-columns:repeat(2,1fr)}
+
+  .pdb-premium-v4 .pdb-plan.featured{transform:none}
+}
+
+
+@media (max-width:780px){
+
+  .pdb-premium-v4 .pdb-wrap{padding:0 16px}
+  .pdb-premium-v4 .pdb-section{padding:56px 0}
+  .pdb-premium-v4 .pdb-hero{padding-top:14px}
+  .pdb-premium-v4 .pdb-hero-shell{padding:24px 18px;border-radius:28px}
+
+  .pdb-premium-v4 .pdb-hero-sub,
+  .pdb-premium-v4 .pdb-benefit-grid,
+  .pdb-premium-v4 .pdb-plan-grid,
+  .pdb-premium-v4 .pdb-steps{
+    grid-template-columns:1fr;
+  }
+
+  /* 🔥 TREATMENTS = HORIZONTAL SCROLL */
+  .pdb-premium-v4 .pdb-treatment-grid{
+    display:flex;
+    overflow-x:auto;
+    gap:12px;
+    padding-bottom:10px;
+    scroll-snap-type:x mandatory;
+  }
+
+  .pdb-premium-v4 .pdb-treatment{
+    min-width:260px;
+    flex:0 0 auto;
+    padding:14px;
+    border-radius:16px;
+    scroll-snap-align:start;
+  }
+
+  .pdb-premium-v4 .pdb-treatment h4{
+    font-size:15px;
+    line-height:1.3;
+    margin-bottom:6px;
+  }
+
+  .pdb-premium-v4 .pdb-treatment p{
+    font-size:13px;
+    line-height:1.5;
+    margin-bottom:6px;
+  }
+
+  .pdb-premium-v4 .pdb-tier-pill{
+    min-height:24px;
+    padding:4px 8px;
+    font-size:9px;
+  }
+
+  /* Buttons */
+  .pdb-premium-v4 .pdb-actions{flex-direction:column}
+  .pdb-premium-v4 .pdb-btn,
+  .pdb-premium-v4 .pdb-btn-secondary{width:100%}
+
+  /* Kategorien */
+  .pdb-premium-v4 .pdb-cats{gap:12px}
+  .pdb-premium-v4 .pdb-cat-btn{padding:14px}
+  .pdb-premium-v4 .pdb-cat-panel{padding:0 14px 14px}
+
+  .pdb-premium-v4 .pdb-cat-letter{
+    width:42px;
+    height:42px;
+    border-radius:12px;
+    font-size:16px;
+  }
+
+  .pdb-premium-v4 .pdb-cat-btn p{
+    font-size:13px;
+    line-height:1.4;
+  }
+
+  /* Karten Padding */
+  .pdb-premium-v4 .pdb-plan-head,
+  .pdb-premium-v4 .pdb-plan-body,
+  .pdb-premium-v4 .pdb-benefit,
+  .pdb-premium-v4 .pdb-step,
+  .pdb-premium-v4 .pdb-ideal,
+  .pdb-premium-v4 .pdb-legal,
+  .pdb-premium-v4 .pdb-final{
+    padding-left:18px;
+    padding-right:18px;
+  }
+
+  /* 🔥 TABELLE */
+  .pdb-premium-v4 .pdb-compare-wrap{
+    overflow-x:auto;
+    border-radius:18px;
+  }
+
+  .pdb-premium-v4 table{
+    min-width:520px;
+  }
+
+  .pdb-premium-v4 th,
+  .pdb-premium-v4 td{
+    padding:10px;
+    font-size:13px;
+    line-height:1.4;
+  }
+
+  .pdb-premium-v4 thead th{
+    font-size:11px;
+  }
+
+  /* === MEMBER MOBILE FIX === */
+
+  .pdb-premium-v4 .pdb-member-gate{
+    padding:18px 12px;
+    border-radius:22px;
+  }
+
+  .pdb-premium-v4 .pdb-member-gate-grid{
+    grid-template-columns:1fr;
+    gap:14px;
+  }
+
+  .pdb-premium-v4 .pdb-member-gate-card{
+    padding:14px;
+    border-radius:18px;
+  }
+
+  .pdb-premium-v4 .pdb-member-gate-stack{
+    gap:12px;
+  }
+
+  .pdb-premium-v4 .pdb-member-booking-card{
+    padding:14px;
+    border-radius:16px;
+  }
+
+  .pdb-premium-v4 .pdb-member-booking-card:hover{
+    transform:none;
+    box-shadow:0 10px 24px rgba(0,0,0,.04);
+  }
+
+  .pdb-premium-v4 .pdb-member-booking-card h3{
+    font-size:18px;
+    line-height:1.35;
+    margin:0 0 8px;
+  }
+
+  .pdb-premium-v4 .pdb-member-booking-card p{
+    font-size:14px;
+    line-height:1.6;
+    margin:0 0 10px;
+  }
+
+  .pdb-premium-v4 .pdb-member-info{
+    font-size:13px;
+    line-height:1.6;
+    margin-top:10px;
+  }
+
+  .pdb-premium-v4 .pdb-member-list{
+    gap:8px;
+    margin-top:10px;
+  }
+
+  .pdb-premium-v4 .pdb-member-list li{
+    font-size:13px;
+    line-height:1.55;
+    padding-left:20px;
+  }
+
+  .pdb-premium-v4 .pdb-member-badge{
+    font-size:10px;
+    letter-spacing:.08em;
+    padding:6px 10px;
+    margin-bottom:10px;
+    max-width:100%;
+    white-space:normal;
+    line-height:1.4;
+  }
+
+  .pdb-premium-v4 .pdb-member-booking-card .pdb-btn,
+  .pdb-premium-v4 .pdb-member-booking-card .pdb-btn-secondary{
+    width:100%;
+    display:flex;
+    justify-content:center;
+    text-align:center;
+    padding:12px 14px;
+    font-size:12px;
+    line-height:1.4;
+  }
+.pdb-premium-api-status{
+  margin-top:18px;
+  padding:14px 16px;
+  border-radius:14px;
+  background:#f8f4ef;
+  border:1px solid rgba(0,0,0,.08);
+  font-size:14px;
+  line-height:1.6;
+  color:#171717;
+}
+
+/* === HERO MOBILE OVERFLOW FIX === */
+
+.pdb-premium-v4 .pdb-hero-shell,
+.pdb-premium-v4 .pdb-hero-grid,
+.pdb-premium-v4 .pdb-hero-copy,
+.pdb-premium-v4 .pdb-hero-visual,
+.pdb-premium-v4 .pdb-glass-card,
+.pdb-premium-v4 .pdb-mini-stat,
+.pdb-premium-v4 .pdb-tier-strip{
+  min-width:0;
+  max-width:100%;
+}
+
+.pdb-premium-v4 h1,
+.pdb-premium-v4 h2,
+.pdb-premium-v4 h3,
+.pdb-premium-v4 h4,
+.pdb-premium-v4 p,
+.pdb-premium-v4 span,
+.pdb-premium-v4 a,
+.pdb-premium-v4 strong{
+  overflow-wrap:anywhere;
+}
+
+.pdb-premium-v4 .pdb-btn,
+.pdb-premium-v4 .pdb-btn-secondary{
+  white-space:normal;
+  line-height:1.35;
+  max-width:100%;
+}
+
+@media (max-width:780px){
+  .pdb-premium-v4 .pdb-hero-shell{
+    width:100%;
+    padding:22px 14px;
+    border-radius:24px;
+  }
+
+  .pdb-premium-v4 .pdb-hero-grid{
+    grid-template-columns:1fr;
+    gap:18px;
+  }
+
+  .pdb-premium-v4 h1{
+    font-size:clamp(30px,8.8vw,38px);
+    line-height:1.08;
+  }
+
+  .pdb-premium-v4 .pdb-lead{
+    font-size:16px;
+    line-height:1.65;
+  }
+
+  .pdb-premium-v4 .pdb-hero-sub{
+    grid-template-columns:1fr;
+    gap:12px;
+  }
+
+  .pdb-premium-v4 .pdb-mini-stat{
+    padding:14px;
+    border-radius:16px;
+  }
+
+  .pdb-premium-v4 .pdb-actions{
+    display:grid;
+    grid-template-columns:1fr;
+    gap:10px;
+  }
+
+  .pdb-premium-v4 .pdb-btn,
+  .pdb-premium-v4 .pdb-btn-secondary{
+    width:100%;
+    min-width:0;
+    padding:13px 12px;
+    font-size:11px;
+    letter-spacing:.05em;
+  }
+
+  .pdb-premium-v4 .pdb-glass-card{
+    padding:18px 14px;
+    border-radius:22px;
+  }
+
+  .pdb-premium-v4 .pdb-tier-strip{
+    align-items:flex-start;
+    flex-direction:column;
+    gap:8px;
+  }
+
+  .pdb-premium-v4 .pdb-tier-badge{
+    align-self:flex-start;
+  }
+/* === MEMBER AREA MOBILE OVERFLOW FIX === */
+
+.pdb-premium-v4 .pdb-member-gate,
+.pdb-premium-v4 .pdb-member-gate-grid,
+.pdb-premium-v4 .pdb-member-gate-card,
+.pdb-premium-v4 .pdb-member-gate-stack,
+.pdb-premium-v4 .pdb-member-booking-card-wrap,
+.pdb-premium-v4 .pdb-member-booking-card,
+.pdb-premium-v4 #pdb-premium-booking-app,
+.pdb-premium-v4 .pdb-booking-scroll,
+.pdb-premium-v4 .pdb-premium-api-status{
+  min-width:0;
+  max-width:100%;
+}
+
+.pdb-premium-v4 .pdb-member-gate-card,
+.pdb-premium-v4 .pdb-member-booking-card{
+  overflow-wrap:anywhere;
+}
+
+.pdb-premium-v4 .pdb-member-booking-card h3,
+.pdb-premium-v4 .pdb-member-booking-card p,
+.pdb-premium-v4 .pdb-member-booking-card li,
+.pdb-premium-v4 .pdb-member-info,
+.pdb-premium-v4 .pdb-member-badge{
+  max-width:100%;
+  overflow-wrap:anywhere;
+}
+
+.pdb-premium-v4 #pdb-premium-booking-app .pdb-btn,
+.pdb-premium-v4 #pdb-premium-booking-app .pdb-book-treatment{
+  width:100%;
+  max-width:100%;
+  min-width:0;
+  white-space:normal;
+  overflow-wrap:anywhere;
+  line-height:1.35;
+}
+
+@media (max-width:780px){
+  .pdb-premium-v4 .pdb-member-gate{
+    width:100%;
+    padding:16px 10px;
+    border-radius:20px;
+    overflow:hidden;
+  }
+
+  .pdb-premium-v4 .pdb-member-gate-grid{
+    display:grid;
+    grid-template-columns:minmax(0,1fr);
+    gap:12px;
+  }
+
+  .pdb-premium-v4 .pdb-member-gate-card{
+    width:100%;
+    padding:14px 12px;
+    border-radius:16px;
+    max-height:none;
+    overflow:visible;
+  }
+
+  .pdb-premium-v4 .pdb-member-gate-stack{
+    width:100%;
+    min-height:0;
+    overflow:visible;
+    padding-right:0;
+  }
+
+  .pdb-premium-v4 .pdb-member-booking-card-wrap{
+    width:100%;
+    max-width:100%;
+    margin:12px 0 0;
+  }
+
+  .pdb-premium-v4 .pdb-member-booking-card{
+    width:100%;
+    padding:14px 12px;
+    border-radius:16px;
+    overflow:visible;
+  }
+
+  .pdb-premium-v4 .pdb-booking-scroll{
+    max-height:none;
+    overflow:visible;
+    padding-right:0;
+  }
+
+  .pdb-premium-v4 #pdb-premium-booking-app{
+    width:100%;
+    overflow:visible;
+    padding-right:0;
+  }
+
+  .pdb-premium-v4 .pdb-member-badge{
+    display:flex;
+    width:100%;
+    white-space:normal;
+    line-height:1.35;
+  }
+
+  .pdb-premium-v4 .pdb-member-booking-card h3{
+    font-size:17px;
+    line-height:1.35;
+  }
+
+  .pdb-premium-v4 .pdb-member-booking-card p,
+  .pdb-premium-v4 .pdb-member-booking-card li,
+  .pdb-premium-v4 .pdb-member-info{
+    font-size:13px;
+    line-height:1.55;
+  }
+}
+
+}
+}
+
+/* === PDB PREMIUM UI REFINEMENT 2026 === */
+
+.pdb-premium-v4 .pdb-value-section{
+  display:none;
+}
+
+.pdb-premium-v4 .pdb-hero-sub,
+.pdb-premium-v4 .pdb-chip-row{
+  display:none;
+}
+
+.pdb-premium-v4 .pdb-section{
+  padding:62px 0;
+}
+
+.pdb-premium-v4 .pdb-hero{
+  padding:24px 0 38px;
+}
+
+.pdb-premium-v4 .pdb-hero-shell{
+  padding:44px;
+}
+
+.pdb-premium-v4 .pdb-hero-copy h1{
+  max-width:760px;
+  font-size:clamp(48px,5vw,64px);
+  text-wrap:balance;
+}
+
+.pdb-premium-v4 .pdb-hero-copy .pdb-lead{
+  max-width:680px;
+  text-wrap:pretty;
+}
+
+.pdb-premium-v4 .pdb-center-head h2{
+  text-wrap:balance;
+}
+
+.pdb-premium-v4 .pdb-btn{
+  background:#1c1a18;
+  color:#fff!important;
+  box-shadow:0 14px 32px rgba(0,0,0,.14);
+}
+
+.pdb-premium-v4 .pdb-btn,
+.pdb-premium-v4 .pdb-btn-secondary,
+.pdb-premium-v4 .pdb-cat-arrow,
+.pdb-premium-v4 .pdb-member-booking-card{
+  transition-property:transform,box-shadow,border-color,background-color;
+  transition-duration:.22s;
+  transition-timing-function:ease;
+}
+
+.pdb-premium-v4 .pdb-btn-member,
+.pdb-premium-v4 .pdb-btn-member::before{
+  animation:none;
+}
+
+.pdb-premium-v4 .pdb-btn:focus-visible,
+.pdb-premium-v4 .pdb-btn-secondary:focus-visible,
+.pdb-premium-v4 .pdb-cat-btn:focus-visible,
+.pdb-premium-v4 .pdb-treatment-more:focus-visible,
+.pdb-premium-v4 .pdb-faq summary:focus-visible{
+  outline:3px solid #171717;
+  outline-offset:4px;
+}
+
+.pdb-premium-v4 #pdb-premium-pakete,
+.pdb-premium-v4 #pdb-premium-treatments,
+.pdb-premium-v4 #pdb-member-booking{
+  scroll-margin-top:90px;
+}
+
+.pdb-premium-v4 .pdb-plan .pdb-tag-row{
+  display:none;
+}
+
+.pdb-premium-v4 .pdb-plan-terms{
+  max-width:780px;
+  margin:24px auto 0;
+  text-align:center;
+  font-size:13px;
+  line-height:1.6;
+  color:#6c625a;
+}
+
+.pdb-premium-v4 .pdb-treatment-more{
+  display:none;
+  width:100%;
+  min-height:48px;
+  margin-top:14px;
+  padding:12px 16px;
+  border:1px solid rgba(0,0,0,.12);
+  border-radius:14px;
+  background:#fff;
+  color:#171717;
+  font:inherit;
+  font-size:13px;
+  font-weight:750;
+  letter-spacing:.03em;
+  cursor:pointer;
+}
+
+.pdb-premium-v4 .pdb-how-section .pdb-center-head{
+  margin-bottom:22px;
+}
+
+.pdb-premium-v4 .pdb-how-section .pdb-center-head p{
+  display:none;
+}
+
+.pdb-premium-v4 .pdb-step{
+  padding:20px;
+}
+
+.pdb-premium-v4 .pdb-step-no{
+  width:40px;
+  height:40px;
+  margin-bottom:12px;
+}
+
+.pdb-premium-v4 .pdb-member-gate{
+  background:#faf8f5;
+  box-shadow:none;
+}
+
+.pdb-premium-v4 .pdb-member-gate-card{
+  box-shadow:none;
+}
+
+.pdb-premium-v4 .pdb-member-booking-card{
+  box-shadow:none;
+  background:#fff;
+}
+
+.pdb-premium-v4 .pdb-premium-api-status{
+  display:grid;
+  gap:10px;
+}
+
+.pdb-premium-v4 .pdb-quota-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+  padding:10px 12px;
+  border-radius:12px;
+  background:#fff;
+  border:1px solid rgba(0,0,0,.06);
+}
+
+.pdb-premium-v4 .pdb-quota-row span{
+  color:#6b625c;
+  font-size:12px;
+}
+
+.pdb-premium-v4 .pdb-quota-row strong{
+  color:#171717;
+  font-size:13px;
+  text-align:right;
+}
+
+.pdb-premium-v4 .pdb-booking-guidance{
+  margin-top:2px;
+  padding:16px 18px;
+  border-radius:14px;
+  background:#1c1a18;
+  color:#fff;
+  box-shadow:0 14px 30px rgba(0,0,0,.12);
+}
+
+.pdb-premium-v4 .pdb-booking-guidance strong{
+  display:block;
+  margin-bottom:4px;
+  color:#fff;
+  font-size:15px;
+  line-height:1.35;
+}
+
+.pdb-premium-v4 .pdb-booking-guidance span{
+  display:block;
+  color:rgba(255,255,255,.76);
+  font-size:13px;
+  line-height:1.55;
+}
+
+body.pdb-premium-page #wisy-toggle{
+  width:72px!important;
+  height:86px!important;
+}
+
+body.pdb-premium-page #wisy-hint-bubble{
+  display:none!important;
+}
+
+@media (max-width:780px){
+  .pdb-premium-v4 .pdb-wrap{
+    padding:0 16px;
+  }
+
+  .pdb-premium-v4 .pdb-section{
+    padding:42px 0;
+  }
+
+  .pdb-premium-v4 .pdb-hero{
+    padding:14px 0 30px;
+  }
+
+  .pdb-premium-v4 .pdb-hero-shell{
+    padding:26px 18px;
+    border-radius:24px;
+  }
+
+  .pdb-premium-v4 .pdb-hero-grid{
+    gap:22px;
+  }
+
+  .pdb-premium-v4 .pdb-hero-copy h1{
+    font-size:clamp(32px,9vw,38px);
+    line-height:1.04;
+    letter-spacing:-.035em;
+  }
+
+  .pdb-premium-v4 .pdb-hero-copy .pdb-lead{
+    font-size:16px;
+    line-height:1.55;
+  }
+
+  .pdb-premium-v4 .pdb-actions{
+    margin-top:18px;
+  }
+
+  .pdb-premium-v4 .pdb-glass-card > p,
+  .pdb-premium-v4 .pdb-glass-card .pdb-note{
+    display:none;
+  }
+
+  .pdb-premium-v4 .pdb-tier-strip{
+    display:grid;
+    grid-template-columns:minmax(0,1fr) auto;
+    align-items:center;
+    gap:10px;
+    padding:12px 14px;
+  }
+
+  .pdb-premium-v4 .pdb-tier-badge{
+    align-self:center;
+  }
+
+  .pdb-premium-v4 .pdb-plan-grid{
+    gap:14px;
+  }
+
+  .pdb-premium-v4 .pdb-plan{
+    border-radius:22px;
+  }
+
+  .pdb-premium-v4 .pdb-plan-head{
+    padding:22px 18px 10px;
+  }
+
+  .pdb-premium-v4 .pdb-plan-body{
+    padding:0 18px 18px;
+    gap:14px;
+  }
+
+  .pdb-premium-v4 .pdb-plan .pdb-list li:nth-child(n+4){
+    display:none;
+  }
+
+  .pdb-premium-v4 .pdb-plan-price strong{
+    font-size:42px;
+  }
+
+  .pdb-premium-v4 .pdb-plan-terms{
+    margin-top:18px;
+    padding:0 8px;
+    font-size:12px;
+  }
+
+  .pdb-premium-v4 .pdb-contract-shell{padding:22px 16px;border-radius:22px}
+  .pdb-premium-v4 .pdb-contract-head{grid-template-columns:1fr;gap:10px}
+  .pdb-premium-v4 .pdb-contract-total{text-align:left}
+  .pdb-premium-v4 .pdb-contract-fields{grid-template-columns:1fr}
+  .pdb-premium-v4 .pdb-contract-field.full{grid-column:auto}
+
+  .pdb-premium-v4 .pdb-treatment-grid{
+    display:grid;
+    grid-template-columns:1fr;
+    gap:10px;
+    overflow:visible;
+    padding-bottom:0;
+    scroll-snap-type:none;
+  }
+
+  .pdb-premium-v4 .pdb-treatment{
+    min-width:0;
+    width:100%;
+    padding:14px;
+    border-radius:14px;
+  }
+
+  .pdb-premium-v4 .pdb-treatment p{
+    font-size:15px;
+    line-height:1.55;
+  }
+
+  .pdb-premium-v4 .pdb-treatment-grid:not(.is-expanded) .pdb-treatment:nth-child(n+6){
+    display:none;
+  }
+
+  .pdb-premium-v4 .pdb-treatment-more{
+    display:block;
+  }
+
+  .pdb-premium-v4 .pdb-tier-pill-row{
+    display:none;
+  }
+
+  .pdb-premium-v4 .pdb-cat-btn-left{
+    min-width:0;
+  }
+
+  .pdb-premium-v4 .pdb-cat-btn h3{
+    font-size:19px;
+  }
+
+  .pdb-premium-v4 .pdb-cat-btn p{
+    font-size:12px;
+  }
+
+  .pdb-premium-v4 .pdb-compare-wrap{
+    overflow:visible;
+    border:0;
+    border-radius:0;
+    box-shadow:none;
+    background:transparent;
+  }
+
+  .pdb-premium-v4 .pdb-compare-wrap table,
+  .pdb-premium-v4 .pdb-compare-wrap tbody{
+    display:block;
+    width:100%;
+    min-width:0;
+    border:0;
+    background:transparent!important;
+  }
+
+  .pdb-premium-v4 .pdb-compare-wrap thead{
+    display:none;
+  }
+
+  .pdb-premium-v4 .pdb-compare-wrap tr{
+    display:grid;
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:0;
+    margin-bottom:12px;
+    overflow:hidden;
+    border:1px solid rgba(0,0,0,.08);
+    border-radius:16px;
+    background:#fff;
+  }
+
+  .pdb-premium-v4 .pdb-compare-wrap td{
+    display:block;
+    min-width:0;
+    padding:12px 8px;
+    border:0;
+    text-align:center;
+    font-size:13px;
+    line-height:1.4;
+  }
+
+  .pdb-premium-v4 .pdb-compare-wrap td:first-child{
+    grid-column:1 / -1;
+    padding:12px 14px;
+    border-bottom:1px solid rgba(0,0,0,.07);
+    background:#faf8f5;
+    text-align:left;
+    font-weight:700;
+  }
+
+  .pdb-premium-v4 .pdb-compare-wrap td:not(:first-child)::before{
+    display:block;
+    margin-bottom:5px;
+    color:#7c7067;
+    font-size:9px;
+    font-weight:800;
+    letter-spacing:.08em;
+  }
+
+  .pdb-premium-v4 .pdb-compare-wrap td:nth-child(2)::before{content:"PURE"}
+  .pdb-premium-v4 .pdb-compare-wrap td:nth-child(3)::before{content:"DEFINE"}
+  .pdb-premium-v4 .pdb-compare-wrap td:nth-child(4)::before{content:"BEYOND"}
+  .pdb-premium-v4 .pdb-compare-wrap td:nth-child(5)::before{content:"PRIVATE"}
+
+  .pdb-premium-v4 .pdb-member-gate{
+    padding:0;
+    border:0;
+    border-radius:0;
+    background:transparent;
+  }
+
+  .pdb-premium-v4 .pdb-member-gate-card{
+    padding:16px;
+    border-radius:18px;
+  }
+
+  .pdb-premium-v4 .pdb-member-booking-card{
+    padding:14px;
+    border-radius:14px;
+  }
+
+  body.pdb-premium-page #SiteHeader.site-header--stuck{
+    padding:4px 0;
+  }
+
+  body.pdb-premium-page #SiteHeader.site-header--stuck .site-header__logo{
+    margin:0;
+  }
+
+  body.pdb-premium-page #SiteHeader.site-header--stuck .page-width,
+  body.pdb-premium-page #SiteHeader.site-header--stuck .header-layout,
+  body.pdb-premium-page #SiteHeader.site-header--stuck .header-item,
+  body.pdb-premium-page #SiteHeader.site-header--stuck .site-header__logo{
+    height:64px!important;
+    min-height:64px!important;
+  }
+
+  body.pdb-premium-page #SiteHeader.site-header--stuck .header-item--logo,
+  body.pdb-premium-page #SiteHeader.site-header--stuck .site-header__logo{
+    width:64px!important;
+  }
+
+  body.pdb-premium-page #SiteHeader.site-header--stuck .site-header__logo-link{
+    height:64px!important;
+    padding-top:64px!important;
+  }
+
+  body.pdb-premium-page #SiteHeader.site-header--stuck .site-header__logo img{
+    width:auto!important;
+    max-height:56px!important;
+  }
+
+  body.pdb-premium-page #wisy-toggle{
+    right:10px!important;
+    bottom:10px!important;
+    width:58px!important;
+    height:66px!important;
+  }
+
+  body.pdb-premium-page #wisy-toggle:hover{
+    transform:none;
+  }
+
+  body.pdb-premium-page #wisy-hint-bubble{
+    display:none!important;
+  }
+
+  body.pdb-premium-page #wisy-widget{
+    right:10px!important;
+    bottom:84px!important;
+    width:calc(100vw - 20px)!important;
+    height:min(620px,calc(100vh - 104px))!important;
+    max-width:none!important;
+    max-height:none!important;
+  }
+}
+
+@media (prefers-reduced-motion:reduce){
+  .pdb-premium-v4 *,
+  .pdb-premium-v4 *::before,
+  .pdb-premium-v4 *::after{
+    scroll-behavior:auto!important;
+    animation-duration:.01ms!important;
+    animation-iteration-count:1!important;
+    transition-duration:.01ms!important;
+  }
+}
+
+  </style>
+
+  <span id="pdb-premium-top" class="pdb-anchor"></span>
+
+ <section class="pdb-premium-v4 pdb-section pdb-hero">
+    <div class="pdb-wrap">
+      <div class="pdb-hero-shell">
+        <div class="pdb-hero-grid">
+          <div class="pdb-hero-copy">
+            <div class="pdb-eyebrow">PDB Premium Membership</div>
+            <h1>PDB PREMIUM.<br>Ihre Beauty-Routine. Klar geplant.</h1>
+            <p class="pdb-lead">
+              Vier Membership-Stufen – von verlässlicher Pflegeroutine bis zum ganzheitlichen PRIVATE-Protokoll.
+            </p>
+
+            <div class="pdb-hero-sub">
+              <div class="pdb-mini-stat">
+                <strong>4 klar getrennte Stufen</strong>
+                <span>PURE für Routine, DEFINE für Kombination, BEYOND für High-End und PRIVATE für umfassende Protokolle.</span>
+              </div>
+              <div class="pdb-mini-stat">
+                <strong>Logisch aufgebaut</strong>
+                <span>Jedes Paket hat eine klare Leistungslogik und macht die Wahl für Kundinnen deutlich verständlicher.</span>
+              </div>
+            </div>
+
+            <div class="pdb-chip-row">
+              <span class="pdb-chip">Planbar im Monat</span>
+              <span class="pdb-chip">Von Pflege bis High-End</span>
+              <span class="pdb-chip">Exklusiv für Mitglieder</span>
+              <span class="pdb-chip">Premium statt Zufall</span>
+            </div>
+
+            <div class="pdb-actions">
+  <a href="#pdb-premium-contract" class="pdb-btn">Mitgliedschaft online abschließen</a>
+  <a href="#pdb-premium-pakete" class="pdb-btn-secondary">Pakete ansehen</a>
+  <a href="{% if customer %}#pdb-member-booking{% else %}{{ routes.storefront_login_url }}?return_url=%2Fpages%2Fpremium%23pdb-member-booking{% endif %}" class="pdb-btn-secondary pdb-btn-member">
+  {% if customer %}Meine Termine & Kontingente{% else %}Member-Login & Terminbuchung{% endif %}
+</a>
+</div>
+          </div>
+
+          <div class="pdb-hero-visual">
+            <div class="pdb-glass-card">
+              <div class="pdb-eyebrow" style="margin-bottom:10px;">Membership Übersicht</div>
+              <h3 style="margin-bottom:8px;">Vier Stufen. Ein klares System.</h3>
+              <p style="margin-bottom:16px;">
+                Die neue Struktur ist einfacher zu verstehen, hochwertiger positioniert und deutlich attraktiver als eine klassische Standard-Mitgliedschaft.
+              </p>
+
+              <div class="pdb-tier-stack">
+                <div class="pdb-tier-strip">
+                  <div>
+                    <strong>PDB PURE</strong>
+                    <span>3 Behandlungen aus PURE</span>
+                  </div>
+                  <div class="pdb-tier-badge">149 €</div>
+                </div>
+
+                <div class="pdb-tier-strip">
+                  <div>
+                    <strong>PDB DEFINE</strong>
+                    <span>1 aus PURE + 1 aus DEFINE</span>
+                  </div>
+                  <div class="pdb-tier-badge">169 €</div>
+                </div>
+
+                <div class="pdb-tier-strip">
+                  <div>
+                    <strong>PDB BEYOND</strong>
+                    <span>1 exklusive BEYOND Behandlung</span>
+                  </div>
+                  <div class="pdb-tier-badge">199 €</div>
+                </div>
+
+                <div class="pdb-tier-strip" style="background:#171513;color:#fff;border-color:rgba(217,191,169,.3)">
+                  <div>
+                    <strong style="color:#fff">PDB PRIVATE</strong>
+                    <span style="color:rgba(255,255,255,.65)">1 ganzheitliches PRIVATE-Protokoll</span>
+                  </div>
+                  <div class="pdb-tier-badge">399 €</div>
+                </div>
+              </div>
+
+              <div class="pdb-note">
+                Jede Paketstufe ist klar gegliedert und orientiert sich an Anspruch, Technologie und Exklusivität.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="pdb-section pdb-value-section">
+    <div class="pdb-wrap">
+      <div class="pdb-center-head">
+        <div class="pdb-eyebrow">Warum PDB PREMIUM?</div>
+        <h2>Ein Membership-Konzept, das Pflege, Wirkung und Exklusivität klar voneinander trennt</h2>
+        <p>
+          PDB PREMIUM wurde für Kundinnen entwickelt, die ihre Treatments strukturierter, hochwertiger und verständlicher wählen möchten — mit klaren Paketstufen statt unübersichtlicher Leistungsfülle.
+        </p>
+      </div>
+
+      <div class="pdb-grid pdb-benefit-grid">
+        <div class="pdb-benefit">
+          <div class="pdb-icon">✦</div>
+          <h3>Regelmäßigkeit statt Zufall</h3>
+          <p>Mit einer klaren Monatsstruktur werden Pflege und ästhetische Routinen planbarer und konsequenter umgesetzt.</p>
+        </div>
+
+        <div class="pdb-benefit">
+          <div class="pdb-icon">◎</div>
+          <h3>Klarer verständlich</h3>
+          <p>Die neue Paketlogik zeigt sofort, was enthalten ist — ohne unklare Mischformen oder verwässerte Premium-Leistungen.</p>
+        </div>
+
+        <div class="pdb-benefit">
+          <div class="pdb-icon">◇</div>
+          <h3>Stärker positioniert</h3>
+          <p>PURE, DEFINE, BEYOND und PRIVATE schaffen eine klare Wertigkeit und machen den passenden nächsten Schritt sofort verständlich.</p>
+        </div>
+
+        <div class="pdb-benefit">
+          <div class="pdb-icon">◐</div>
+          <h3>Für später vorbereitet</h3>
+          <p>Die Membership-Struktur ist bereits so aufgebaut, dass sie später technisch sauber erweitert werden kann.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="pdb-section" id="pdb-premium-pakete">
+    <div class="pdb-wrap">
+      <div class="pdb-center-head">
+        <div class="pdb-eyebrow">Die vier Paketstufen</div>
+        <h2>PURE. DEFINE. BEYOND. PRIVATE.</h2>
+        <p>
+          Jede Stufe hat eine klare Aufgabe: regelmäßige Pflege, gezielte Kombination oder exklusive High-End Behandlung.
+        </p>
+      </div>
+
+      <div class="pdb-grid pdb-plan-grid">
+        <article class="pdb-plan pdb-plan-choice" data-package-card="pure">
+          <div class="pdb-plan-head">
+            <div class="pdb-eyebrow" style="margin-bottom:10px;">PDB PURE</div>
+            <h3>Pflege & Routine</h3>
+            <div class="pdb-plan-sub">Der strukturierte Einstieg in regelmäßige Behandlungen.</div>
+            <div class="pdb-plan-price">
+              <strong>149 €</strong>
+              <span>pro Monat</span>
+            </div>
+            <p class="pdb-plan-copy">
+              Für Kundinnen, die auf regelmäßige Pflege, Erhaltung, Glow und planbare Beauty-Routinen setzen.
+            </p>
+          </div>
+
+          <div class="pdb-plan-body">
+            <ul class="pdb-list">
+              <li>3 Behandlungen pro Monat aus dem PURE Bereich</li>
+              <li>Ideal für regelmäßige Studio-Pflege und Beauty-Routine</li>
+              <li>Perfekt für Pflege, Frische und Erhaltung</li>
+              <li>Der cleane Einstieg in das PDB Membership-System</li>
+            </ul>
+
+            <div class="pdb-tag-row">
+              <span class="pdb-tag">Routine</span>
+              <span class="pdb-tag">Pflege</span>
+              <span class="pdb-tag">Glow</span>
+            </div>
+
+            <div class="pdb-plan-cta">
+              <a href="#pdb-premium-contract" class="pdb-btn-secondary" data-pdb-package="pure">PURE wählen</a>
+            </div>
+          </div>
+        </article>
+
+        <article class="pdb-plan featured pdb-plan-choice" data-package-card="define">
+          <span class="pdb-plan-mark">Beliebte Mitte</span>
+
+          <div class="pdb-plan-head">
+            <div class="pdb-eyebrow" style="margin-bottom:10px;">PDB DEFINE</div>
+            <h3>Wirkung & Kombination</h3>
+            <div class="pdb-plan-sub">Pflege und gezieltere Intensiv-Leistung sinnvoll kombiniert.</div>
+            <div class="pdb-plan-price">
+              <strong>169 €</strong>
+              <span>pro Monat</span>
+            </div>
+            <p class="pdb-plan-copy">
+              Für Kundinnen, die mehr als reine Routine möchten und eine Pflegeleistung mit einer intensiveren Behandlung verbinden wollen.
+            </p>
+          </div>
+
+          <div class="pdb-plan-body">
+            <ul class="pdb-list">
+              <li>1 Behandlung aus PURE + 1 Behandlung aus DEFINE pro Monat</li>
+              <li>Perfekt für den Mix aus Pflege und gezielter Verbesserung</li>
+              <li>Sehr attraktive Mittelstufe mit klarem Upgrade-Gefühl</li>
+              <li>Ideal für Kundinnen mit stärkerem Ergebnisfokus</li>
+            </ul>
+
+            <div class="pdb-tag-row">
+              <span class="pdb-tag">Upgrade</span>
+              <span class="pdb-tag">Kombination</span>
+              <span class="pdb-tag">Mehr Wirkung</span>
+            </div>
+
+            <div class="pdb-plan-cta">
+              <a href="#pdb-premium-contract" class="pdb-btn" data-pdb-package="define">DEFINE wählen</a>
+            </div>
+          </div>
+        </article>
+
+        <article class="pdb-plan pdb-plan-choice" data-package-card="beyond">
+          <div class="pdb-plan-head">
+            <div class="pdb-eyebrow" style="margin-bottom:10px;">PDB BEYOND</div>
+            <h3>Exklusiv & High-End</h3>
+            <div class="pdb-plan-sub">Für besonders hochwertige Treatments und Premium-Technologien.</div>
+            <div class="pdb-plan-price">
+              <strong>199 €</strong>
+              <span>pro Monat</span>
+            </div>
+            <span class="pdb-price-future">Preis für Neuverträge steigt künftig auf 249 €</span>
+            <p class="pdb-plan-copy">
+              Für Kundinnen mit Premium-Anspruch, die bewusst eine exklusive High-End Behandlung pro Monat wählen möchten.
+            </p>
+          </div>
+
+          <div class="pdb-plan-body">
+            <ul class="pdb-list">
+              <li>1 exklusive Behandlung pro Monat aus dem BEYOND Bereich</li>
+              <li>Luxus-, Geräte- und Signature-Treatments statt Standard-Routine</li>
+              <li>Stark positioniert für moderne Premium-Technologien</li>
+              <li>High-End Auswahl mit besonders starkem Preis-Leistungs-Verhältnis</li>
+            </ul>
+
+            <div class="pdb-tag-row">
+              <span class="pdb-tag">Luxus</span>
+              <span class="pdb-tag">High-End</span>
+              <span class="pdb-tag">Exklusiv</span>
+            </div>
+
+            <div class="pdb-plan-cta">
+              <a href="#pdb-premium-contract" class="pdb-btn-secondary" data-pdb-package="beyond">BEYOND für 199 € sichern</a>
+            </div>
+          </div>
+        </article>
+
+        <article class="pdb-plan private pdb-plan-choice" data-package-card="private">
+          <span class="pdb-plan-mark" style="background:#f3e4d8;color:#191614">Private Selection</span>
+          <div class="pdb-plan-head">
+            <div class="pdb-eyebrow" style="margin-bottom:10px;">PDB PRIVATE</div>
+            <h3>Ganzheitlich & kompromisslos</h3>
+            <div class="pdb-plan-sub">Umfassende Gesichts- und Body-Protokolle statt einzelner Areale.</div>
+            <div class="pdb-plan-price">
+              <strong>399 €</strong>
+              <span>pro Monat</span>
+            </div>
+            <p class="pdb-plan-copy">Für Kundinnen, die nicht zwischen kleinen Arealen wählen möchten, sondern eine vollständige, sinnvoll kombinierte Behandlung erwarten.</p>
+          </div>
+          <div class="pdb-plan-body">
+            <ul class="pdb-list">
+              <li>1 vollständiges PRIVATE-Protokoll pro Monat</li>
+              <li>Morpheus8 gesamtes Gesicht oder HIFU Gesicht als Auswahl</li>
+              <li>RedTouch PRO für Gesicht, Hals und Dekolleté</li>
+              <li>Weitere kombinierte Gesichts- und Body-Protokolle</li>
+            </ul>
+            <div class="pdb-tag-row">
+              <span class="pdb-tag">Full Face</span><span class="pdb-tag">Protokolle</span><span class="pdb-tag">Private</span>
+            </div>
+            <div class="pdb-plan-cta">
+              <a href="#pdb-premium-contract" class="pdb-btn" data-pdb-package="private">PRIVATE wählen</a>
+            </div>
+          </div>
+        </article>
+      </div>
+
+      <p class="pdb-plan-terms">
+        12 Monate Mindestlaufzeit · danach monatlich kündbar · einmalig 39 € Einrichtung · monatlicher SEPA-Einzug
+      </p>
+
+      <div class="pdb-contract-shell" id="pdb-premium-contract">
+        <div class="pdb-contract-head">
+          <div>
+            <div class="pdb-eyebrow">Sicher online abschließen</div>
+            <h2>Ihre Mitgliedschaft verbindlich auswählen</h2>
+            <p>Nach dem Abschluss richten wir Ihr SEPA-Mandat ein. Die Buchung wird freigeschaltet, sobald der Einzug im Naspa-Onlinebanking hinterlegt ist.</p>
+          </div>
+          <div class="pdb-contract-total" aria-live="polite">
+            <strong id="pdb-contract-monthly">169 € / Monat</strong>
+            <span>monatlicher SEPA-Einzug</span>
+          </div>
+        </div>
+
+        {% if customer %}
+          <form class="pdb-contract-form" id="pdb-membership-contract-form" novalidate>
+            <div class="pdb-contract-fields">
+              <div class="pdb-contract-field">
+                <label for="pdb-package">Paket</label>
+                <select id="pdb-package" name="package_key" required>
+                  <option value="pure">PURE · 149 € / Monat</option>
+                  <option value="define" selected>DEFINE · 169 € / Monat</option>
+                  <option value="beyond">BEYOND · aktuell 199 € / Monat</option>
+                  <option value="private">PRIVATE · 399 € / Monat</option>
+                </select>
+              </div>
+              <div class="pdb-contract-field">
+                <label for="pdb-start">Vertragsbeginn</label>
+                <input id="pdb-start" name="starts_on" type="date" required>
+              </div>
+              <div class="pdb-contract-field">
+                <label for="pdb-first-name">Vorname</label>
+                <input id="pdb-first-name" name="first_name" value="{{ customer.first_name | escape }}" autocomplete="given-name" required>
+              </div>
+              <div class="pdb-contract-field">
+                <label for="pdb-last-name">Nachname</label>
+                <input id="pdb-last-name" name="last_name" value="{{ customer.last_name | escape }}" autocomplete="family-name" required>
+              </div>
+              <div class="pdb-contract-field full">
+                <label for="pdb-email">E-Mail-Adresse</label>
+                <input id="pdb-email" name="email" type="email" value="{{ customer.email | escape }}" autocomplete="email" required>
+              </div>
+              <div class="pdb-contract-field full">
+                <label for="pdb-address">Straße und Hausnummer</label>
+                <input id="pdb-address" name="address_line1" autocomplete="street-address" required>
+              </div>
+              <div class="pdb-contract-field">
+                <label for="pdb-postal">PLZ</label>
+                <input id="pdb-postal" name="postal_code" inputmode="numeric" autocomplete="postal-code" required>
+              </div>
+              <div class="pdb-contract-field">
+                <label for="pdb-city">Ort</label>
+                <input id="pdb-city" name="city" autocomplete="address-level2" required>
+              </div>
+              <div class="pdb-contract-field full">
+                <label for="pdb-iban">IBAN für den monatlichen SEPA-Einzug</label>
+                <input id="pdb-iban" name="iban" inputmode="text" autocomplete="off" placeholder="DE00 0000 0000 0000 0000 00" required>
+              </div>
+              <input type="hidden" name="debit_day" value="1">
+            </div>
+
+            <div class="pdb-contract-checks">
+              <label class="pdb-contract-check"><input type="checkbox" name="accept_agb" required><span>Ich akzeptiere die <a href="/pages/premium-vertragsbedingungen" target="_blank">AGB und Vertragsbedingungen</a>. Mindestlaufzeit: 12 Monate; danach unbefristet mit 1 Monat Kündigungsfrist.</span></label>
+              <label class="pdb-contract-check"><input type="checkbox" name="accept_withdrawal" required><span>Ich habe die <a href="/pages/premium-widerruf" target="_blank">Widerrufsbelehrung und das Widerrufsformular</a> erhalten und konnte sie speichern.</span></label>
+              <div class="pdb-contract-mandate"><strong>SEPA-Basislastschriftmandat</strong>Zahlungsempfänger: PDB – AESTHETIC ROOM, Rheinstraße 59, 65185 Wiesbaden · Gläubiger-ID: DE73ZZZ00002018874 · Mandatsreferenz: wird nach dem Abschluss mitgeteilt. Ich ermächtige PDB – AESTHETIC ROOM, wiederkehrende Zahlungen aus dieser Mitgliedschaft sowie die einmalige Einrichtungsgebühr von meinem Konto einzuziehen. Zugleich weise ich mein Kreditinstitut an, die Lastschriften einzulösen. Ich kann innerhalb von acht Wochen ab Belastungsdatum die Erstattung des belasteten Betrags verlangen; es gelten die mit meinem Kreditinstitut vereinbarten Bedingungen.</div>
+              <label class="pdb-contract-check"><input type="checkbox" name="accept_sepa" required><span>Ich erteile das oben beschriebene SEPA-Basislastschriftmandat.</span></label>
+              <label class="pdb-contract-check"><input type="checkbox" name="request_early_start"><span>Optional: Ich wünsche den Leistungsbeginn bereits innerhalb der 14-tägigen Widerrufsfrist und kenne die gesetzlichen Folgen.</span></label>
+            </div>
+
+            <div class="pdb-contract-security">Ihre IBAN wird verschlüsselt in unserem Vertragssystem gespeichert und nicht in Shopify-Kundennotizen oder Kundentags abgelegt.</div>
+            <p class="pdb-plan-terms">Informationen zur Verarbeitung Ihrer Vertrags- und Zahlungsdaten finden Sie in unserer <a href="{{ shop.privacy_policy.url }}" target="_blank">Datenschutzerklärung</a>.</p>
+            <div class="pdb-contract-status" id="pdb-contract-status" role="status" aria-live="polite"></div>
+            <div class="pdb-order-summary" aria-live="polite">
+              <h3>Ihre Zahlungsübersicht</h3>
+              <div class="pdb-order-row"><span>Gewähltes Paket</span><strong id="pdb-order-package">DEFINE</strong></div>
+              <div class="pdb-order-row"><span>Monatlicher Beitrag</span><strong id="pdb-order-monthly">169,00 €</strong></div>
+              <div class="pdb-order-row"><span>Einmalige Einrichtung</span><strong>39,00 €</strong></div>
+              <div class="pdb-order-row"><span>Mindestlaufzeit</span><strong>12 Monate</strong></div>
+              <div class="pdb-order-row total"><span>Gesamt während der Mindestlaufzeit</span><strong id="pdb-contract-total">2.067,00 €</strong></div>
+              <small>Die Beiträge werden monatlich per SEPA eingezogen; die Gesamtsumme wird nicht auf einmal fällig.</small>
+            </div>
+            <button class="pdb-btn" id="pdb-contract-submit" type="submit">Zahlungspflichtig bestellen</button>
+          </form>
+        {% else %}
+          <div class="pdb-contract-login">
+            <h3>Für den sicheren Abschluss zuerst anmelden</h3>
+            <p>So können Vertrag, SEPA-Mandat und späterer Buchungszugang eindeutig Ihrem Kundenkonto zugeordnet werden.</p>
+            <a class="pdb-btn" href="{{ routes.storefront_login_url }}?return_url=%2Fpages%2Fpremium%23pdb-premium-contract">Anmelden & Mitgliedschaft abschließen</a>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </section>
+
+  <section class="pdb-section pdb-how-section">
+    <div class="pdb-wrap">
+      <div class="pdb-center-head">
+        <div class="pdb-eyebrow">So funktioniert es</div>
+        <h2>Einfach, verständlich und sofort nachvollziehbar</h2>
+        <p>
+          Jedes Paket folgt einer klaren Logik und ist so aufgebaut, dass Interessentinnen sofort verstehen, was monatlich enthalten ist.
+        </p>
+      </div>
+
+      <div class="pdb-grid pdb-steps">
+        <div class="pdb-step">
+          <div class="pdb-step-no">1</div>
+          <h3>Paket wählen</h3>
+          <p>Sie wählen PURE, DEFINE, BEYOND oder PRIVATE – passend zu Routine, Ergebniswunsch und gewünschtem Behandlungsumfang.</p>
+        </div>
+
+        <div class="pdb-step">
+          <div class="pdb-step-no">2</div>
+          <h3>Online abschließen</h3>
+          <p>Vertrag und SEPA-Mandat werden sicher online erfasst. Sie erhalten direkt eine speicherbare Bestätigung.</p>
+        </div>
+
+        <div class="pdb-step">
+          <div class="pdb-step-no">3</div>
+          <h3>Monatlich nutzen</h3>
+          <p>Je nach Paket wählen Sie Ihre enthaltenen monatlichen Treatments aus dem jeweiligen Bereich.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="pdb-section pdb-treatments-section" id="pdb-premium-treatments">
+    <div class="pdb-wrap">
+      <div class="pdb-center-head">
+        <div class="pdb-eyebrow">Enthaltene Behandlungen</div>
+        <h2>Diese Treatments stehen je nach Paketstufe zur Verfügung</h2>
+        <p>
+          Die Behandlungsbereiche sind klar gegliedert, damit sofort sichtbar wird, welche Leistungen zu PURE, DEFINE, BEYOND und PRIVATE gehören.
+        </p>
+      </div>
+
+      <div class="pdb-cats">
+        <div class="pdb-cat active">
+          <button class="pdb-cat-btn" type="button" aria-expanded="true" aria-controls="pdb-pure-treatment-panel">
+            <div class="pdb-cat-btn-left">
+              <div class="pdb-cat-letter">P</div>
+              <div>
+                <h3>PURE Treatments</h3>
+                <p>16 Behandlungen · 3 pro Monat aus diesem Bereich</p>
+              </div>
+            </div>
+            <div class="pdb-cat-arrow" aria-hidden="true">+</div>
+          </button>
+
+          <div class="pdb-cat-panel" id="pdb-pure-treatment-panel">
+            <div class="pdb-treatment-grid">
+              <div class="pdb-treatment"><h4>Laser Haarentfernung – kleine Zone</h4><p>Geeignet für kleinere Areale als planbare Membership-Routine.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill pure">PURE</span></div></div>
+              <div class="pdb-treatment"><h4>Klassische Gesichtsbehandlung</h4><p>Die klassische Pflegebasis für Frische, Wohlgefühl und regelmäßige Hauterhaltung.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill pure">PURE</span></div></div>
+              <div class="pdb-treatment"><h4>Aquafacial</h4><p>Beliebt für gereinigte, frischer wirkende Haut und einen gepflegten Glow.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill pure">PURE</span></div></div>
+              <div class="pdb-treatment"><h4>Lymphdrainage</h4><p>Unterstützend für Leichtigkeit und ein strukturiertes Studio-Ritual.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill pure">PURE</span></div></div>
+              <div class="pdb-treatment"><h4>Dermaplaning</h4><p>Beliebte Ergänzung für ein glatteres Hautgefühl und ein gepflegtes Finish.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill pure">PURE</span></div></div>
+              <div class="pdb-treatment"><h4>Gesichtsmassage</h4><p>Entspannende Membership-Leistung für Regeneration, Pflege und Wohlbefinden.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill pure">PURE</span></div></div>
+              <div class="pdb-treatment"><h4>Microdermabrasion</h4><p>Routineorientierte Behandlung für ein feineres, gepflegteres Hautbild.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill pure">PURE</span></div></div>
+              <div class="pdb-treatment"><h4>Hautaufhellung</h4><p>Geeignet als Membership-Baustein bei dem Wunsch nach mehr Ebenmäßigkeit.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill pure">PURE</span></div></div>
+              <div class="pdb-treatment"><h4>Matrix Lifting Mask</h4><p>Pflegender Booster für Glow, Finish und einen luxuriösen Abschluss.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill pure">PURE</span></div></div>
+              <div class="pdb-treatment"><h4>Microneedling</h4><p>Aktiviert die Hauterneuerung und verfeinert das Hautbild sichtbar.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill pure">PURE</span></div></div>
+              <div class="pdb-treatment"><h4>Ausreinigung</h4><p>Klärt die Haut gründlich und reduziert verstopfte Poren.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill pure">PURE</span></div></div>
+              <div class="pdb-treatment"><h4>Radiofrequenz</h4><p>Strafft die Haut sanft und unterstützt neue Spannkraft.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill pure">PURE</span></div></div>
+              <div class="pdb-treatment"><h4>Ultraschall</h4><p>Schleust Wirkstoffe ein und unterstützt ein frisches Hautgefühl.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill pure">PURE</span></div></div>
+              <div class="pdb-treatment"><h4>LED Lichttherapie</h4><p>Beruhigt die Haut und unterstützt Regeneration sowie Ausstrahlung.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill pure">PURE</span></div></div>
+              <div class="pdb-treatment"><h4>Madero – Gesicht, Hals oder Dekolleté</h4><p>Membership-Baustein mit strukturierter Pflege- und Ritualwirkung.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill pure">PURE</span></div></div>
+              <div class="pdb-treatment"><h4>OxyGeneo</h4><p>Versorgt die Haut intensiv mit Sauerstoff und sorgt für sofortige Frische.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill pure">PURE</span></div></div>
+            </div>
+            <button class="pdb-treatment-more" type="button" aria-expanded="false">
+              Alle 16 PURE Behandlungen anzeigen
+            </button>
+          </div>
+        </div>
+
+        <div class="pdb-cat">
+          <button class="pdb-cat-btn" type="button" aria-expanded="false" aria-controls="pdb-define-treatment-panel">
+            <div class="pdb-cat-btn-left">
+              <div class="pdb-cat-letter">D</div>
+              <div>
+                <h3>DEFINE Treatments</h3>
+                <p>13 Behandlungen · 1 aus PURE + 1 aus DEFINE pro Monat</p>
+              </div>
+            </div>
+            <div class="pdb-cat-arrow" aria-hidden="true">+</div>
+          </button>
+
+          <div class="pdb-cat-panel" id="pdb-define-treatment-panel">
+            <div class="pdb-treatment-grid">
+              <div class="pdb-treatment"><h4>Kryolipolyse</h4><p>Bodyfokussierte Membership-Leistung mit stärkerer Ergebniswahrnehmung.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill define">DEFINE</span></div></div>
+              <div class="pdb-treatment"><h4>Ems-Sella Stuhl</h4><p>Technischere Membership-Option für strukturierte Behandlungskonzepte.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill define">DEFINE</span></div></div>
+              <div class="pdb-treatment"><h4>Microneedling + Ausreinigung</h4><p>Sehr attraktiv für Kundinnen mit Fokus auf Hautstruktur und intensivere Verbesserung.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill define">DEFINE</span></div></div>
+              <div class="pdb-treatment"><h4>Ems-Sculpt Neo</h4><p>Stärkere Body-Option für Kundinnen mit mehr Dynamik im Monatskonzept.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill define">DEFINE</span></div></div>
+              <div class="pdb-treatment"><h4>Hautverjüngung</h4><p>Membership-Leistung mit deutlicherem Anti-Aging- und Fortschrittscharakter.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill define">DEFINE</span></div></div>
+              <div class="pdb-treatment"><h4>Oxy Geneo</h4><p>Moderne Gesichtsbehandlung mit wertigerer Wahrnehmung als reine Basispflege.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill define">DEFINE</span></div></div>
+              <div class="pdb-treatment"><h4>G8 Cellulite</h4><p>Gezielte Body-Leistung mit stärkerer Membership-Differenzierung.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill define">DEFINE</span></div></div>
+              <div class="pdb-treatment"><h4>MOTUS PRO DEKA® – Haarentfernung große Zone</h4><p>Laser-Haarentfernung für größere Körperbereiche wie Beine, Rücken oder Arme.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill define">DEFINE</span></div></div>
+              <div class="pdb-treatment"><h4>FORMA by INMODE™ – Gesicht, Hals oder Dekolleté</h4><p>Technologieorientierte Premium-Leistung für Kundinnen mit gehobenem Anspruch.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill define">DEFINE</span></div></div>
+              <div class="pdb-treatment"><h4>HYDRAFACIAL® Signature (ohne Maske)</h4><p>Sehr starker Membership-Magnet mit klarer Marken- und Premiumwirkung.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill define">DEFINE</span></div></div>
+              <div class="pdb-treatment"><h4>Ultraschall Titan – Gesicht, Hals oder Dekolleté</h4><p>Wertige Technologie-Leistung für eine deutlich höhere Paketwahrnehmung.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill define">DEFINE</span></div></div>
+              <div class="pdb-treatment"><h4>CIRCADIA® Premium Treatments</h4><p>Zum Beispiel Firming Peptide Mask Treatment, SWICH™ oder Oxygen RX als gehobene Membership-Option.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill define">DEFINE</span></div></div>
+              <div class="pdb-treatment"><h4>Carbon Laser Peeling</h4><p>Moderne High-End Ergänzung für Kundinnen mit Technologie-Fokus.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill define">DEFINE</span></div></div>
+            </div>
+            <button class="pdb-treatment-more" type="button" aria-expanded="false">
+              Alle 13 DEFINE Behandlungen anzeigen
+            </button>
+          </div>
+        </div>
+
+        <div class="pdb-cat">
+          <button class="pdb-cat-btn" type="button" aria-expanded="false" aria-controls="pdb-beyond-treatment-panel">
+            <div class="pdb-cat-btn-left">
+              <div class="pdb-cat-letter">B</div>
+              <div>
+                <h3>BEYOND Treatments</h3>
+                <p>14 Behandlungen · 1 exklusive Behandlung pro Monat</p>
+              </div>
+            </div>
+            <div class="pdb-cat-arrow" aria-hidden="true">+</div>
+          </button>
+
+          <div class="pdb-cat-panel" id="pdb-beyond-treatment-panel">
+            <div class="pdb-treatment-grid">
+              <div class="pdb-treatment"><h4>Morpheus8™ – Gesichtsareal</h4><p>Besonders attraktive High-End Option für gezielte, technologieorientierte Premium-Behandlungen.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill beyond">BEYOND</span></div></div>
+              <div class="pdb-treatment"><h4>MOTUS PRO DEKA® – Laser Haarentfernung für drei große Zonen</h4><p>Laser-Haarentfernung für drei große Körperzonen in einer Sitzung mit maximalem Komfort und effizienter Anwendung.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill beyond">BEYOND</span></div></div>
+              <div class="pdb-treatment"><h4>HIFU – gezielte Areale (z. B. Jawline, Doppelkinn, Augenbrauenlifting)</h4><p>Hochintensive Ultraschall-Technologie zur präzisen Straffung kleiner, definierter Gesichtsbereiche – für sichtbar festere Konturen ohne chirurgischen Eingriff.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill beyond">BEYOND</span></div></div>
+              <div class="pdb-treatment"><h4>RedTouch PRO</h4><p>Exklusive Premium-Technologie für Kundinnen, die bewusst das stärkste Paket wählen möchten.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill beyond">BEYOND</span></div></div>
+              <div class="pdb-treatment"><h4>HydraFacial meets Forma</h4><p>Luxuriöse Kombination aus Premium-Pflege und Technologie innerhalb der höchsten Membership-Stufe.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill beyond">BEYOND</span></div></div>
+              <div class="pdb-treatment"><h4>Exosomen</h4><p>Sehr gehobene Option mit klarer Premium-Anziehungskraft für anspruchsvolle Kundinnen.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill beyond">BEYOND</span></div></div>
+              <div class="pdb-treatment"><h4>Polynukleotide</h4><p>Moderne Premium-Leistung zur deutlichen Abgrenzung der höchsten Membership-Stufe.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill beyond">BEYOND</span></div></div>
+              <div class="pdb-treatment"><h4>Medical Needling</h4><p>Stark positionierte High-End Behandlung für Kundinnen mit klarem Ergebnis- und Qualitätsanspruch.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill beyond">BEYOND</span></div></div>
+              <div class="pdb-treatment"><h4>MESO PEEL® MD</h4><p>Zum Beispiel blemiskin, azelan rx, phenTCA oder melanostop tranex als gehobene Peeling-Option.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill beyond">BEYOND</span></div></div>
+              <div class="pdb-treatment"><h4>HydraFacial meets Circadia</h4><p>Tiefenreinigung kombiniert mit Wirkstoffen für maximale Hauterneuerung und Glow.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill beyond">BEYOND</span></div></div>
+              <div class="pdb-treatment"><h4>3x Kryolipolyse</h4><p>Exklusive Body-Behandlung als intensive BEYOND-Leistung mit drei Sitzungen im Paket.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill beyond">BEYOND</span></div></div>
+              <div class="pdb-treatment"><h4>3x EMS-Sella</h4><p>Technologieorientierte BEYOND-Option mit drei EMS-Sella Anwendungen im Premium-Paket.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill beyond">BEYOND</span></div></div>
+              <div class="pdb-treatment"><h4>2x Forma</h4><p>Hochwertige Forma-Behandlung im Doppelpaket für einen besonders exklusiven Membership-Vorteil.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill beyond">BEYOND</span></div></div>
+              <div class="pdb-treatment"><h4>3x EMS-Sculpt</h4><p>Intensive Body-Option mit drei EMS-Sculpt Anwendungen innerhalb der höchsten Membership-Stufe.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill beyond">BEYOND</span></div></div>
+            </div>
+            <button class="pdb-treatment-more" type="button" aria-expanded="false">
+              Alle 14 BEYOND Behandlungen anzeigen
+            </button>
+          </div>
+        </div>
+
+        <div class="pdb-cat">
+          <button class="pdb-cat-btn" type="button" aria-expanded="false" aria-controls="pdb-private-treatment-panel">
+            <div class="pdb-cat-btn-left">
+              <div class="pdb-cat-letter" style="background:#171513;color:#f0d7c2">PR</div>
+              <div>
+                <h3>PRIVATE Treatments</h3>
+                <p>10 ganzheitliche Protokolle · 1 vollständiges Protokoll pro Monat</p>
+              </div>
+            </div>
+            <div class="pdb-cat-arrow" aria-hidden="true">+</div>
+          </button>
+          <div class="pdb-cat-panel" id="pdb-private-treatment-panel">
+            <div class="pdb-treatment-grid">
+              <div class="pdb-treatment"><h4>Morpheus8™ – gesamtes Gesicht</h4><p>Morpheus8 für das gesamte Gesicht in einer 90-minütigen Sitzung.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill private">PRIVATE</span></div></div>
+              <div class="pdb-treatment"><h4>HIFU – Gesicht</h4><p>HIFU für das gesamte Gesicht in einer 90-minütigen Sitzung.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill private">PRIVATE</span></div></div>
+              <div class="pdb-treatment"><h4>RedTouch PRO – Gesicht, Hals und Dekolleté</h4><p>RedTouch PRO für Gesicht, Hals und Dekolleté in einer 90-minütigen Sitzung.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill private">PRIVATE</span></div></div>
+              <div class="pdb-treatment"><h4>HydraForma Ultimate</h4><p>HydraFacial und FORMA by INMODE™ kombiniert in einer 90-minütigen Sitzung.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill private">PRIVATE</span></div></div>
+              <div class="pdb-treatment"><h4>Regeneration Pro</h4><p>Medical Needling und Exosomen kombiniert in einer 90-minütigen Sitzung.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill private">PRIVATE</span></div></div>
+              <div class="pdb-treatment"><h4>Glass Skin Protocol</h4><p>Dermaplaning, HydraFacial und OxyGeneo als 90-minütiges Glass-Skin-Protokoll.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill private">PRIVATE</span></div></div>
+              <div class="pdb-treatment"><h4>Pigment & Texture Protocol</h4><p>MESO PEEL MD und eine passend zum Hautbild ausgewählte apparative Technologie in einer 90-minütigen Sitzung.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill private">PRIVATE</span></div></div>
+              <div class="pdb-treatment"><h4>Laser Complete</h4><p>MOTUS PRO DEKA Ganzkörper-Laserbehandlung in einer 90-minütigen Sitzung.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill private">PRIVATE</span></div></div>
+              <div class="pdb-treatment"><h4>Body Sculpt Intensive</h4><p>EMS Sculpt, G8 und Lymphdrainage – als vier einzelne Termine à 90 Minuten innerhalb eines Mitgliedschaftsmonats.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill private">PRIVATE · 4 Termine</span></div></div>
+              <div class="pdb-treatment"><h4>Cryo Contour Intensive</h4><p>Kryolipolyse, G8 und Lymphdrainage kombiniert in einer 90-minütigen Sitzung.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill private">PRIVATE</span></div></div>
+            </div>
+            <button class="pdb-treatment-more" type="button" aria-expanded="false">Alle 10 PRIVATE Behandlungen anzeigen</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="pdb-section pdb-compare-section">
+    <div class="pdb-wrap">
+      <div class="pdb-center-head">
+        <div class="pdb-eyebrow">Paketvergleich</div>
+        <h2>So unterscheiden sich alle vier Pakete auf einen Blick</h2>
+        <p>
+          Die Tabelle macht das Membership-System sofort verständlich und zeigt klar, warum jede Stufe eine eigene Aufgabe hat.
+        </p>
+      </div>
+
+      <div class="pdb-compare-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Leistung</th>
+              <th>PDB PURE</th>
+              <th>PDB DEFINE</th>
+              <th>PDB BEYOND</th>
+              <th>PDB PRIVATE</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Monatspreis</td>
+              <td>149 €</td>
+              <td>169 €</td>
+              <td>199 €</td>
+              <td>399 €</td>
+            </tr>
+            <tr>
+              <td>Monatliche Struktur</td>
+              <td>3x PURE</td>
+              <td>1x PURE + 1x DEFINE</td>
+              <td>1x BEYOND</td>
+              <td>1x PRIVATE Protokoll</td>
+            </tr>
+            <tr>
+              <td>Fokus auf Pflege & Routine</td>
+              <td class="pdb-check">✓</td>
+              <td class="pdb-check">✓</td>
+              <td class="pdb-check">✓</td>
+              <td class="pdb-check">✓</td>
+            </tr>
+            <tr>
+              <td>Gezieltere Intensiv-Behandlungen</td>
+              <td class="pdb-dash">–</td>
+              <td class="pdb-check">✓</td>
+              <td class="pdb-check">✓</td>
+              <td class="pdb-check">✓</td>
+            </tr>
+            <tr>
+              <td>Exklusive High-End Treatments</td>
+              <td class="pdb-dash">–</td>
+              <td class="pdb-dash">–</td>
+              <td class="pdb-check">✓</td>
+              <td class="pdb-check">✓</td>
+            </tr>
+            <tr>
+              <td>Ideal für Einstieg & Regelmäßigkeit</td>
+              <td class="pdb-check">✓</td>
+              <td class="pdb-check">✓</td>
+              <td class="pdb-check">✓</td>
+              <td class="pdb-check">✓</td>
+            </tr>
+            <tr>
+              <td>Ideal für Premium-Anspruch</td>
+              <td class="pdb-dash">–</td>
+              <td class="pdb-dash">–</td>
+              <td class="pdb-check">✓</td>
+              <td class="pdb-check">✓</td>
+            </tr>
+            <tr>
+              <td>Vollständige Gesichts-/Body-Protokolle</td>
+              <td class="pdb-dash">–</td>
+              <td class="pdb-dash">–</td>
+              <td class="pdb-dash">–</td>
+              <td class="pdb-check">✓</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+{% assign is_logged_in = false %}
+{% assign is_pure = false %}
+{% assign is_define = false %}
+{% assign is_beyond = false %}
+{% assign is_private = false %}
+
+{% if customer %}
+  {% assign is_logged_in = true %}
+
+  {% if customer.tags contains 'premium-pure' %}
+    {% assign is_pure = true %}
+  {% endif %}
+
+  {% if customer.tags contains 'premium-define' %}
+    {% assign is_define = true %}
+    {% assign is_pure = true %}
+  {% endif %}
+
+  {% if customer.tags contains 'premium-beyond' %}
+    {% assign is_beyond = true %}
+  {% endif %}
+
+  {% if customer.tags contains 'premium-private' %}
+    {% assign is_private = true %}
+  {% endif %}
+{% endif %}
+
+<section class="pdb-section" id="pdb-member-booking">
+  <div class="pdb-wrap">
+    <div class="pdb-member-gate">
+      <div class="pdb-member-gate-grid">
+
+        <div class="pdb-member-gate-card">
+          <div class="pdb-eyebrow">Mitgliederbereich</div>
+          <h2>Premium-Buchung für aktive Mitglieder</h2>
+          <p class="pdb-lead">
+            Je nach freigeschaltetem Paket sehen eingeloggte Mitglieder hier ihre passenden Buchungsoptionen für PURE, DEFINE, BEYOND oder PRIVATE.
+          </p>
+
+          {% unless is_logged_in %}
+            <div class="pdb-member-booking-card">
+              <h3>Bitte zuerst einloggen</h3>
+              <p>
+                Nur eingeloggte Mitglieder mit aktivem Premium-Status sehen ihre freigeschalteten Buchungsbereiche.
+              </p>
+              <a href="{{ routes.storefront_login_url }}?return_url=%2Fpages%2Fpremium%23pdb-member-booking" class="pdb-btn">
+                Login zum Mitgliederbereich
+              </a>
+            </div>
+
+            <div id="pdb-premium-api-status" class="pdb-premium-api-status">
+              Premium-Daten werden geladen...
+            </div>
+          {% else %}
+            {% if is_logged_in %}
+              <div class="pdb-member-booking-card" id="pdb-premium-member-summary">
+  <span class="pdb-member-badge">Premium-Status wird geprüft...</span>
+  <h3>Mitgliederbereich wird geladen</h3>
+  <p>Ihre Premium-Daten werden gerade geprüft.</p>
+</div>
+            {% else %}
+              <div class="pdb-member-booking-card">
+                <span class="pdb-member-badge">Kein aktiver Premium-Status</span>
+                <h3>Ihr Konto ist aktuell nicht freigeschaltet</h3>
+                <p>
+                  Sie sind eingeloggt, aber Ihrem Kundenkonto ist derzeit keine aktive PDB PREMIUM Mitgliedschaft zugeordnet.
+                  Bitte kontaktieren Sie uns, falls Ihr Zugang bereits freigeschaltet sein sollte.
+                </p>
+                <a href="/pages/contact?behandlung=Pr%C3%BCfung%20PDB%20PREMIUM%20Mitgliedschaft" class="pdb-btn-secondary">
+                  Kontakt aufnehmen
+                </a>
+              </div>
+            {% endif %}
+          {% endunless %}
+
+          {% unless is_logged_in %}
+            <div class="pdb-member-info">
+              Die Buchung ist ausschließlich für aktive Mitglieder freigeschaltet. Ohne Login werden auf dieser Seite nur die regulären Anfrage- und Beratungsmöglichkeiten angezeigt.
+            </div>
+          {% endunless %}
+        </div>
+
+        <div class="pdb-member-gate-card">
+          <div class="pdb-member-gate-stack">
+
+            {% unless is_logged_in %}
+              <div class="pdb-member-booking-card">
+                <h3>Buchungszugang nach Login</h3>
+                <p>
+                  Nach dem Login werden automatisch die zu Ihrem Paket passenden Buchungsoptionen angezeigt.
+                </p>
+              </div>
+            {% else %}
+              <div class="pdb-member-booking-card">
+                <h3>PREMIUM MEMBER</h3>
+                <p>
+                  Hier werden automatisch alle aktuell verfügbaren Behandlungen basierend auf Ihrem Paket angezeigt.
+                </p>
+
+                <div class="pdb-booking-scroll">
+  <div id="pdb-premium-booking-app"></div>
+</div>
+              </div>
+
+              <div class="pdb-member-booking-card-wrap">
+                {% unless is_pure or is_define or is_beyond or is_private %}
+                  <div class="pdb-member-booking-card">
+                    <h3>Kein Buchungszugang aktiv</h3>
+                    <p>
+                      Ihrem Kundenkonto ist aktuell kein freigeschaltetes Premium-Paket zugeordnet.
+                    </p>
+                    <a href="/pages/contact?behandlung=Pr%C3%BCfung%20PDB%20PREMIUM%20Mitgliedschaft" class="pdb-btn-secondary">
+                      Zugang prüfen lassen
+                    </a>
+                  </div>
+                {% endunless %}
+
+                <div class="pdb-member-booking-card">
+                  <h3>Wichtige Hinweise</h3>
+                  <ul class="pdb-member-list">
+                    <li>Nicht genutzte Behandlungen verfallen am Monatsende.</li>
+                    <li>Leistungen sind nicht auf den Folgemonat übertragbar.</li>
+                    <li>Buchungsoptionen erscheinen nur für eingeloggte Kundenkonten mit aktivem Paket.</li>
+                    <li>Bitte buchen Sie ausschließlich die Leistungen, die in Ihrem aktiven Paket enthalten sind.</li>
+                  </ul>
+                </div>
+              </div>
+            {% endunless %}
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</section>
+
+  <section class="pdb-section pdb-faq-section">
+    <div class="pdb-wrap">
+      <div class="pdb-center-head">
+        <div class="pdb-eyebrow">FAQ</div>
+        <h2>Häufige Fragen zu PDB PREMIUM</h2>
+      </div>
+
+      <div class="pdb-faqs">
+        <details class="pdb-faq" open>
+          <summary>Wie funktioniert PDB PREMIUM grundsätzlich?</summary>
+          <div class="pdb-faq-content">
+            <p>PDB PREMIUM umfasst vier Paketstufen. Je nach gebuchter Stufe erhalten Mitglieder monatlich Zugang zu PURE, DEFINE, BEYOND oder einem vollständigen PRIVATE-Protokoll.</p>
+          </div>
+        </details>
+
+        <details class="pdb-faq">
+          <summary>Was ist im PURE Paket enthalten?</summary>
+          <div class="pdb-faq-content">
+            <p>PURE beinhaltet 3 Behandlungen pro Monat aus dem PURE Bereich und eignet sich ideal für regelmäßige Pflege, Glow und Erhaltung.</p>
+          </div>
+        </details>
+
+        <details class="pdb-faq">
+          <summary>Was ist im DEFINE Paket enthalten?</summary>
+          <div class="pdb-faq-content">
+            <p>DEFINE beinhaltet 1 Behandlung aus dem PURE Bereich und 1 Behandlung aus dem DEFINE Bereich pro Monat. Damit verbindet das Paket Pflege und gezieltere Intensiv-Behandlungen.</p>
+          </div>
+        </details>
+
+        <details class="pdb-faq">
+          <summary>Was ist im BEYOND Paket enthalten?</summary>
+          <div class="pdb-faq-content">
+            <p>BEYOND beinhaltet 1 exklusive Behandlung pro Monat aus dem BEYOND Bereich. Diese Stufe ist für hochwertige High-End und Premium-Treatments reserviert.</p>
+          </div>
+        </details>
+
+        <details class="pdb-faq">
+          <summary>Was ist im PRIVATE Paket enthalten?</summary>
+          <div class="pdb-faq-content">
+            <p>PRIVATE beinhaltet ein vollständiges Protokoll pro Monat. Die meisten Protokolle bestehen aus einer 90-minütigen Sitzung. Body Sculpt Intensive umfasst vier einzelne 90-minütige Termine im Mitgliedschaftsmonat. Mit der ersten Buchung wird das gewählte PRIVATE-Protokoll für diesen Monat festgelegt.</p>
+          </div>
+        </details>
+
+        <details class="pdb-faq">
+          <summary>Kann ich die Mitgliedschaft direkt online abschließen?</summary>
+          <div class="pdb-faq-content">
+            <p>Ja. Nach dem sicheren Onlineabschluss richten wir Ihr SEPA-Mandat manuell ein. Sobald die Einrichtung bestätigt ist, wird Ihr Mitgliederbereich freigeschaltet.</p>
+          </div>
+        </details>
+
+        <details class="pdb-faq">
+          <summary>Was passiert mit nicht genutzten Behandlungen?</summary>
+          <div class="pdb-faq-content">
+            <p>Nicht genutzte Behandlungen verfallen am Monatsende und sind nicht auf den Folgemonat übertragbar.</p>
+          </div>
+        </details>
+
+        <details class="pdb-faq">
+          <summary>Wie lange läuft die Mitgliedschaft?</summary>
+          <div class="pdb-faq-content">
+            <p>Die Mindestlaufzeit beträgt 12 Monate und beginnt jeweils zum 1. des Monats.</p>
+          </div>
+        </details>
+
+        <details class="pdb-faq">
+          <summary>Wie kann ich kündigen?</summary>
+          <div class="pdb-faq-content">
+            <p>Die Mindestlaufzeit beträgt 12 Monate. Danach läuft die Mitgliedschaft unbefristet weiter und kann jederzeit mit einer Frist von einem Monat online oder in Textform gekündigt werden.</p>
+          </div>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <section class="pdb-section pdb-legal-section">
+    <div class="pdb-wrap">
+      <div class="pdb-legal">
+        <div class="pdb-eyebrow">Wichtige Hinweise</div>
+        <h2>Mitgliedschaft & Bedingungen</h2>
+        <p>
+          Die Mindestlaufzeit der PDB Aesthetic Room PREMIUM Mitgliedschaft beträgt 12 Monate und beginnt zum 1. des gewählten Monats.
+          Danach läuft der Vertrag unbefristet weiter und kann jederzeit mit einer Frist von einem Monat gekündigt werden.
+        </p>
+        <p>
+          Nicht in Anspruch genommene Behandlungen sind nicht auf den Folgemonat übertragbar und verfallen am Monatsende.
+          Muss eine Behandlung aus sachlichem oder gesundheitlichem Grund ersetzt werden, wird eine mindestens gleichwertige Alternative innerhalb des gebuchten Pakets angeboten.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="pdb-section pdb-final-section">
+    <div class="pdb-wrap">
+      <div class="pdb-final">
+        <div class="pdb-eyebrow">Jetzt starten</div>
+        <h2>Werden Sie Teil von PDB PREMIUM</h2>
+        <p class="pdb-lead">
+          Wählen Sie ein Membership-Modell, das Pflege, gezielte Wirkung und exklusive Treatments in einer klaren Premium-Struktur verbindet.
+        </p>
+
+        <div class="pdb-actions">
+          <a href="#pdb-premium-contract" class="pdb-btn">Mitgliedschaft online abschließen</a>
+          <a href="/pages/contact?behandlung=Beratung%20PDB%20PREMIUM" class="pdb-btn-secondary">Beratung anfragen</a>
+        </div>
+
+        <div class="pdb-small-note">
+          Sicherer Onlinevertrag · SEPA-Basislastschrift · Freischaltung nach Einrichtung des Einzugs
+        </div>
+      </div>
+    </div>
+
+
+  </section>
+
+</section>
+
+  <script type="application/ld+json">
+  {
+    "@context":"https://schema.org",
+    "@type":"FAQPage",
+    "mainEntity":[
+      {
+        "@type":"Question",
+        "name":"Wie funktioniert PDB PREMIUM grundsätzlich?",
+        "acceptedAnswer":{"@type":"Answer","text":"PDB PREMIUM ist ein Mitgliedschaftsmodell mit vier Paketstufen: PURE, DEFINE, BEYOND und PRIVATE."}
+      },
+      {
+        "@type":"Question",
+        "name":"Was ist im PURE Paket enthalten?",
+        "acceptedAnswer":{"@type":"Answer","text":"PURE beinhaltet 3 Behandlungen pro Monat aus dem PURE Bereich und eignet sich ideal für regelmäßige Pflege, Glow und Erhaltung."}
+      },
+      {
+        "@type":"Question",
+        "name":"Was ist im DEFINE Paket enthalten?",
+        "acceptedAnswer":{"@type":"Answer","text":"DEFINE beinhaltet 1 Behandlung aus dem PURE Bereich und 1 Behandlung aus dem DEFINE Bereich pro Monat."}
+      },
+      {
+        "@type":"Question",
+        "name":"Was ist im BEYOND Paket enthalten?",
+        "acceptedAnswer":{"@type":"Answer","text":"BEYOND beinhaltet 1 exklusive Behandlung pro Monat aus dem BEYOND Bereich. Diese Stufe ist für hochwertige High-End und Premium-Treatments reserviert."}
+      },
+      {
+        "@type":"Question",
+        "name":"Was ist im PRIVATE Paket enthalten?",
+        "acceptedAnswer":{"@type":"Answer","text":"PRIVATE beinhaltet 1 vollständiges Gesichts- oder Body-Protokoll pro Monat. Die meisten Protokolle bestehen aus einer 90-minütigen Sitzung; Body Sculpt Intensive umfasst vier einzelne 90-minütige Termine im Mitgliedschaftsmonat."}
+      },
+      {
+        "@type":"Question",
+        "name":"Kann ich die Mitgliedschaft direkt online abschließen?",
+        "acceptedAnswer":{"@type":"Answer","text":"Ja. Vertrag und SEPA-Mandat können online erteilt werden; die Freischaltung erfolgt nach Einrichtung des Einzugs."}
+      },
+      {
+        "@type":"Question",
+        "name":"Was passiert mit nicht genutzten Behandlungen?",
+        "acceptedAnswer":{"@type":"Answer","text":"Nicht genutzte Behandlungen verfallen am Monatsende und sind nicht auf den Folgemonat übertragbar."}
+      },
+      {
+        "@type":"Question",
+        "name":"Wie lange läuft die Mitgliedschaft?",
+        "acceptedAnswer":{"@type":"Answer","text":"Die Mindestlaufzeit beträgt 12 Monate und beginnt jeweils zum 1. des Monats."}
+      },
+      {
+        "@type":"Question",
+        "name":"Wie kann ich kündigen?",
+        "acceptedAnswer":{"@type":"Answer","text":"Nach 12 Monaten Mindestlaufzeit läuft die Mitgliedschaft unbefristet weiter und kann jederzeit mit einer Frist von einem Monat gekündigt werden."}
+      }
+    ]
+  }
+  </script>
+
+  <script type="application/ld+json">
+  {
+    "@context":"https://schema.org",
+    "@type":"Service",
+    "name":"PDB Aesthetic Room PREMIUM Mitgliedschaft",
+    "serviceType":"Beauty- und Aesthetic Membership",
+    "provider":{
+      "@type":"BeautySalon",
+      "name":"PDB Aesthetic Room",
+      "url":"https://palaisdebeaute.de/pages/premium"
+    },
+    "areaServed":{
+      "@type":"City",
+      "name":"Wiesbaden"
+    },
+    "offers":{
+      "@type":"AggregateOffer",
+      "priceCurrency":"EUR",
+      "lowPrice":"149",
+      "highPrice":"399",
+      "availability":"https://schema.org/InStock"
+    }
+  }
+  </script>
+
+ <script>
+
+
+  (function () {
+    var root = document.querySelector('.pdb-premium-v4');
+    if (!root) return;
+
+    document.body.classList.add('pdb-premium-page');
+
+    var shopifyCustomerId = '{{ customer.id | default: "" }}';
+
+    var isLoggedIn = !!shopifyCustomerId;
+    var isPremiumMember = false;
+
+    var cats = root.querySelectorAll('.pdb-cat');
+    if (cats.length) {
+      cats.forEach(function (cat) {
+        var btn = cat.querySelector('.pdb-cat-btn');
+        var panel = cat.querySelector('.pdb-cat-panel');
+        var moreBtn = cat.querySelector('.pdb-treatment-more');
+        var treatmentGrid = cat.querySelector('.pdb-treatment-grid');
+
+        if (!btn) return;
+
+        btn.setAttribute(
+          'aria-expanded',
+          cat.classList.contains('active') ? 'true' : 'false'
+        );
+
+        btn.addEventListener('click', function () {
+          var shouldOpen = !cat.classList.contains('active');
+
+          cats.forEach(function (otherCat) {
+            var otherBtn = otherCat.querySelector('.pdb-cat-btn');
+            var otherPanel = otherCat.querySelector('.pdb-cat-panel');
+            var otherMoreBtn = otherCat.querySelector('.pdb-treatment-more');
+            var otherTreatmentGrid = otherCat.querySelector('.pdb-treatment-grid');
+
+            otherCat.classList.remove('active');
+            if (otherBtn) otherBtn.setAttribute('aria-expanded', 'false');
+            if (otherPanel) otherPanel.hidden = true;
+            if (otherTreatmentGrid) {
+              otherTreatmentGrid.classList.remove('is-expanded');
+            }
+            if (otherMoreBtn) {
+              otherMoreBtn.setAttribute('aria-expanded', 'false');
+              if (otherMoreBtn.dataset.collapsedLabel) {
+                otherMoreBtn.textContent = otherMoreBtn.dataset.collapsedLabel;
+              }
+            }
+          });
+
+          if (shouldOpen) {
+            cat.classList.add('active');
+            btn.setAttribute('aria-expanded', 'true');
+            if (panel) panel.hidden = false;
+          }
+        });
+
+        if (panel) {
+          panel.hidden = !cat.classList.contains('active');
+        }
+
+        if (moreBtn && treatmentGrid) {
+          var expandedLabel = moreBtn.textContent.trim();
+          var collapsedLabel = 'Weniger Behandlungen anzeigen';
+          moreBtn.dataset.collapsedLabel = expandedLabel;
+
+          moreBtn.addEventListener('click', function () {
+            var isExpanded = treatmentGrid.classList.toggle('is-expanded');
+            moreBtn.setAttribute('aria-expanded', isExpanded ? 'true' : 'false');
+            moreBtn.textContent = isExpanded ? collapsedLabel : expandedLabel;
+          });
+        }
+      });
+    }
+
+    var contractForm = document.getElementById('pdb-membership-contract-form');
+    var packageSelect = document.getElementById('pdb-package');
+    var contractTotal = document.getElementById('pdb-contract-total');
+    var contractMonthly = document.getElementById('pdb-contract-monthly');
+    var orderPackage = document.getElementById('pdb-order-package');
+    var orderMonthly = document.getElementById('pdb-order-monthly');
+    var contractStatus = document.getElementById('pdb-contract-status');
+    var contractSubmit = document.getElementById('pdb-contract-submit');
+    var packageOffers = {
+      pure: { name: 'PURE', monthly: '149,00 €', monthlyHero: '149 € / Monat', total: '1.827,00 €' },
+      define: { name: 'DEFINE', monthly: '169,00 €', monthlyHero: '169 € / Monat', total: '2.067,00 €' },
+      beyond: { name: 'BEYOND', monthly: '199,00 €', monthlyHero: '199 € / Monat', total: '2.427,00 €' },
+      private: { name: 'PRIVATE', monthly: '399,00 €', monthlyHero: '399 € / Monat', total: '4.827,00 €' }
+    };
+
+    function updateSelectedPackage(packageKey) {
+      if (!packageOffers[packageKey]) return;
+      if (packageSelect) packageSelect.value = packageKey;
+      if (contractTotal) contractTotal.textContent = packageOffers[packageKey].total;
+      if (contractMonthly) contractMonthly.textContent = packageOffers[packageKey].monthlyHero;
+      if (orderPackage) orderPackage.textContent = packageOffers[packageKey].name;
+      if (orderMonthly) orderMonthly.textContent = packageOffers[packageKey].monthly;
+      root.querySelectorAll('[data-package-card]').forEach(function (card) {
+        card.classList.toggle('is-selected', card.getAttribute('data-package-card') === packageKey);
+      });
+    }
+
+    root.querySelectorAll('[data-pdb-package]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        updateSelectedPackage(button.getAttribute('data-pdb-package'));
+      });
+    });
+
+    if (packageSelect) {
+      packageSelect.addEventListener('change', function () {
+        updateSelectedPackage(packageSelect.value);
+      });
+      updateSelectedPackage(packageSelect.value);
+    }
+
+    var startInput = document.getElementById('pdb-start');
+    if (startInput && !startInput.value) {
+      var now = new Date();
+      var nextStart = new Date(now.getFullYear(), now.getMonth() + 1, 1, 12, 0, 0);
+      var startValue = nextStart.getFullYear() + '-' + String(nextStart.getMonth() + 1).padStart(2, '0') + '-01';
+      startInput.value = startValue;
+      startInput.min = startValue;
+    }
+
+    var ibanInput = document.getElementById('pdb-iban');
+    if (ibanInput) {
+      ibanInput.addEventListener('input', function () {
+        var compact = ibanInput.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 34);
+        ibanInput.value = compact.replace(/(.{4})/g, '$1 ').trim();
+      });
+    }
+
+    function showContractStatus(message, isError) {
+      if (!contractStatus) return;
+      contractStatus.classList.add('is-visible');
+      contractStatus.classList.toggle('is-error', !!isError);
+      contractStatus.innerHTML = message;
+    }
+
+    if (contractForm) {
+      contractForm.addEventListener('submit', async function (event) {
+        event.preventDefault();
+        if (!contractForm.reportValidity()) return;
+
+        contractSubmit.disabled = true;
+        contractSubmit.textContent = 'Vertrag wird sicher übermittelt…';
+        showContractStatus('Ihre Angaben werden geprüft und verschlüsselt gespeichert.', false);
+
+        var formData = new FormData(contractForm);
+        var payload = Object.fromEntries(formData.entries());
+        payload.debit_day = Number(payload.debit_day);
+        payload.accept_agb = contractForm.elements.accept_agb.checked;
+        payload.accept_withdrawal = contractForm.elements.accept_withdrawal.checked;
+        payload.accept_sepa = contractForm.elements.accept_sepa.checked;
+        payload.request_early_start = contractForm.elements.request_early_start.checked;
+
+        try {
+          var response = await fetch('/apps/pdb/contracts/apply', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          var result = await response.json();
+          if (!response.ok || !result.ok) {
+            var messages = {
+              INVALID_IBAN: 'Bitte prüfen Sie die IBAN.',
+              INVALID_START_DATE: 'Bitte wählen Sie den ersten Tag eines kommenden Monats.',
+              REQUIRED_CONSENT_MISSING: 'Bitte bestätigen Sie die verpflichtenden Vertrags- und SEPA-Erklärungen.',
+              CUSTOMER_LOGIN_REQUIRED: 'Bitte melden Sie sich erneut an und versuchen Sie es danach noch einmal.'
+            };
+            throw new Error(messages[result.error] || 'Der Abschluss konnte nicht gespeichert werden. Bitte prüfen Sie Ihre Angaben.');
+          }
+
+          sessionStorage.setItem('pdb_contract_token', result.public_token);
+          sessionStorage.setItem('pdb_contract_id', result.application.id);
+          showContractStatus(
+            '<strong>Ihr Antrag ist eingegangen.</strong><br>Mandatsreferenz: ' + result.application.mandate_reference +
+            '<br>Wir richten den Einzug bei der Naspa ein und schalten anschließend Ihren Mitgliederbereich frei.' +
+            '<br><br><a class="pdb-btn-secondary" href="' + result.confirmation_url + '">Vertragsbestätigung herunterladen</a>',
+            false
+          );
+          contractForm.querySelectorAll('input,select,button').forEach(function (field) { field.disabled = true; });
+        } catch (error) {
+          showContractStatus(error.message || 'Technischer Fehler beim Vertragsabschluss.', true);
+          contractSubmit.disabled = false;
+          contractSubmit.textContent = 'Mitgliedschaft zahlungspflichtig abschließen';
+        }
+      });
+    }
+
+    var statusBox = document.createElement('div');
+    statusBox.id = 'pdb-premium-api-status';
+    statusBox.style.marginTop = '18px';
+    statusBox.style.padding = '14px 16px';
+    statusBox.style.borderRadius = '14px';
+    statusBox.style.background = '#f8f4ef';
+    statusBox.style.border = '1px solid rgba(0,0,0,.08)';
+    statusBox.style.fontSize = '14px';
+    statusBox.style.lineHeight = '1.6';
+    statusBox.style.color = '#171717';
+    statusBox.setAttribute('role', 'status');
+    statusBox.setAttribute('aria-live', 'polite');
+    statusBox.innerHTML = 'Premium-Daten werden geladen...';
+
+    var bookingApp = document.getElementById('pdb-premium-booking-app');
+    var memberSummary = document.getElementById('pdb-premium-member-summary');
+    var memberArea =
+      root.querySelector('.pdb-member-gate') ||
+      root.querySelector('.pdb-member-booking-card') ||
+      root.querySelector('.pdb-member-gate-card') ||
+      root;
+
+    async function loadContractManagement() {
+      if (!isLoggedIn || !memberArea) return;
+      try {
+        var response = await fetch('/apps/pdb/contracts/mine?pdb_ts=' + Date.now());
+        var result = await response.json();
+        if (!response.ok || !result.ok || !result.application) return;
+        var application = result.application;
+
+        if (application.status === 'sepa_pending') {
+          var pending = document.createElement('div');
+          pending.className = 'pdb-member-booking-card';
+          pending.innerHTML = '<span class="pdb-member-badge">SEPA-Einrichtung ausstehend</span><h3>Ihr Antrag wird vorbereitet</h3><p>Mandatsreferenz: ' + application.mandate_reference + '. Nach der Einrichtung bei der Naspa wird Ihr Paket automatisch freigeschaltet.</p>';
+          memberArea.appendChild(pending);
+          return;
+        }
+
+        if (application.status !== 'active') return;
+        var card = document.createElement('div');
+        card.className = 'pdb-member-booking-card';
+        card.id = 'pdb-contract-cancellation';
+        card.innerHTML =
+          '<h3>Mitgliedschaft verwalten</h3>' +
+          '<p>Vertrag ' + application.mandate_reference + ' · Paket ' + String(application.package_key).toUpperCase() + '</p>' +
+          '<button type="button" class="pdb-btn-secondary" id="pdb-open-cancellation">Verträge hier kündigen</button>' +
+          '<div id="pdb-cancellation-panel" hidden style="margin-top:16px;display:grid;gap:12px">' +
+            '<label class="pdb-contract-field"><span style="display:block;margin-bottom:6px;font-weight:700">Art der Kündigung</span><select id="pdb-cancellation-type"><option value="ordinary">Ordentlich zum nächstmöglichen Zeitpunkt</option><option value="extraordinary">Außerordentlich aus wichtigem Grund</option></select></label>' +
+            '<label class="pdb-contract-field"><span style="display:block;margin-bottom:6px;font-weight:700">Grund bei außerordentlicher Kündigung</span><input id="pdb-cancellation-reason" maxlength="500"></label>' +
+            '<button type="button" class="pdb-btn" id="pdb-confirm-cancellation">jetzt kündigen</button>' +
+            '<div class="pdb-contract-status" id="pdb-cancellation-status" role="status" aria-live="polite"></div>' +
+          '</div>';
+        memberArea.appendChild(card);
+
+        var openButton = card.querySelector('#pdb-open-cancellation');
+        var panel = card.querySelector('#pdb-cancellation-panel');
+        var confirmButton = card.querySelector('#pdb-confirm-cancellation');
+        var cancellationStatus = card.querySelector('#pdb-cancellation-status');
+        openButton.addEventListener('click', function () {
+          panel.hidden = false;
+          openButton.hidden = true;
+        });
+        confirmButton.addEventListener('click', async function () {
+          var cancellationType = card.querySelector('#pdb-cancellation-type').value;
+          var reason = card.querySelector('#pdb-cancellation-reason').value.trim();
+          if (cancellationType === 'extraordinary' && !reason) {
+            cancellationStatus.className = 'pdb-contract-status is-visible is-error';
+            cancellationStatus.textContent = 'Bitte geben Sie den wichtigen Grund für die außerordentliche Kündigung an.';
+            return;
+          }
+          confirmButton.disabled = true;
+          var cancelResponse = await fetch('/apps/pdb/contracts/cancel', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ application_id: application.id, cancellation_type: cancellationType, reason: reason })
+          });
+          var cancelResult = await cancelResponse.json();
+          if (!cancelResponse.ok || !cancelResult.ok) {
+            cancellationStatus.className = 'pdb-contract-status is-visible is-error';
+            cancellationStatus.textContent = 'Die Kündigung konnte nicht übermittelt werden. Bitte versuchen Sie es erneut.';
+            confirmButton.disabled = false;
+            return;
+          }
+          cancellationStatus.className = 'pdb-contract-status is-visible';
+          cancellationStatus.innerHTML = '<strong>Kündigung ist eingegangen.</strong><br>Vorgesehenes Vertragsende: ' + cancelResult.confirmation.effective_on + '<br><a class="pdb-btn-secondary" href="' + cancelResult.confirmation_url + '" style="margin-top:10px">Bestätigung herunterladen</a>';
+          confirmButton.hidden = true;
+        });
+      } catch (error) {
+        console.error('Vertragsverwaltung konnte nicht geladen werden:', error);
+      }
+    }
+
+    if (memberSummary) {
+      memberSummary.insertAdjacentElement('afterend', statusBox);
+    } else {
+      memberArea.appendChild(statusBox);
+    }
+
+    function formatPremiumMonth(value) {
+      var match = String(value || '').match(/^(\d{4})-(\d{2})(?:-\d{2})?$/);
+
+      if (!match) return '';
+
+      var year = Number(match[1]);
+      var month = Number(match[2]);
+
+      if (month < 1 || month > 12) return '';
+
+      return new Intl.DateTimeFormat('de-DE', {
+        month: 'long',
+        timeZone: 'Europe/Berlin'
+      }).format(new Date(year, month - 1, 1, 12, 0, 0));
+    }
+
+    function renderTreatments(treatments) {
+      if (!bookingApp) return;
+
+      if (!Array.isArray(treatments) || !treatments.length) {
+        bookingApp.innerHTML =
+          '<div style="padding:14px 16px;border-radius:14px;background:#fff;border:1px solid rgba(0,0,0,.08);font-size:14px;line-height:1.6;color:#171717;">' +
+          'Aktuell sind für diesen Monat keine weiteren Premium-Behandlungen verfügbar.' +
+          '</div>';
+        return;
+      }
+
+      var html = '<div style="display:grid;gap:12px;">';
+
+      treatments.forEach(function (t) {
+        html +=
+          '<div style="padding:14px 16px;border-radius:14px;background:#fff;border:1px solid rgba(0,0,0,.08);">' +
+          '<div style="font-weight:600;font-size:15px;line-height:1.5;color:#171717;">' +
+          (t.title || 'Behandlung') +
+          '</div>' +
+          '<button class="pdb-btn pdb-book-treatment" data-treatment-key="' + t.treatment_key + '" style="margin-top:10px;">' +
+          'Termin buchen' +
+          '</button>' +
+          '</div>';
+      });
+
+      html += '</div>';
+      bookingApp.innerHTML = html;
+    }
+
+      var PDB_PREMIUM_TAGS = [
+  {% if is_private %}
+    'premium-private'
+  {% elsif is_beyond %}
+    'premium-beyond'
+  {% elsif is_define %}
+    'premium-define'
+  {% elsif is_pure %}
+    'premium-pure'
+  {% endif %}
+].filter(Boolean);
+
+    async function loadAllowedTreatments() {
+      try {
+        if (!isLoggedIn) {
+          if (statusBox) {
+            statusBox.innerHTML = 'Bitte logge dich ein, um deine Premium-Mitgliedschaft zu nutzen.';
+          }
+
+          if (bookingApp) {
+            bookingApp.innerHTML = '';
+          }
+
+          return;
+        }
+
+        var res = await fetch(
+          '/apps/pdb/allowed?email={{ customer.email | url_encode }}' +
+          '&firstName={{ customer.first_name | url_encode }}' +
+          '&lastName={{ customer.last_name | url_encode }}' +
+          '&tags=' + encodeURIComponent(Array.isArray(PDB_PREMIUM_TAGS) ? PDB_PREMIUM_TAGS.join(',') : '') +
+          '&pdb_ts=' + Date.now(),
+          {
+            method: 'GET'
+          }
+        );
+
+        var data = await res.json();
+        console.log('PDB Premium allowed treatments response:', data);
+
+        if (!data.ok) {
+          console.error('API returned error:', data);
+
+          statusBox.innerHTML =
+            'Premium-Daten konnten aktuell nicht geladen werden.<br>' +
+            'Shopify-ID: ' + shopifyCustomerId + '<br>' +
+            'Fehler: ' + (data.error || 'Unbekannt');
+
+          if (bookingApp) {
+            bookingApp.innerHTML = '';
+          }
+
+          return;
+        }
+
+        var member = data.member || null;
+
+        isPremiumMember =
+          !!member &&
+          member.status === 'active' &&
+          ['pure', 'define', 'beyond', 'private'].includes(member.package_key);
+
+        if (!isPremiumMember) {
+          statusBox.innerHTML =
+            '<strong>PDB PREMIUM</strong><br>' +
+            'Für dieses Kundenkonto wurde aktuell keine aktive Premium-Mitgliedschaft gefunden.';
+
+          if (bookingApp) {
+            bookingApp.innerHTML = '';
+          }
+
+          return;
+        }
+
+        console.log('Member:', data.member);
+        console.log('Entitlements:', data.entitlements);
+        console.log('Treatments:', data.treatments);
+
+        var packageKey = data.member && data.member.package_key ? data.member.package_key.toUpperCase() : '-';
+
+        if (memberSummary) {
+  var summaryText = '';
+
+  if (packageKey === 'PURE') {
+    summaryText = 'Sie können pro Kalendermonat 3 frei wählbare Behandlungen aus der PURE Kollektion buchen. Mehrfachbuchungen derselben Behandlung sind möglich. Nicht genutzte Leistungen verfallen am Monatsende.';
+  } else if (packageKey === 'DEFINE') {
+    summaryText = 'Sie können pro Kalendermonat 1 Behandlung aus PURE und 1 Behandlung aus DEFINE buchen. Nicht genutzte Leistungen verfallen am Monatsende.';
+  } else if (packageKey === 'BEYOND') {
+    summaryText = 'Sie können pro Kalendermonat 1 exklusive Behandlung aus der BEYOND Kollektion buchen. Nicht genutzte Leistungen verfallen am Monatsende.';
+  } else if (packageKey === 'PRIVATE') {
+    summaryText = 'Sie können pro Kalendermonat 1 vollständiges Protokoll aus der PRIVATE Kollektion buchen. Nicht genutzte Leistungen verfallen am Monatsende.';
+  }
+
+  memberSummary.innerHTML =
+    '<span class="pdb-member-badge">Aktiver Status: ' + packageKey + ' aktiv</span>' +
+    '<h3>Ihr freigeschalteter Mitgliederbereich</h3>' +
+    '<p>' + summaryText + '</p>';
+}
+
+        var remainingPure = data.entitlements && data.entitlements.remaining ? data.entitlements.remaining.pure : 0;
+        var remainingDefine = data.entitlements && data.entitlements.remaining ? data.entitlements.remaining.define : 0;
+        var remainingBeyond = data.entitlements && data.entitlements.remaining ? data.entitlements.remaining.beyond : 0;
+        var remainingPrivate = data.entitlements && data.entitlements.remaining ? data.entitlements.remaining.private : 0;
+        var nextRemainingPure = data.nextMonthEntitlements && data.nextMonthEntitlements.remaining ? data.nextMonthEntitlements.remaining.pure : 0;
+        var nextRemainingDefine = data.nextMonthEntitlements && data.nextMonthEntitlements.remaining ? data.nextMonthEntitlements.remaining.define : 0;
+        var nextRemainingBeyond = data.nextMonthEntitlements && data.nextMonthEntitlements.remaining ? data.nextMonthEntitlements.remaining.beyond : 0;
+        var nextRemainingPrivate = data.nextMonthEntitlements && data.nextMonthEntitlements.remaining ? data.nextMonthEntitlements.remaining.private : 0;
+        var treatmentCount = Array.isArray(data.treatments) ? data.treatments.length : 0;
+        var currentQuotaText = '';
+        var nextQuotaText = '';
+        var currentRemainingTotal = 0;
+        var nextRemainingTotal = 0;
+
+        if (packageKey === 'PURE') {
+          currentQuotaText = remainingPure + ' PURE';
+          nextQuotaText = nextRemainingPure + ' PURE';
+          currentRemainingTotal = remainingPure;
+          nextRemainingTotal = nextRemainingPure;
+        } else if (packageKey === 'DEFINE') {
+          currentQuotaText = remainingPure + ' PURE · ' + remainingDefine + ' DEFINE';
+          nextQuotaText = nextRemainingPure + ' PURE · ' + nextRemainingDefine + ' DEFINE';
+          currentRemainingTotal = remainingPure + remainingDefine;
+          nextRemainingTotal = nextRemainingPure + nextRemainingDefine;
+        } else if (packageKey === 'BEYOND') {
+          currentQuotaText = remainingBeyond + ' BEYOND';
+          nextQuotaText = nextRemainingBeyond + ' BEYOND';
+          currentRemainingTotal = remainingBeyond;
+          nextRemainingTotal = nextRemainingBeyond;
+        } else {
+          currentQuotaText = remainingPrivate + ' PRIVATE';
+          nextQuotaText = nextRemainingPrivate + ' PRIVATE';
+          currentRemainingTotal = remainingPrivate;
+          nextRemainingTotal = nextRemainingPrivate;
+        }
+
+        var currentMonthLabel = formatPremiumMonth(
+          data.entitlements && data.entitlements.month
+        );
+        var nextMonthLabel = formatPremiumMonth(
+          data.nextMonthEntitlements && data.nextMonthEntitlements.month
+        );
+        var guidanceHtml = '';
+
+        if (
+          currentRemainingTotal === 0 &&
+          nextRemainingTotal > 0 &&
+          currentMonthLabel &&
+          nextMonthLabel
+        ) {
+          var treatmentLabel = packageKey === 'PRIVATE'
+            ? 'PRIVATE-Protokoll'
+            : packageKey === 'BEYOND' ? 'BEYOND-Behandlung' : 'Premium-Behandlung';
+
+          guidanceHtml =
+            '<div class="pdb-booking-guidance">' +
+            '<strong>' + currentMonthLabel + ' bereits genutzt</strong>' +
+            '<span>Ihre nächste ' + treatmentLabel + ' können Sie für ' + nextMonthLabel + ' buchen.</span>' +
+            '</div>';
+        }
+
+        statusBox.innerHTML =
+          '<strong>Dein Kontingent</strong>' +
+          '<div class="pdb-quota-row"><span>Aktueller Monat</span><strong>' + currentQuotaText + '</strong></div>' +
+          '<div class="pdb-quota-row"><span>Nächster Monat</span><strong>' + nextQuotaText + '</strong></div>' +
+          '<div class="pdb-quota-row"><span>Buchbare Behandlungen</span><strong>' + treatmentCount + '</strong></div>' +
+          guidanceHtml;
+
+        renderTreatments(data.treatments);
+      } catch (error) {
+        console.error('Fehler beim Laden der erlaubten Treatments:', error);
+        statusBox.innerHTML = 'Technischer Fehler beim Laden der Premium-Daten.';
+
+        if (bookingApp) {
+          bookingApp.innerHTML = '';
+        }
+      }
+    }
+
+    loadAllowedTreatments();
+    loadContractManagement();
+
+    document.addEventListener('click', async function (e) {
+      var btn = e.target.closest('.pdb-book-treatment');
+      if (!btn) return;
+
+      if (!isPremiumMember) {
+        if (statusBox) {
+          statusBox.innerHTML =
+            '<strong>PDB PREMIUM</strong><br>' +
+            'Du hast aktuell keine aktive Premium-Mitgliedschaft.<br><br>' +
+            'Als Mitglied erhältst du monatlich exklusive Behandlungen und direkten Zugang zur Online-Buchung.';
+        }
+
+        if (bookingApp) {
+          bookingApp.innerHTML =
+            '<div style="text-align:center; padding:24px;">' +
+            '<a href="/pages/premium" style="display:inline-block; background:#d9bfa9; color:#fff; padding:12px 20px; border-radius:10px; text-decoration:none; font-weight:600;">' +
+            'Mitgliedschaft ansehen' +
+            '</a>' +
+            '</div>';
+        }
+
+        return;
+      }
+
+      var key = btn.getAttribute('data-treatment-key');
+      if (!key) return;
+
+      btn.disabled = true;
+      var originalText = btn.innerText;
+      btn.innerText = 'Wird geöffnet...';
+
+        var params = new URLSearchParams();
+
+params.set('email', '{{ customer.email | escape }}');
+params.set('firstName', '{{ customer.first_name | escape }}');
+params.set('lastName', '{{ customer.last_name | escape }}');
+params.set('tags', Array.isArray(PDB_PREMIUM_TAGS) ? PDB_PREMIUM_TAGS.join(',') : '');
+
+var res = await fetch('/apps/pdb/member/allowed?' + params.toString(), {
+  method: 'GET'
+});
+
+          try {
+        var res = await fetch('/apps/pdb/bookings/create', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            treatment_key: key,
+            shopify_customer_id: shopifyCustomerId
+          })
+        });
+
+        var data = await res.json();
+
+        if (!data.ok || !data.token) {
+          var message = 'Buchung aktuell nicht möglich.';
+
+          if (data.error === 'LIMIT_REACHED') {
+            message = 'Dein monatliches Kontingent für dieses Paket ist bereits aufgebraucht.';
+          } else if (data.error === 'TREATMENT_NOT_ALLOWED') {
+            message = 'Diese Behandlung ist in deinem aktuellen Paket nicht enthalten.';
+          } else if (data.error === 'MEMBER_NOT_FOUND') {
+            message = 'Für dein Kundenkonto wurde keine aktive Premium-Mitgliedschaft gefunden.';
+          } else if (data.error === 'TREATMENT_KEY_REQUIRED') {
+            message = 'Die Behandlung konnte nicht korrekt übergeben werden.';
+          }
+
+          alert(message);
+          btn.disabled = false;
+          btn.innerText = originalText;
+          return;
+        }
+
+        var consumeRes = await fetch('/apps/pdb/bookings/consume', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            token: data.token,
+            shopify_customer_id: shopifyCustomerId
+          })
+        });
+
+        var consumeData = await consumeRes.json();
+
+        if (!consumeData.ok || !consumeData.booking_url) {
+          var consumeMessage = 'Buchungslink konnte nicht geöffnet werden.';
+
+          if (consumeData.error === 'TOKEN_ALREADY_USED') {
+            consumeMessage = 'Dieser Buchungslink wurde bereits verwendet.';
+          } else if (consumeData.error === 'TOKEN_NOT_FOUND') {
+            consumeMessage = 'Der Buchungslink ist ungültig oder nicht mehr verfügbar.';
+          } else if (consumeData.error === 'TOKEN_EXPIRED') {
+            consumeMessage = 'Der Buchungslink ist abgelaufen. Bitte starte die Buchung erneut.';
+          } else if (consumeData.error === 'MEMBER_NOT_FOUND') {
+            consumeMessage = 'Für dieses Kundenkonto wurde keine aktive Premium-Mitgliedschaft gefunden.';
+          }
+
+          alert(consumeMessage);
+          btn.disabled = false;
+          btn.innerText = originalText;
+          return;
+        }
+
+        window.open(consumeData.booking_url, '_blank', 'noopener');
+
+        btn.disabled = false;
+        btn.innerText = originalText;
+      } catch (err) {
+        console.error(err);
+        alert('Technischer Fehler bei der Buchung.');
+        btn.disabled = false;
+        btn.innerText = originalText;
+      }
+    });
+  })();
+</script>
+
+<script>
+document.addEventListener("click", function (e) {
+  var btn = e.target.closest(".pdb-book-treatment");
+  if (!btn) return;
+
+  e.preventDefault();
+  e.stopPropagation();
+  e.stopImmediatePropagation();
+
+  var key = btn.getAttribute("data-treatment-key");
+  if (!key) return;
+
+  window.location.href = "/products/" + key;
+}, true);
+</script>
+
+
+{% schema %}
+{
+  "name": "PDB Premium Membership",
+  "settings": [],
+  "presets": [
+    {
+      "name": "PDB Premium Membership"
+    }
+  ]
+}
+{% endschema %}

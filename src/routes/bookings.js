@@ -3,19 +3,26 @@ import { pool } from "../config/pool.js";
 import { findMemberByShopifyId } from "../repositories/member.repository.js";
 import {
   getEntitlements,
-  getEntitlementsForMonth
+  getEntitlementsForMonth,
+  getTreatmentEntitlementsForMonth
 } from "../services/entitlement.service.js";
 import { getAllowedCategoriesForPackage } from "../utils/packageRules.js";
 import {
+  getBookingMonth,
   getBookingMonthForAppointmentDate,
   getNextBookingMonth,
   isCurrentOrNextBookingMonth
 } from "../utils/dates.js";
 import crypto from "crypto";
+import {
+  requireMatchingCustomer,
+  requireShopifyCustomer,
+  verifyShopifyAppProxy
+} from "../middleware/shopifyAppProxy.js";
 
 const router = express.Router();
 
-router.post("/create", async (req, res) => {
+router.post("/create", verifyShopifyAppProxy, requireShopifyCustomer, requireMatchingCustomer(), async (req, res) => {
   try {
     const { treatment_key } = req.body;
 
@@ -69,8 +76,12 @@ if (!allowedForPackage.includes(treatment.category_key)) {
 }
 
 const [entitlements, nextMonthEntitlements] = await Promise.all([
-  getEntitlements(member),
-  getEntitlementsForMonth(member, getNextBookingMonth())
+  getTreatmentEntitlementsForMonth(
+    member,
+    treatment,
+    getBookingMonth()
+  ),
+  getTreatmentEntitlementsForMonth(member, treatment, getNextBookingMonth())
 ]);
 
 const availableBookingMonths = [entitlements, nextMonthEntitlements]
@@ -185,7 +196,7 @@ router.get("/token/:token", async (req, res) => {
   }
 });
 
-router.post("/validate-slot", async (req, res) => {
+router.post("/validate-slot", verifyShopifyAppProxy, requireShopifyCustomer, requireMatchingCustomer(), async (req, res) => {
   try {
     const { token, appointment_date } = req.body || {};
     const shopifyCustomerId = String(
@@ -224,6 +235,7 @@ router.post("/validate-slot", async (req, res) => {
         bt.expires_at,
         bt.used_at,
         t.category_key,
+        t.treatment_key,
         m.id AS member_id,
         m.shopify_customer_id,
         m.package_key,
@@ -286,7 +298,14 @@ router.post("/validate-slot", async (req, res) => {
       id: bookingToken.member_id,
       package_key: bookingToken.package_key
     };
-    const entitlements = await getEntitlementsForMonth(member, bookingMonth);
+    const entitlements = await getTreatmentEntitlementsForMonth(
+      member,
+      {
+        category_key: bookingToken.category_key,
+        treatment_key: bookingToken.treatment_key
+      },
+      bookingMonth
+    );
     const remainingForCategory =
       entitlements.remaining?.[bookingToken.category_key] ?? 0;
 
@@ -308,7 +327,7 @@ router.post("/validate-slot", async (req, res) => {
   }
 });
 
-router.post("/consume", async (req, res) => {
+router.post("/consume", verifyShopifyAppProxy, requireShopifyCustomer, requireMatchingCustomer(), async (req, res) => {
   const client = await pool.connect();
 
   try {
@@ -361,6 +380,7 @@ router.post("/consume", async (req, res) => {
         bt.expires_at,
         bt.used_at,
         t.category_key,
+        t.treatment_key,
         t.salonized_url,
         m.id AS verified_member_id,
         m.shopify_customer_id,
@@ -464,8 +484,12 @@ router.post("/consume", async (req, res) => {
       bookingMonth = String(bookingMonthResult.rows[0].booking_month);
     }
 
-    const entitlementsBeforeConsume = await getEntitlementsForMonth(
+    const entitlementsBeforeConsume = await getTreatmentEntitlementsForMonth(
       member,
+      {
+        category_key: bookingToken.category_key,
+        treatment_key: bookingToken.treatment_key
+      },
       bookingMonth,
       client
     );

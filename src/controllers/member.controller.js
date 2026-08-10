@@ -8,9 +8,7 @@ import { getNextBookingMonth } from '../utils/dates.js';
 
 export async function getMe(req, res) {
   try {
-    console.log('SHOPIFY_PROXY_QUERY', req.query);
-
-    const shopifyCustomerId = req.query.logged_in_customer_id;
+    const shopifyCustomerId = req.shopifyProxy.customerId;
 
     if (!shopifyCustomerId) {
       return res.status(401).json({ error: 'CUSTOMER_NOT_LOGGED_IN' });
@@ -18,10 +16,10 @@ export async function getMe(req, res) {
 
     const member = await getOrCreateMember({
       id: shopifyCustomerId,
-      email: 'test@pdb.de',
-      firstName: 'Test',
-      lastName: 'User',
-      tags: ['premium-pure']
+      email: req.query.email || null,
+      firstName: req.query.firstName || null,
+      lastName: req.query.lastName || null,
+      tags: req.query.tags ? String(req.query.tags).split(',').map(tag => tag.trim()).filter(Boolean) : []
     });
 
     const entitlements = await getEntitlements(member);
@@ -40,9 +38,7 @@ export async function getAllowed(req, res) {
   try {
     res.set('Cache-Control', 'private, no-store, no-cache, must-revalidate');
 
-    console.log('SHOPIFY_PROXY_QUERY_ALLOWED', req.query);
-
-    const shopifyCustomerId = req.query.logged_in_customer_id;
+    const shopifyCustomerId = req.shopifyProxy.customerId;
 
     if (!shopifyCustomerId) {
       return res.status(401).json({ ok: false, error: 'CUSTOMER_NOT_LOGGED_IN' });

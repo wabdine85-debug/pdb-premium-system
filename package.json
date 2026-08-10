@@ -6,7 +6,13 @@
   "main": "src/server.js",
   "scripts": {
     "dev": "node --watch src/server.js",
-    "start": "node server.js"
+    "start": "node server.js",
+    "test": "node --test",
+    "sync:treatments": "node src/scripts/syncTreatments.js",
+    "validate:treatments": "node src/scripts/syncTreatments.js --validate-only",
+    "audit:shopify-treatments": "node src/scripts/auditShopifyTreatmentHandles.js",
+    "sync:shopify-private-products": "node src/scripts/createPrivateDummyProducts.js",
+    "sync:shopify-premium-legal": "node src/scripts/syncShopifyPremiumLegalPages.js"
   },
   "dependencies": {
     "cors": "^2.8.6",
