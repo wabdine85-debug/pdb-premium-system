@@ -34,6 +34,9 @@ app.get('/api/*', (req, res, next) => {
 
 app.use('/member', memberRoutes);
 app.use("/member/member", memberRoutes);
+app.use('/member/contracts', contractsRouter);
+app.use('/member/bookings', bookingsRouter);
+app.use('/member/treatments', treatmentsRouter);
 app.use('/api/member', memberRoutes);
 app.use('/api', treatmentsRouter);
 app.use('/api/treatments', treatmentsRouter);
