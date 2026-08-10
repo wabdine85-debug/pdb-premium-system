@@ -140,7 +140,7 @@ async function findProductByHandle(token, handle) {
   return data.products.nodes[0] || null;
 }
 
-async function findOnlineStorePublication(token) {
+async function findAppointlyPublications(token) {
   const data = await graphql(
     token,
     `
@@ -158,12 +158,27 @@ async function findOnlineStorePublication(token) {
     `
   );
 
-  return data.publications.nodes.find((publication) =>
-    publication.catalog?.title === "Online Store" || publication.catalog?.title === "Onlineshop"
-  ) || null;
+  const requiredTitles = ["online-store", "shop"];
+  const publications = data.publications.nodes.filter((publication) => {
+    const title = publication.catalog?.title?.trim().toLowerCase();
+    return title === "online store" || title === "onlineshop" || title === "shop";
+  });
+  const foundTitles = new Set(
+    publications.map((publication) => {
+      const title = publication.catalog?.title?.trim().toLowerCase();
+      return title === "online store" || title === "onlineshop" ? "online-store" : title;
+    })
+  );
+  const missingTitles = requiredTitles.filter((title) => !foundTitles.has(title));
+
+  if (missingTitles.length) {
+    throw new Error(`Required publications not found: ${missingTitles.join(", ")}`);
+  }
+
+  return publications;
 }
 
-async function publishProduct(token, productId, publicationId) {
+async function publishProduct(token, productId, publicationIds) {
   const data = await graphql(
     token,
     `
@@ -181,7 +196,10 @@ async function publishProduct(token, productId, publicationId) {
         }
       }
     `,
-    { id: productId, input: [{ publicationId }] }
+    {
+      id: productId,
+      input: publicationIds.map((publicationId) => ({ publicationId }))
+    }
   );
 
   if (data.publishablePublish.userErrors.length) {
@@ -320,8 +338,8 @@ async function createProduct(token, product) {
 
 async function main() {
   const token = await getAccessToken();
-  const publication = PUBLISH ? await findOnlineStorePublication(token) : null;
-  if (PUBLISH && !publication) throw new Error("Online Store publication not found");
+  const publications = PUBLISH ? await findAppointlyPublications(token) : [];
+  const publicationIds = publications.map((publication) => publication.id);
   const result = [];
 
   for (const product of products) {
@@ -346,7 +364,7 @@ async function main() {
         const updated = await updateProductStatus(token, existing.id, desiredStatus);
         currentProduct = { ...currentProduct, status: updated.status };
       }
-      if (PUBLISH) await publishProduct(token, existing.id, publication.id);
+      if (PUBLISH) await publishProduct(token, existing.id, publicationIds);
       result.push({
         action: PUBLISH ? "updated-and-published" : APPLY ? "updated" : "unchanged",
         product: currentProduct
@@ -360,7 +378,7 @@ async function main() {
     }
 
     const created = await createProduct(token, product);
-    if (PUBLISH) await publishProduct(token, created.id, publication.id);
+    if (PUBLISH) await publishProduct(token, created.id, publicationIds);
     result.push({ action: PUBLISH ? "created-and-published" : "created", product: created });
   }
 

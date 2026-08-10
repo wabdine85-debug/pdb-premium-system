@@ -67,6 +67,19 @@ The ten PRIVATE carrier products are created idempotently with:
 npm run sync:shopify-private-products -- --apply
 ```
 
-Use `--ensure-unlisted` to restore the direct-link-only status. Publishing to
-the Online Store requires the additional `--publish` flag and the
+Use `--ensure-unlisted` to restore the direct-link-only status. The `--publish`
+flag publishes every carrier product to both **Onlineshop** and **Shop**, which
+Appointly requires for a working product-to-calendar association. It requires
+the
 `read_publications` / `write_publications` scopes.
+
+## Appointly service setup
+
+Do not search for a newly created Shopify carrier product directly in an
+existing Appointly service form. In Shopify Admin, open Appointly, go to
+**Services**, click **Neuen Service hinzufügen**, and then select the Shopify
+product from the list shown in that flow. Configure every PRIVATE service with
+a duration of 90 minutes. Body Sculpt Intensive represents one monthly PRIVATE
+protocol with four separately booked 90-minute appointments; the backend locks
+the member to that protocol after the first appointment and permits three more
+appointments in the same membership month.
