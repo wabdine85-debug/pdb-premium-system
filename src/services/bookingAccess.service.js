@@ -1,5 +1,8 @@
 import { pool } from '../config/pool.js';
-import { findActiveApplicationForBooking } from '../repositories/contract.repository.js';
+import {
+  findActiveApplicationForBooking,
+  hasActiveBookingTestAccess
+} from '../repositories/contract.repository.js';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc.js';
 import timezone from 'dayjs/plugin/timezone.js';
@@ -34,7 +37,17 @@ export function calculateBookingAccess(application, now = new Date()) {
   return { allowed, reason, available_at: availableAt.toISOString() };
 }
 
+export function calculateBookingAccessWithTestOverride(application, testAccessActive, now = new Date()) {
+  if (application && testAccessActive) {
+    return { allowed: true, reason: 'ADMIN_TEST_ACCESS', available_at: null };
+  }
+  return calculateBookingAccess(application, now);
+}
+
 export async function getMemberBookingAccess(memberId, db = pool, now = new Date()) {
   const application = await findActiveApplicationForBooking(memberId, db);
-  return calculateBookingAccess(application, now);
+  const testAccessActive = application
+    ? await hasActiveBookingTestAccess(application.id, db)
+    : false;
+  return calculateBookingAccessWithTestOverride(application, testAccessActive, now);
 }

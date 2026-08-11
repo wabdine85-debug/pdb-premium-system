@@ -18,6 +18,7 @@ import {
   findApplicationForAdmin,
   findContractActionByReceiptTokenHash,
   findLatestApplicationByCustomer,
+  hasActiveBookingTestAccess,
   listContractActionRequests,
   listApplications,
   requestCancellation
@@ -498,6 +499,63 @@ router.post('/admin/:id/activate', requireAdminToken, async (req, res) => {
     return res.status(500).json({ ok: false, error: 'ACTIVATION_FAILED' });
   } finally {
     client.release();
+  }
+});
+
+router.post('/admin/:id/resend-confirmation', requireAdminToken, async (req, res) => {
+  const application = await findApplicationForAdmin(req.params.id);
+  if (!application) return res.status(404).json({ ok: false, error: 'APPLICATION_NOT_FOUND' });
+  if (application.status !== 'active') {
+    return res.status(409).json({ ok: false, error: 'APPLICATION_NOT_ACTIVE' });
+  }
+
+  try {
+    const mailDelivery = await sendTransactionalHtml({
+      to: application.email,
+      subject: `Annahme- und Vertragsbestätigung ${application.mandate_reference}`,
+      html: applicationConfirmationHtml(application),
+      filename: `PDB-Vertragsbestaetigung-${application.mandate_reference}.html`
+    });
+    await addContractEvent(application.id, 'acceptance_confirmation_resent', 'admin', {
+      emailSent: mailDelivery.sent,
+      reason: mailDelivery.reason || null
+    });
+    if (!mailDelivery.sent) {
+      return res.status(503).json({ ok: false, error: 'CONFIRMATION_EMAIL_NOT_SENT' });
+    }
+    return res.json({ ok: true, confirmation_email_sent: true });
+  } catch (error) {
+    console.error('Contract confirmation resend failed:', error.message);
+    try {
+      await addContractEvent(application.id, 'acceptance_confirmation_resent', 'admin', {
+        emailSent: false,
+        reason: 'DELIVERY_FAILED'
+      });
+    } catch (eventError) {
+      console.error('Contract confirmation failure event could not be stored:', eventError.message);
+    }
+    return res.status(502).json({ ok: false, error: 'CONFIRMATION_EMAIL_NOT_SENT' });
+  }
+});
+
+router.post('/admin/:id/test-booking-access', requireAdminToken, async (req, res) => {
+  try {
+    const application = await findApplicationForAdmin(req.params.id);
+    if (!application) return res.status(404).json({ ok: false, error: 'APPLICATION_NOT_FOUND' });
+    if (application.status !== 'active') {
+      return res.status(409).json({ ok: false, error: 'APPLICATION_NOT_ACTIVE' });
+    }
+
+    const expiresAt = new Date(Date.now() + 2 * 60 * 60_000).toISOString();
+    await addContractEvent(application.id, 'booking_test_access_granted', 'admin', {
+      expiresAt,
+      purpose: 'live_system_test'
+    });
+    const active = await hasActiveBookingTestAccess(application.id);
+    return res.json({ ok: true, active, expires_at: expiresAt });
+  } catch (error) {
+    console.error('POST /api/contracts/admin/:id/test-booking-access failed:', error.message);
+    return res.status(500).json({ ok: false, error: 'TEST_BOOKING_ACCESS_FAILED' });
   }
 });
 

@@ -80,6 +80,22 @@
       </div>
     </dialog>
 
+    <dialog id="admin-action-dialog" aria-labelledby="admin-action-heading">
+      <div class="dialog-body">
+        <span class="eyebrow" id="admin-action-eyebrow">Admin-Aktion</span>
+        <h2 id="admin-action-heading"></h2>
+        <p id="admin-action-copy"></p>
+        <label class="confirmation-check">
+          <input id="admin-action-confirmation" name="admin_action_confirmation" type="checkbox">
+          <span id="admin-action-confirmation-copy"></span>
+        </label>
+        <div class="dialog-actions">
+          <form method="dialog"><button class="button button-secondary" type="submit">Abbrechen</button></form>
+          <button class="button" id="admin-action-confirm-button" type="button" disabled></button>
+        </div>
+      </div>
+    </dialog>
+
     <script src="/admin/assets/contracts.js" defer></script>
   </body>
 </html>

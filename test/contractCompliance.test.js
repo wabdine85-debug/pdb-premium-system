@@ -8,7 +8,11 @@ import {
 } from '../src/services/contractDocuments.service.js';
 import { ensureContractActionSchema } from '../src/services/schema.service.js';
 import { hasHouseNumber, hasRequiredContractConsents } from '../src/utils/contractConsent.js';
-import { calculateBookingAccess } from '../src/services/bookingAccess.service.js';
+import {
+  calculateBookingAccess,
+  calculateBookingAccessWithTestOverride
+} from '../src/services/bookingAccess.service.js';
+import { isRetryableMailError } from '../src/services/mail.service.js';
 
 const baseApplication = {
   id: 'application-123',
@@ -138,4 +142,26 @@ test('future contract start still blocks booking despite early-performance reque
   const access = calculateBookingAccess(application, new Date('2026-08-20T10:00:00.000Z'));
   assert.equal(access.allowed, false);
   assert.equal(access.reason, 'CONTRACT_NOT_STARTED');
+});
+
+test('logged admin test access temporarily overrides booking timing without changing the contract', () => {
+  const application = {
+    starts_on: '2026-09-01',
+    activated_at: '2026-08-11T10:00:00.000Z',
+    early_start_requested_at: null
+  };
+  const access = calculateBookingAccessWithTestOverride(
+    application,
+    true,
+    new Date('2026-08-11T12:00:00.000Z')
+  );
+  assert.deepEqual(access, { allowed: true, reason: 'ADMIN_TEST_ACCESS', available_at: null });
+  assert.equal(application.early_start_requested_at, null);
+  assert.equal(application.starts_on, '2026-09-01');
+});
+
+test('mail delivery retries only transient connection failures', () => {
+  assert.equal(isRetryableMailError({ code: 'ETIMEDOUT' }), true);
+  assert.equal(isRetryableMailError(new Error('Connection timeout')), true);
+  assert.equal(isRetryableMailError({ code: 'EAUTH' }), false);
 });

@@ -15,4 +15,8 @@ test('admin portal is no-store and ships its script without exposing a token', a
   assert.doesNotMatch(page, /Bearer\s+[A-Za-z0-9_-]{16,}/);
   assert.match(script, /Authorization: `Bearer \$\{adminToken\}`/);
   assert.doesNotMatch(script, /localStorage|sessionStorage/);
+  assert.match(page, /admin-action-dialog/);
+  assert.match(script, /Vertragsbestätigung erneut senden/);
+  assert.match(script, /Test-Buchung 2 Stunden freigeben/);
+  assert.match(script, /statusFilter\.value = 'active'/);
 });

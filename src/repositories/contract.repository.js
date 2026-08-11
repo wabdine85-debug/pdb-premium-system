@@ -114,6 +114,20 @@ export async function findActiveApplicationForBooking(memberId, db = pool) {
   return result.rows[0] || null;
 }
 
+export async function hasActiveBookingTestAccess(applicationId, db = pool) {
+  const result = await db.query(
+    `SELECT EXISTS (
+       SELECT 1
+       FROM membership_contract_events
+       WHERE application_id = $1
+         AND event_type = 'booking_test_access_granted'
+         AND (metadata->>'expiresAt')::timestamptz > NOW()
+     ) AS active`,
+    [applicationId]
+  );
+  return result.rows[0]?.active === true;
+}
+
 export async function findApplicationForAdmin(id, db = pool) {
   const result = await db.query(
     `SELECT *, 'DE•• •••• •••• •••• ••' || iban_last4 AS masked_iban

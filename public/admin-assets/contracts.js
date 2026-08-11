@@ -15,11 +15,18 @@
   const activateCopy = document.getElementById('activate-copy');
   const activateConfirmation = document.getElementById('activate-confirmation');
   const activateConfirmButton = document.getElementById('activate-confirm-button');
+  const adminActionDialog = document.getElementById('admin-action-dialog');
+  const adminActionHeading = document.getElementById('admin-action-heading');
+  const adminActionCopy = document.getElementById('admin-action-copy');
+  const adminActionConfirmationCopy = document.getElementById('admin-action-confirmation-copy');
+  const adminActionConfirmation = document.getElementById('admin-action-confirmation');
+  const adminActionConfirmButton = document.getElementById('admin-action-confirm-button');
 
   const currency = new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' });
   const date = new Intl.DateTimeFormat('de-DE', { dateStyle: 'medium', timeZone: 'Europe/Berlin' });
   let adminToken = '';
   let pendingActivation = null;
+  let pendingAdminAction = null;
 
   function setStatus(element, message, isError = false) {
     element.textContent = message;
@@ -48,7 +55,10 @@
         ADMIN_AUTH_REQUIRED: 'Admin-Token fehlt.',
         ADMIN_AUTH_INVALID: 'Admin-Token ist ungültig.',
         APPLICATION_NOT_FOUND: 'Der Antrag wurde nicht gefunden.',
-        APPLICATION_NOT_ACTIVATABLE: 'Dieser Antrag kann nicht aktiviert werden.'
+        APPLICATION_NOT_ACTIVATABLE: 'Dieser Antrag kann nicht aktiviert werden.',
+        APPLICATION_NOT_ACTIVE: 'Diese Aktion ist nur für aktive Verträge möglich.',
+        CONFIRMATION_EMAIL_NOT_SENT: 'Die E-Mail konnte nicht versendet werden. Bitte SMTP-Verbindung prüfen und erneut versuchen.',
+        TEST_BOOKING_ACCESS_FAILED: 'Der Testzugang konnte nicht gespeichert werden. Bitte erneut versuchen.'
       };
       throw new Error(messages[result.error] || 'Die Aktion konnte nicht ausgeführt werden.');
     }
@@ -98,7 +108,13 @@
       reference.textContent = application.mandate_reference;
       const badge = document.createElement('span');
       badge.className = 'badge';
-      badge.textContent = application.status === 'sepa_pending' ? 'SEPA ausstehend' : application.status;
+      const statusLabels = {
+        sepa_pending: 'SEPA ausstehend',
+        active: 'Aktiv',
+        cancel_requested: 'Kündigung angefordert',
+        cancelled: 'Beendet'
+      };
+      badge.textContent = statusLabels[application.status] || application.status;
       titleWrap.append(title, reference);
       heading.append(titleWrap, badge);
 
@@ -130,6 +146,26 @@
         activateButton.dataset.id = application.id;
         activateButton.dataset.reference = application.mandate_reference;
         actions.appendChild(activateButton);
+      }
+
+      if (application.status === 'active') {
+        const resendButton = document.createElement('button');
+        resendButton.className = 'button button-secondary';
+        resendButton.type = 'button';
+        resendButton.textContent = 'Vertragsbestätigung erneut senden';
+        resendButton.dataset.action = 'resend-confirmation';
+        resendButton.dataset.id = application.id;
+        resendButton.dataset.reference = application.mandate_reference;
+        actions.appendChild(resendButton);
+
+        const testAccessButton = document.createElement('button');
+        testAccessButton.className = 'button button-secondary';
+        testAccessButton.type = 'button';
+        testAccessButton.textContent = 'Test-Buchung 2 Stunden freigeben';
+        testAccessButton.dataset.action = 'test-booking-access';
+        testAccessButton.dataset.id = application.id;
+        testAccessButton.dataset.reference = application.mandate_reference;
+        actions.appendChild(testAccessButton);
       }
 
       card.append(heading, grid, actions);
@@ -213,6 +249,26 @@
       activateConfirmButton.disabled = true;
       activateDialog.showModal();
     }
+    if (button.dataset.action === 'resend-confirmation') {
+      pendingAdminAction = { action: button.dataset.action, id: button.dataset.id };
+      adminActionHeading.textContent = 'Vertragsbestätigung erneut senden?';
+      adminActionCopy.textContent = `Die Bestätigung für ${button.dataset.reference} wird erneut an die im Vertrag hinterlegte E-Mail-Adresse gesendet.`;
+      adminActionConfirmationCopy.textContent = 'Ich möchte diese Vertragsbestätigung jetzt erneut versenden.';
+      adminActionConfirmButton.textContent = 'Bestätigung senden';
+      adminActionConfirmation.checked = false;
+      adminActionConfirmButton.disabled = true;
+      adminActionDialog.showModal();
+    }
+    if (button.dataset.action === 'test-booking-access') {
+      pendingAdminAction = { action: button.dataset.action, id: button.dataset.id };
+      adminActionHeading.textContent = 'Test-Buchung freigeben?';
+      adminActionCopy.textContent = `Für ${button.dataset.reference} wird ein protokollierter Testzugang für 2 Stunden eingerichtet. Vertragsbeginn und Widerrufserklärung bleiben unverändert.`;
+      adminActionConfirmationCopy.textContent = 'Ich bestätige die zeitlich begrenzte Freigabe für den Live-Systemtest.';
+      adminActionConfirmButton.textContent = '2 Stunden freigeben';
+      adminActionConfirmation.checked = false;
+      adminActionConfirmButton.disabled = true;
+      adminActionDialog.showModal();
+    }
   });
 
   sepaDialog.addEventListener('close', () => sepaDetails.replaceChildren());
@@ -229,15 +285,59 @@
     activateConfirmButton.disabled = true;
     activateConfirmButton.textContent = 'Vertrag wird angenommen…';
     try {
-      await adminRequest(`/admin/${encodeURIComponent(pendingActivation.id)}/activate`, { method: 'POST' });
+      const result = await adminRequest(`/admin/${encodeURIComponent(pendingActivation.id)}/activate`, { method: 'POST' });
       activateDialog.close();
-      setStatus(adminStatus, 'Vertrag wurde angenommen. Kundentag und Vertragsbestätigung wurden verarbeitet.');
+      statusFilter.value = 'active';
       await loadApplications();
+      setStatus(
+        adminStatus,
+        result.confirmation_email_sent
+          ? 'Vertrag ist aktiv. Kundentag und Vertragsbestätigung wurden verarbeitet.'
+          : 'Vertrag ist aktiv und der Kundentag wurde gesetzt. Die E-Mail konnte nicht versendet werden; nutzen Sie „Vertragsbestätigung erneut senden“.',
+        !result.confirmation_email_sent
+      );
     } catch (error) {
       setStatus(adminStatus, error.message, true);
       activateConfirmButton.disabled = false;
     } finally {
       activateConfirmButton.textContent = 'Vertrag annehmen';
+    }
+  });
+
+  adminActionDialog.addEventListener('close', () => {
+    pendingAdminAction = null;
+    adminActionConfirmation.checked = false;
+    adminActionConfirmButton.disabled = true;
+  });
+  adminActionConfirmation.addEventListener('change', () => {
+    adminActionConfirmButton.disabled = !adminActionConfirmation.checked;
+  });
+  adminActionConfirmButton.addEventListener('click', async () => {
+    if (!pendingAdminAction || !adminActionConfirmation.checked) return;
+    const action = pendingAdminAction;
+    adminActionConfirmButton.disabled = true;
+    adminActionConfirmButton.textContent = action.action === 'resend-confirmation'
+      ? 'Bestätigung wird gesendet…'
+      : 'Testzugang wird freigegeben…';
+    try {
+      const result = await adminRequest(`/admin/${encodeURIComponent(action.id)}/${action.action}`, { method: 'POST' });
+      adminActionDialog.close();
+      if (action.action === 'resend-confirmation') {
+        setStatus(adminStatus, 'Die Vertragsbestätigung wurde erneut versendet.');
+      } else {
+        const expiresAt = new Intl.DateTimeFormat('de-DE', {
+          dateStyle: 'medium',
+          timeStyle: 'short',
+          timeZone: 'Europe/Berlin'
+        }).format(new Date(result.expires_at));
+        setStatus(adminStatus, `Test-Buchungszugang ist bis ${expiresAt} Uhr freigeschaltet.`);
+      }
+    } catch (error) {
+      setStatus(adminStatus, error.message, true);
+      adminActionConfirmButton.disabled = false;
+      adminActionConfirmButton.textContent = action.action === 'resend-confirmation'
+        ? 'Bestätigung senden'
+        : '2 Stunden freigeben';
     }
   });
 })();

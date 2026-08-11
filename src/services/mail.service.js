@@ -26,10 +26,15 @@ function getTransporter() {
   return transporter;
 }
 
-export async function sendTransactionalHtml({ to, subject, html, filename }) {
-  const transport = getTransporter();
-  if (!transport) return { sent: false, reason: 'SMTP_NOT_CONFIGURED' };
+export function isRetryableMailError(error) {
+  const code = String(error?.code || '').toUpperCase();
+  const message = String(error?.message || '').toLowerCase();
+  return ['ETIMEDOUT', 'ESOCKET', 'ECONNECTION', 'ECONNRESET'].includes(code)
+    || message.includes('connection timeout')
+    || message.includes('socket timeout');
+}
 
+async function deliverHtmlMail(transport, { to, subject, html, filename }) {
   await transport.sendMail({
     from: env.smtpFrom,
     to,
@@ -42,6 +47,20 @@ export async function sendTransactionalHtml({ to, subject, html, filename }) {
       contentType: 'text/html; charset=utf-8'
     }]
   });
+}
+
+export async function sendTransactionalHtml({ to, subject, html, filename }) {
+  let transport = getTransporter();
+  if (!transport) return { sent: false, reason: 'SMTP_NOT_CONFIGURED' };
+
+  try {
+    await deliverHtmlMail(transport, { to, subject, html, filename });
+  } catch (error) {
+    if (!isRetryableMailError(error)) throw error;
+    transporter = undefined;
+    transport = getTransporter();
+    await deliverHtmlMail(transport, { to, subject, html, filename });
+  }
 
   return { sent: true };
 }
