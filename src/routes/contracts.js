@@ -36,6 +36,7 @@ import {
   hashPublicToken,
   maskIban
 } from '../utils/sepaCrypto.js';
+import { hasRequiredContractConsents } from '../utils/contractConsent.js';
 
 const router = express.Router();
 const applicationLimiter = rateLimit({ windowMs: 15 * 60_000, max: 5 });
@@ -107,12 +108,7 @@ router.post(
       if (!Number.isInteger(debitDay) || debitDay < 1 || debitDay > 28) {
         return res.status(400).json({ ok: false, error: 'INVALID_DEBIT_DAY' });
       }
-      if (
-        req.body.accept_agb !== true ||
-        req.body.accept_withdrawal !== true ||
-        req.body.accept_sepa !== true ||
-        req.body.account_holder_confirmed !== true
-      ) {
+      if (!hasRequiredContractConsents(req.body)) {
         return res.status(400).json({ ok: false, error: 'REQUIRED_CONSENT_MISSING' });
       }
 
@@ -150,7 +146,8 @@ router.post(
       await addContractEvent(id, 'application_submitted', 'customer', {
         packageKey,
         contractVersion: env.contractVersion,
-        accountHolderConfirmed: true
+        accountHolderConfirmed: true,
+        age18Confirmed: true
       });
 
       const confirmation = applicationConfirmationHtml(application);

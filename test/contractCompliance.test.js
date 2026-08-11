@@ -6,6 +6,7 @@ import {
   escapeHtml
 } from '../src/services/contractDocuments.service.js';
 import { ensureContractActionSchema } from '../src/services/schema.service.js';
+import { hasRequiredContractConsents } from '../src/utils/contractConsent.js';
 
 const baseApplication = {
   first_name: 'Test',
@@ -63,4 +64,17 @@ test('contract action schema bootstrap is additive and idempotent SQL', async ()
   assert.match(queries[0], /CREATE TABLE IF NOT EXISTS contract_action_requests/);
   assert.match(queries[1], /CREATE INDEX IF NOT EXISTS/);
   assert.match(queries[2], /CREATE INDEX IF NOT EXISTS/);
+});
+
+test('membership application requires an explicit 18+ confirmation', () => {
+  const consents = {
+    confirm_age_18: true,
+    accept_agb: true,
+    accept_withdrawal: true,
+    accept_sepa: true,
+    account_holder_confirmed: true
+  };
+  assert.equal(hasRequiredContractConsents(consents), true);
+  assert.equal(hasRequiredContractConsents({ ...consents, confirm_age_18: false }), false);
+  assert.equal(hasRequiredContractConsents({ ...consents, confirm_age_18: undefined }), false);
 });
