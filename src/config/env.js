@@ -11,10 +11,16 @@ export const env = {
   shopifyAppSecret: process.env.SHOPIFY_APP_SECRET || process.env.SHOPIFY_CLIENT_SECRET || '',
   contractEncryptionKey: process.env.CONTRACT_ENCRYPTION_KEY || '',
   adminApiToken: process.env.ADMIN_API_TOKEN || '',
-  contractVersion: process.env.CONTRACT_VERSION || '2026-08-10-v1',
+  contractVersion: process.env.CONTRACT_VERSION || '2026-08-11-v2',
   shopifyShop: process.env.SHOPIFY_SHOP || '',
   shopifyClientId: process.env.SHOPIFY_CLIENT_ID || '',
-  shopifyClientSecret: process.env.SHOPIFY_CLIENT_SECRET || ''
+  shopifyClientSecret: process.env.SHOPIFY_CLIENT_SECRET || '',
+  smtpHost: process.env.SMTP_HOST || '',
+  smtpPort: Number(process.env.SMTP_PORT || 465),
+  smtpSecure: String(process.env.SMTP_SECURE || 'true').toLowerCase() !== 'false',
+  smtpUser: process.env.SMTP_USER || '',
+  smtpPass: process.env.SMTP_PASS || '',
+  smtpFrom: process.env.SMTP_FROM || ''
 };
 
 export function assertRuntimeEnv() {

@@ -11,15 +11,24 @@ import {
 import {
   activateApplication,
   addContractEvent,
+  createContractActionRequest,
   createApplication,
+  findApplicationForPublicAction,
   findApplicationByPublicTokenHash,
   findApplicationForAdmin,
+  findContractActionByReceiptTokenHash,
   findLatestApplicationByCustomer,
+  listContractActionRequests,
   listApplications,
   requestCancellation
 } from '../repositories/contract.repository.js';
 import { createMember, findMemberByShopifyId, updateMemberByShopifyId } from '../repositories/member.repository.js';
 import { setPremiumCustomerTag } from '../services/shopifyAdmin.service.js';
+import {
+  applicationConfirmationHtml,
+  contractActionReceiptHtml
+} from '../services/contractDocuments.service.js';
+import { sendTransactionalHtml } from '../services/mail.service.js';
 import { getPackageOffer, SETUP_FEE_CENTS } from '../utils/packageCatalog.js';
 import {
   decryptIban,
@@ -30,6 +39,7 @@ import {
 
 const router = express.Router();
 const applicationLimiter = rateLimit({ windowMs: 15 * 60_000, max: 5 });
+const contractActionLimiter = rateLimit({ windowMs: 15 * 60_000, max: 5 });
 
 function cleanText(value, maxLength) {
   return String(value || '').trim().replace(/\s+/g, ' ').slice(0, maxLength);
@@ -49,26 +59,24 @@ function isValidStartDate(value) {
   return date.getTime() >= earliest && date.getTime() <= latest;
 }
 
-function money(cents) {
-  return new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(cents / 100);
-}
-
-function escapeHtml(value) {
-  return String(value ?? '')
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#039;');
-}
-
-function confirmationHtml(application) {
-  const offer = getPackageOffer(application.package_key);
-  return `<!doctype html><html lang="de"><head><meta charset="utf-8"><title>Vertragsbestätigung ${escapeHtml(application.mandate_reference)}</title><style>body{font:16px/1.55 Arial,sans-serif;color:#171717;max-width:760px;margin:40px auto;padding:0 24px}h1,h2{line-height:1.15}table{width:100%;border-collapse:collapse;margin:20px 0}td{padding:10px;border-bottom:1px solid #ddd}td:first-child{font-weight:700;width:42%}.note{background:#f7f2ed;padding:18px;border-radius:12px}@media print{body{margin:0}.note{border:1px solid #ddd}}</style></head><body><h1>Bestätigung Ihrer Premium-Mitgliedschaft</h1><p>Ihr Antrag ist bei PDB – AESTHETIC ROOM eingegangen. Die Mitgliedschaft wird aktiviert, sobald das SEPA-Mandat im Naspa-Onlinebanking eingerichtet wurde.</p><table><tr><td>Name</td><td>${escapeHtml(application.first_name)} ${escapeHtml(application.last_name)}</td></tr><tr><td>Paket</td><td>${escapeHtml(offer?.name)}</td></tr><tr><td>Monatsbeitrag</td><td>${money(application.monthly_price_cents)}</td></tr><tr><td>Einrichtungsgebühr</td><td>${money(application.setup_fee_cents)}</td></tr><tr><td>Gesamtkosten Mindestlaufzeit</td><td>${money(application.minimum_total_cents)}</td></tr><tr><td>Vertragsbeginn</td><td>${escapeHtml(application.starts_on)}</td></tr><tr><td>Laufzeit</td><td>12 Monate, danach unbefristet; Kündigungsfrist 1 Monat</td></tr><tr><td>SEPA-Mandat</td><td>${escapeHtml(application.mandate_reference)} · ${escapeHtml(maskIban(application.iban_last4))}</td></tr><tr><td>Status</td><td>SEPA-Einrichtung ausstehend</td></tr></table><div class="note"><strong>Widerruf:</strong> Sie können den online geschlossenen Vertrag grundsätzlich innerhalb von 14 Tagen widerrufen. Verwenden Sie hierfür info@palaisdebeaute.de oder das bereitgestellte Widerrufsformular.</div><p>PDB – AESTHETIC ROOM · Rheinstraße 59 · 65185 Wiesbaden · info@palaisdebeaute.de</p></body></html>`;
+function isValidIsoDate(value) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const date = new Date(`${value}T00:00:00.000Z`);
+  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
 }
 
 function cancellationConfirmationHtml(application) {
-  return `<!doctype html><html lang="de"><head><meta charset="utf-8"><title>Kündigungsbestätigung</title><style>body{font:16px/1.55 Arial,sans-serif;color:#171717;max-width:720px;margin:40px auto;padding:0 24px}h1{line-height:1.15}.box{padding:18px;border:1px solid #ddd;border-radius:12px;background:#f8f4ef}</style></head><body><h1>Bestätigung Ihrer Kündigungserklärung</h1><div class="box"><p><strong>Vertrag:</strong> ${escapeHtml(application.mandate_reference)}</p><p><strong>Eingang:</strong> ${escapeHtml(application.cancellation_requested_at)}</p><p><strong>Vorgesehenes Vertragsende:</strong> ${escapeHtml(application.cancellation_effective_on)}</p></div><p>Wir prüfen die Erklärung unverzüglich. Bitte beachten Sie: Der zugehörige SEPA-Einzug wird bei der Naspa zum wirksamen Vertragsende beendet.</p><p>PDB – AESTHETIC ROOM · Rheinstraße 59 · 65185 Wiesbaden · info@palaisdebeaute.de</p></body></html>`;
+  return contractActionReceiptHtml({
+    id: application.id,
+    action_type: 'cancellation',
+    first_name: application.first_name,
+    last_name: application.last_name,
+    mandate_reference: application.mandate_reference,
+    communication_email: application.email,
+    cancellation_type: 'ordinary',
+    requested_end_on: application.cancellation_effective_on,
+    created_at: application.cancellation_requested_at
+  });
 }
 
 router.post(
@@ -99,7 +107,12 @@ router.post(
       if (!Number.isInteger(debitDay) || debitDay < 1 || debitDay > 28) {
         return res.status(400).json({ ok: false, error: 'INVALID_DEBIT_DAY' });
       }
-      if (req.body.accept_agb !== true || req.body.accept_withdrawal !== true || req.body.accept_sepa !== true) {
+      if (
+        req.body.accept_agb !== true ||
+        req.body.accept_withdrawal !== true ||
+        req.body.accept_sepa !== true ||
+        req.body.account_holder_confirmed !== true
+      ) {
         return res.status(400).json({ ok: false, error: 'REQUIRED_CONSENT_MISSING' });
       }
 
@@ -136,8 +149,22 @@ router.post(
       });
       await addContractEvent(id, 'application_submitted', 'customer', {
         packageKey,
-        contractVersion: env.contractVersion
+        contractVersion: env.contractVersion,
+        accountHolderConfirmed: true
       });
+
+      const confirmation = applicationConfirmationHtml(application);
+      let mailDelivery = { sent: false, reason: 'DELIVERY_FAILED' };
+      try {
+        mailDelivery = await sendTransactionalHtml({
+          to: application.email,
+          subject: `Eingangsbestätigung ${application.mandate_reference}`,
+          html: confirmation,
+          filename: `PDB-Eingangsbestaetigung-${application.mandate_reference}.html`
+        });
+      } catch (mailError) {
+        console.error('Contract application confirmation email failed:', mailError.message);
+      }
 
       res.set('Cache-Control', 'no-store');
       return res.status(201).json({
@@ -150,7 +177,8 @@ router.post(
           masked_iban: maskIban(application.iban_last4)
         },
         public_token: publicToken,
-        confirmation_url: `/apps/pdb/contracts/confirmation?token=${encodeURIComponent(publicToken)}`
+        confirmation_url: `/apps/pdb/contracts/confirmation?token=${encodeURIComponent(publicToken)}`,
+        confirmation_email_sent: mailDelivery.sent
       });
     } catch (error) {
       if (error.message === 'INVALID_IBAN') {
@@ -191,7 +219,109 @@ router.get('/confirmation', verifyShopifyAppProxy, requireShopifyCustomer, async
   if (!application) return res.status(404).send('Vertragsbestätigung nicht gefunden.');
   res.set('Cache-Control', 'private, no-store');
   res.set('Content-Disposition', `attachment; filename="PDB-Vertragsbestaetigung-${application.mandate_reference}.html"`);
-  return res.type('html').send(confirmationHtml(application));
+  return res.type('html').send(applicationConfirmationHtml(application));
+});
+
+router.get('/confirmation-latest', verifyShopifyAppProxy, requireShopifyCustomer, async (req, res) => {
+  const application = await findLatestApplicationByCustomer(req.shopifyProxy.customerId);
+  if (!application) return res.status(404).send('Bestätigung nicht gefunden.');
+  const prefix = application.status === 'active' ? 'PDB-Vertragsbestaetigung' : 'PDB-Eingangsbestaetigung';
+  res.set('Cache-Control', 'private, no-store');
+  res.set('Content-Disposition', `attachment; filename="${prefix}-${application.mandate_reference}.html"`);
+  return res.type('html').send(applicationConfirmationHtml(application));
+});
+
+router.post('/action', verifyShopifyAppProxy, contractActionLimiter, async (req, res) => {
+  try {
+    const actionType = req.body?.action_type === 'withdrawal' ? 'withdrawal' : req.body?.action_type === 'cancellation' ? 'cancellation' : '';
+    const firstName = cleanText(req.body?.first_name, 80);
+    const lastName = cleanText(req.body?.last_name, 80);
+    const email = cleanText(req.body?.email, 160).toLowerCase();
+    const communicationEmail = cleanText(req.body?.communication_email || email, 160).toLowerCase();
+    const mandateReference = cleanText(req.body?.mandate_reference, 80).toUpperCase();
+    const cancellationType = actionType === 'cancellation'
+      ? (req.body?.cancellation_type === 'extraordinary' ? 'extraordinary' : 'ordinary')
+      : null;
+    const cancellationReason = cancellationType === 'extraordinary'
+      ? cleanText(req.body?.cancellation_reason, 500)
+      : null;
+    const requestedEndOn = cleanText(req.body?.requested_end_on, 10) || null;
+
+    if (!actionType || !firstName || !lastName || !isEmail(email) || !isEmail(communicationEmail)) {
+      return res.status(400).json({ ok: false, error: 'INVALID_ACTION_DATA' });
+    }
+    if (cancellationType === 'extraordinary' && !cancellationReason) {
+      return res.status(400).json({ ok: false, error: 'CANCELLATION_REASON_REQUIRED' });
+    }
+    if (requestedEndOn && !isValidIsoDate(requestedEndOn)) {
+      return res.status(400).json({ ok: false, error: 'INVALID_END_DATE' });
+    }
+
+    const application = mandateReference
+      ? await findApplicationForPublicAction({ mandateReference, email, firstName, lastName })
+      : null;
+    const receiptToken = crypto.randomBytes(32).toString('base64url');
+    const action = await createContractActionRequest({
+      id: crypto.randomUUID(),
+      actionType,
+      firstName,
+      lastName,
+      email,
+      mandateReference,
+      communicationEmail,
+      cancellationType,
+      cancellationReason,
+      requestedEndOn,
+      matchedApplicationId: application?.id || null,
+      receiptTokenHash: hashPublicToken(receiptToken),
+      metadata: { shop: req.shopifyProxy.shop || null }
+    });
+    if (application) {
+      await addContractEvent(application.id, `${actionType}_received`, 'customer', {
+        actionRequestId: action.id,
+        cancellationType,
+        requestedEndOn
+      });
+    }
+
+    const receipt = contractActionReceiptHtml(action);
+    let mailDelivery = { sent: false, reason: 'DELIVERY_FAILED' };
+    try {
+      mailDelivery = await sendTransactionalHtml({
+        to: communicationEmail,
+        subject: actionType === 'withdrawal' ? 'Eingangsbestätigung Ihres Widerrufs' : 'Eingangsbestätigung Ihrer Kündigung',
+        html: receipt,
+        filename: `PDB-${actionType === 'withdrawal' ? 'Widerruf' : 'Kuendigung'}-${action.id}.html`
+      });
+    } catch (mailError) {
+      console.error('Contract action confirmation email failed:', mailError.message);
+    }
+
+    res.set('Cache-Control', 'no-store');
+    return res.status(201).json({
+      ok: true,
+      request: {
+        id: action.id,
+        action_type: action.action_type,
+        received_at: action.created_at,
+        status: action.status
+      },
+      receipt_url: `/apps/pdb/contracts/action-confirmation?token=${encodeURIComponent(receiptToken)}`,
+      confirmation_email_sent: mailDelivery.sent
+    });
+  } catch (error) {
+    console.error('POST /api/contracts/action failed:', error.message);
+    return res.status(500).json({ ok: false, error: 'CONTRACT_ACTION_FAILED' });
+  }
+});
+
+router.get('/action-confirmation', verifyShopifyAppProxy, async (req, res) => {
+  const action = await findContractActionByReceiptTokenHash(hashPublicToken(String(req.query.token || '')));
+  if (!action) return res.status(404).send('Eingangsbestätigung nicht gefunden.');
+  const filename = action.action_type === 'withdrawal' ? 'PDB-Widerruf' : 'PDB-Kuendigung';
+  res.set('Cache-Control', 'private, no-store');
+  res.set('Content-Disposition', `attachment; filename="${filename}-${action.id}.html"`);
+  return res.type('html').send(contractActionReceiptHtml(action));
 });
 
 router.post('/cancel', verifyShopifyAppProxy, requireShopifyCustomer, async (req, res) => {
@@ -204,6 +334,18 @@ router.post('/cancel', verifyShopifyAppProxy, requireShopifyCustomer, async (req
   const application = await requestCancellation(id, req.shopifyProxy.customerId);
   if (!application) return res.status(404).json({ ok: false, error: 'ACTIVE_CONTRACT_NOT_FOUND' });
   await addContractEvent(id, 'cancellation_requested', 'customer', { cancellationType, reason });
+  const confirmationDocument = cancellationConfirmationHtml(application);
+  let mailDelivery = { sent: false, reason: 'DELIVERY_FAILED' };
+  try {
+    mailDelivery = await sendTransactionalHtml({
+      to: application.email,
+      subject: 'Eingangsbestätigung Ihrer Kündigung',
+      html: confirmationDocument,
+      filename: `PDB-Kuendigung-${application.mandate_reference}.html`
+    });
+  } catch (mailError) {
+    console.error('Member cancellation confirmation email failed:', mailError.message);
+  }
   res.set('Cache-Control', 'no-store');
   return res.json({
     ok: true,
@@ -213,7 +355,8 @@ router.post('/cancel', verifyShopifyAppProxy, requireShopifyCustomer, async (req
       effective_on: application.cancellation_effective_on,
       instruction: 'SEPA-Einzug bei Naspa zum Vertragsende beenden'
     },
-    confirmation_url: `/apps/pdb/contracts/cancellation-confirmation?id=${encodeURIComponent(application.id)}`
+    confirmation_url: `/apps/pdb/contracts/cancellation-confirmation?id=${encodeURIComponent(application.id)}`,
+    confirmation_email_sent: mailDelivery.sent
   });
 });
 
@@ -234,6 +377,11 @@ router.get('/cancellation-confirmation', verifyShopifyAppProxy, requireShopifyCu
 router.get('/admin', requireAdminToken, async (req, res) => {
   const applications = await listApplications({ status: req.query.status, limit: req.query.limit });
   return res.json({ ok: true, applications: applications.map((item) => ({ ...item, masked_iban: maskIban(item.iban_last4) })) });
+});
+
+router.get('/admin-actions', requireAdminToken, async (req, res) => {
+  const actions = await listContractActionRequests({ status: req.query.status, limit: req.query.limit });
+  return res.json({ ok: true, actions });
 });
 
 router.get('/admin/:id/sepa', requireAdminToken, async (req, res) => {
@@ -292,7 +440,33 @@ router.post('/admin/:id/activate', requireAdminToken, async (req, res) => {
     const activated = await activateApplication(application.id, member.id, client);
     await addContractEvent(application.id, 'membership_activated', 'admin', { memberId: member.id }, client);
     await client.query('COMMIT');
-    return res.json({ ok: true, application: activated, member_id: member.id });
+    const confirmation = applicationConfirmationHtml(activated);
+    let mailDelivery = { sent: false, reason: 'DELIVERY_FAILED' };
+    try {
+      mailDelivery = await sendTransactionalHtml({
+        to: activated.email,
+        subject: `Annahme- und Vertragsbestätigung ${activated.mandate_reference}`,
+        html: confirmation,
+        filename: `PDB-Vertragsbestaetigung-${activated.mandate_reference}.html`
+      });
+      await addContractEvent(application.id, 'acceptance_confirmation_delivery', 'system', {
+        emailSent: mailDelivery.sent,
+        reason: mailDelivery.reason || null
+      });
+    } catch (mailError) {
+      console.error('Contract acceptance confirmation email failed:', mailError.message);
+      await addContractEvent(application.id, 'acceptance_confirmation_delivery', 'system', {
+        emailSent: false,
+        reason: 'DELIVERY_FAILED'
+      });
+    }
+    return res.json({
+      ok: true,
+      application: activated,
+      member_id: member.id,
+      confirmation_email_sent: mailDelivery.sent,
+      customer_confirmation_url: '/apps/pdb/contracts/confirmation-latest'
+    });
   } catch (error) {
     await client.query('ROLLBACK');
     console.error('POST /api/contracts/admin/:id/activate failed:', error.message);

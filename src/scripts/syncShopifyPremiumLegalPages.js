@@ -13,10 +13,11 @@ const pages = [
     title: "PDB PREMIUM Vertragsbedingungen",
     handle: "premium-vertragsbedingungen",
     body: `
-      <p><strong>Stand: 10. August 2026</strong></p>
+      <p><strong>Stand: 11. August 2026</strong></p>
       <p>Diese Vertragsbedingungen gelten für PDB PREMIUM Mitgliedschaften zwischen PDB – AESTHETIC ROOM, Rheinstraße 59, 65185 Wiesbaden, und Verbraucherinnen oder Verbrauchern.</p>
+      <p>Ergänzend gelten die <a href="/policies/terms-of-service">allgemeinen Nutzungsbedingungen / AGB</a> von PDB. Bei Widersprüchen gehen diese PDB PREMIUM Vertragsbedingungen für die Mitgliedschaft vor. Die <a href="/pages/premium-widerruf">Widerrufsbelehrung für PDB PREMIUM</a> ist Bestandteil der vorvertraglichen Informationen.</p>
       <h2>1. Vertragsschluss</h2>
-      <p>Online gibt das Mitglied mit „Zahlungspflichtig bestellen“ eine verbindliche Bestellung ab. PDB bestätigt den Zugang elektronisch. Der Vertrag kommt mit der ausdrücklichen Annahmebestätigung von PDB zustande. Vertragsübersicht, Bedingungen und Widerrufsinformationen werden anschließend speicherbar bereitgestellt.</p>
+      <p>Online gibt das Mitglied mit „Zahlungspflichtig bestellen“ eine verbindliche Bestellung ab und erteilt das angezeigte SEPA-Basislastschriftmandat. PDB bestätigt den Eingang unverzüglich auf einem dauerhaften Datenträger. Der Vertrag kommt erst mit der ausdrücklichen Annahmebestätigung von PDB zustande; diese wird nach Einrichtung des SEPA-Einzugs ebenfalls auf einem dauerhaften Datenträger bereitgestellt.</p>
       <h2>2. Pakete und Kosten</h2>
       <ul>
         <li><strong>PURE:</strong> 149,00 € monatlich; bis zu 3 Behandlungen aus PURE.</li>
@@ -27,7 +28,7 @@ const pages = [
       <p>Bei PRIVATE umfasst ein Monatsanspruch grundsätzlich eine 90-minütige Sitzung des gewählten Protokolls. Das Protokoll „Body Sculpt Intensive“ umfasst abweichend vier separate Sitzungen zu je 90 Minuten innerhalb desselben Anspruchsmonats; nach der ersten Buchung bleibt dieses Protokoll für den laufenden Monat festgelegt.</p>
       <p>Die Einrichtungsgebühr beträgt einmalig 39,00 €. Die Gesamtkosten der Mindestlaufzeit betragen einschließlich Einrichtungsgebühr: PURE 1.827,00 €, DEFINE 2.067,00 €, BEYOND 2.427,00 € und PRIVATE 4.827,00 €. Maßgeblich ist die beim Vertragsschluss angezeigte Leistungsbeschreibung.</p>
       <h2>3. Laufzeit und Kündigung</h2>
-      <p>Die Mindestlaufzeit beträgt zwölf Monate ab Vertragsbeginn. Währenddessen ist die ordentliche Kündigung ausgeschlossen. Danach läuft der Vertrag auf unbestimmte Zeit weiter und kann jederzeit mit einer Frist von einem Monat gekündigt werden. Das Recht zur außerordentlichen Kündigung aus wichtigem Grund bleibt unberührt. Für online abschließbare Mitgliedschaften steht im Mitgliederbereich eine Kündigungsschaltfläche bereit.</p>
+      <p>Die Mindestlaufzeit beträgt zwölf Monate ab Vertragsbeginn. Währenddessen ist die ordentliche Kündigung ausgeschlossen. Danach läuft der Vertrag auf unbestimmte Zeit weiter und kann jederzeit mit einer Frist von einem Monat gekündigt werden. Das Recht zur außerordentlichen Kündigung aus wichtigem Grund bleibt unberührt. Die ständig zugängliche Schaltfläche „Verträge hier kündigen“ befindet sich im Footer der Website und führt unmittelbar zur Bestätigungsseite.</p>
       <h2>4. Zahlung und SEPA</h2>
       <p>Monatsbeiträge werden im Voraus per SEPA-Basislastschrift eingezogen. Die erste Belastung umfasst den ersten Monatsbeitrag und die Einrichtungsgebühr. Änderungen von Betrag oder Fälligkeit teilt PDB mindestens drei Kalendertage vor der Belastung in Textform mit; die Parteien vereinbaren insoweit eine verkürzte Vorankündigungsfrist von drei Kalendertagen.</p>
       <p>Rücklastschriftkosten können nur in tatsächlich entstandener Höhe verlangt werden, wenn das Mitglied die Rücklastschrift zu vertreten hat. Bei Zahlungsverzug darf PDB nach Mahnung und angemessener Frist Leistungen bis zum Ausgleich fälliger Beträge aussetzen.</p>
@@ -55,26 +56,54 @@ const pages = [
     title: "Widerrufsbelehrung PDB PREMIUM",
     handle: "premium-widerruf",
     body: `
-      <p><strong>Stand: 10. August 2026</strong></p>
-      <h2>Widerrufsrecht</h2>
-      <p>Sie haben das Recht, binnen vierzehn Tagen ohne Angabe von Gründen diesen Vertrag zu widerrufen. Die Widerrufsfrist beträgt vierzehn Tage ab dem Tag des Vertragsabschlusses.</p>
-      <p>Um Ihr Widerrufsrecht auszuüben, müssen Sie uns – PDB – AESTHETIC ROOM, Rheinstraße 59, 65185 Wiesbaden, E-Mail: info@palaisdebeaute.de, Telefon: 0178 600 11 03 – mittels einer eindeutigen Erklärung, zum Beispiel per Post oder E-Mail, über Ihren Entschluss informieren. Sie können das nachstehende Muster-Widerrufsformular verwenden; dies ist jedoch nicht vorgeschrieben.</p>
-      <p>Zur Wahrung der Widerrufsfrist reicht es aus, dass Sie die Mitteilung vor Ablauf der Widerrufsfrist absenden.</p>
-      <h2>Folgen des Widerrufs</h2>
-      <p>Wenn Sie diesen Vertrag widerrufen, erstatten wir alle von Ihnen erhaltenen Zahlungen unverzüglich und spätestens binnen vierzehn Tagen ab Eingang Ihrer Widerrufserklärung. Für die Rückzahlung verwenden wir grundsätzlich dasselbe Zahlungsmittel wie bei der ursprünglichen Transaktion; hierfür werden keine Entgelte berechnet.</p>
-      <p>Haben Sie verlangt, dass Dienstleistungen während der Widerrufsfrist beginnen, zahlen Sie einen angemessenen Betrag für den Anteil der bis zum Widerruf bereits erbrachten Leistungen im Verhältnis zum vertraglich vorgesehenen Gesamtumfang, soweit die gesetzlichen Voraussetzungen für Wertersatz erfüllt sind.</p>
-      <h2>Muster-Widerrufsformular</h2>
-      <p>Wenn Sie den Vertrag widerrufen wollen, können Sie diesen Text ausfüllen und an uns zurücksenden:</p>
-      <blockquote>
-        <p>An PDB – AESTHETIC ROOM, Rheinstraße 59, 65185 Wiesbaden, info@palaisdebeaute.de</p>
-        <p>Hiermit widerrufe ich den von mir abgeschlossenen Vertrag über die folgende PDB PREMIUM Mitgliedschaft:</p>
-        <p>Paket: ______________________________</p>
-        <p>Vertrag abgeschlossen am: ______________________________</p>
-        <p>Name: ______________________________</p>
-        <p>Anschrift: ______________________________</p>
-        <p>Datum: ______________________________</p>
-        <p>Unterschrift – nur bei Mitteilung auf Papier: ______________________________</p>
-      </blockquote>
+      <div class="pdb-legal-intro">
+        <p>Alle Informationen für einen Widerruf Ihrer online abgeschlossenen PDB PREMIUM Mitgliedschaft – klar, vollständig und direkt versandbereit.</p>
+        <div class="pdb-legal-meta">Stand: 11. August 2026<br>Fernabsatzvertrag · Dienstleistung</div>
+      </div>
+      <section class="pdb-legal-section">
+        <h2>Widerrufsrecht</h2>
+        <div class="pdb-legal-copy">
+          <p>Sie haben das Recht, binnen vierzehn Tagen ohne Angabe von Gründen diesen Vertrag zu widerrufen. Die Widerrufsfrist beträgt vierzehn Tage ab dem Tag des Vertragsabschlusses.</p>
+          <p>Um Ihr Widerrufsrecht auszuüben, müssen Sie uns – PDB Aesthetic Room, Inhaberin Noureen Hussain, Rheinstraße 59, 65185 Wiesbaden, Telefon: +49 178 6001103, E-Mail: <a href="mailto:info@palaisdebeaute.de">info@palaisdebeaute.de</a> – mittels einer eindeutigen Erklärung über Ihren Entschluss informieren. Sie können dafür die ständig zugängliche Online-Funktion <a href="/pages/premium?contract_action=withdrawal#pdb-contract-actions">„Vertrag widerrufen“</a>, eine E-Mail, einen Brief oder das nachstehende Muster verwenden.</p>
+          <p>Zur Wahrung der Widerrufsfrist reicht es aus, dass Sie die Mitteilung vor Ablauf der Widerrufsfrist absenden.</p>
+        </div>
+      </section>
+      <section class="pdb-legal-section">
+        <h2>Folgen des Widerrufs</h2>
+        <div class="pdb-legal-copy">
+          <p>Wenn Sie diesen Vertrag widerrufen, erstatten wir alle von Ihnen erhaltenen Zahlungen unverzüglich und spätestens binnen vierzehn Tagen ab dem Tag, an dem Ihre Widerrufserklärung bei uns eingegangen ist. Für die Rückzahlung verwenden wir dasselbe Zahlungsmittel wie bei der ursprünglichen Transaktion, sofern nicht ausdrücklich etwas anderes vereinbart wurde; hierfür werden keine Entgelte berechnet.</p>
+          <p>Haben Sie verlangt, dass Dienstleistungen während der Widerrufsfrist beginnen, zahlen Sie einen angemessenen Betrag für den Anteil der bis zum Widerruf bereits erbrachten Leistungen im Verhältnis zum vertraglich vorgesehenen Gesamtumfang, soweit die gesetzlichen Voraussetzungen für Wertersatz erfüllt sind.</p>
+          <div class="pdb-legal-note"><strong>Wichtig:</strong> Eine formlose E-Mail mit einer eindeutigen Widerrufserklärung genügt. Die Verwendung des Musterformulars ist freiwillig.</div>
+          <div class="pdb-withdrawal-actions">
+            <a class="pdb-legal-action" href="/pages/premium?contract_action=withdrawal#pdb-contract-actions">Vertrag online widerrufen</a>
+            <a class="pdb-legal-action" href="mailto:info@palaisdebeaute.de?subject=Widerruf%20PDB%20PREMIUM">Widerruf per E-Mail senden</a>
+            <a class="pdb-legal-action is-secondary" href="#muster-widerrufsformular">Zum Musterformular</a>
+          </div>
+        </div>
+      </section>
+      <section class="pdb-legal-section" id="muster-widerrufsformular">
+        <h2>Musterformular</h2>
+        <div class="pdb-legal-copy">
+          <p>Wenn Sie den Vertrag widerrufen wollen, füllen Sie dieses Formular aus und senden Sie es per Post oder E-Mail zurück.</p>
+          <div class="pdb-withdrawal-stage">
+            <div class="pdb-withdrawal-paper">
+              <p class="pdb-paper-kicker">Muster-Widerrufsformular</p>
+              <h3>Widerruf einer PDB PREMIUM Mitgliedschaft</h3>
+              <div class="pdb-paper-recipient"><strong>An</strong><br>PDB Aesthetic Room · Inhaberin Noureen Hussain<br>Rheinstraße 59 · 65185 Wiesbaden<br>info@palaisdebeaute.de</div>
+              <p>Hiermit widerrufe(n) ich/wir (*) den von mir/uns (*) abgeschlossenen Vertrag über die Erbringung der folgenden Dienstleistung:</p>
+              <dl>
+                <div class="pdb-form-line"><dt>PDB PREMIUM Paket</dt><dd>&nbsp;</dd></div>
+                <div class="pdb-form-line"><dt>Bestellt am</dt><dd>&nbsp;</dd></div>
+                <div class="pdb-form-line"><dt>Name</dt><dd>&nbsp;</dd></div>
+                <div class="pdb-form-line"><dt>Anschrift</dt><dd>&nbsp;</dd></div>
+                <div class="pdb-form-line"><dt>Datum</dt><dd>&nbsp;</dd></div>
+                <div class="pdb-form-line"><dt>Unterschrift</dt><dd>&nbsp;</dd></div>
+              </dl>
+              <p><small>Unterschrift nur bei Mitteilung auf Papier. (*) Unzutreffendes streichen.</small></p>
+            </div>
+          </div>
+        </div>
+      </section>
     `
   }
 ];

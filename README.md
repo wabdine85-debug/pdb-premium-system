@@ -43,6 +43,7 @@ The following environment variables are required in production:
 - `CONTRACT_ENCRYPTION_KEY` (32 random bytes encoded as Base64 or 64 hex characters)
 - `ADMIN_API_TOKEN` (a long random bearer token)
 - `CONTRACT_VERSION`
+- `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`
 
 The Shopify app proxy must forward `/apps/pdb/*` to this service under
 `/api/*`. Contract and booking endpoints reject unsigned proxy requests.
@@ -58,6 +59,20 @@ direct debit in Naspa Online-Banking, and then activates the application. The
 activation adds the matching Shopify customer tag and enables the member in
 the local database. IBAN values must never be placed in Shopify notes, tags,
 emails or logs.
+
+## Contract confirmations and public contract actions
+
+The storefront exposes permanently reachable links for `Vertrag widerrufen`
+and `Verträge hier kündigen`. Every declaration is stored independently in
+`contract_action_requests`, including declarations that cannot be matched
+automatically. The customer receives an immediate downloadable HTML receipt;
+when SMTP is configured, the same receipt is also sent as an attachment.
+
+Submitting the membership form is a binding order and grants the SEPA mandate.
+The contract is formed only when an administrator activates the application.
+Activation sends the explicit acceptance and contract confirmation when SMTP
+is configured. The latest order or contract confirmation remains downloadable
+from the signed customer area.
 
 ## Shopify products
 

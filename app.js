@@ -9,6 +9,7 @@ import bookingsRouter from "./src/routes/bookings.js";
 import contractsRouter from './src/routes/contracts.js';
 
 const app = express();
+app.set('trust proxy', 1);
 app.use((req, res, next) => {
   if (req.headers['x-shopify-shop-domain']) {
     req.url = req.url.replace('/apps/pdb', '/api');

@@ -157,3 +157,83 @@ export async function requestCancellation(id, customerId, db = pool) {
   );
   return result.rows[0] || null;
 }
+
+export async function findApplicationForPublicAction({
+  mandateReference,
+  email,
+  firstName,
+  lastName
+}, db = pool) {
+  const result = await db.query(
+    `SELECT ${PUBLIC_COLUMNS}
+     FROM membership_applications
+     WHERE UPPER(mandate_reference) = UPPER($1)
+       AND LOWER(email) = LOWER($2)
+       AND LOWER(first_name) = LOWER($3)
+       AND LOWER(last_name) = LOWER($4)
+     ORDER BY created_at DESC
+     LIMIT 1`,
+    [mandateReference, email, firstName, lastName]
+  );
+  return result.rows[0] || null;
+}
+
+export async function createContractActionRequest(request, db = pool) {
+  const result = await db.query(
+    `INSERT INTO contract_action_requests (
+       id, action_type, first_name, last_name, email, mandate_reference,
+       communication_email, cancellation_type, cancellation_reason,
+       requested_end_on, matched_application_id, receipt_token_hash,
+       request_metadata
+     ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13::jsonb)
+     RETURNING *`,
+    [
+      request.id,
+      request.actionType,
+      request.firstName,
+      request.lastName,
+      request.email,
+      request.mandateReference,
+      request.communicationEmail,
+      request.cancellationType,
+      request.cancellationReason,
+      request.requestedEndOn,
+      request.matchedApplicationId,
+      request.receiptTokenHash,
+      JSON.stringify(request.metadata || {})
+    ]
+  );
+  return result.rows[0];
+}
+
+export async function findContractActionByReceiptTokenHash(tokenHash, db = pool) {
+  const result = await db.query(
+    `SELECT id, action_type, first_name, last_name, email, mandate_reference,
+            communication_email, cancellation_type, cancellation_reason,
+            requested_end_on, status, created_at
+     FROM contract_action_requests
+     WHERE receipt_token_hash = $1
+     LIMIT 1`,
+    [tokenHash]
+  );
+  return result.rows[0] || null;
+}
+
+export async function listContractActionRequests({ status, limit = 50 }, db = pool) {
+  const values = [];
+  const where = status ? 'WHERE status = $1' : '';
+  if (status) values.push(status);
+  values.push(Math.min(Math.max(Number(limit) || 50, 1), 100));
+  const limitParam = values.length;
+  const result = await db.query(
+    `SELECT id, action_type, first_name, last_name, email, mandate_reference,
+            communication_email, cancellation_type, cancellation_reason,
+            requested_end_on, matched_application_id, status, created_at, updated_at
+     FROM contract_action_requests
+     ${where}
+     ORDER BY created_at ASC
+     LIMIT $${limitParam}`,
+    values
+  );
+  return result.rows;
+}
