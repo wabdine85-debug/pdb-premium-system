@@ -36,7 +36,7 @@ import {
   hashPublicToken,
   maskIban
 } from '../utils/sepaCrypto.js';
-import { hasRequiredContractConsents } from '../utils/contractConsent.js';
+import { hasHouseNumber, hasRequiredContractConsents } from '../utils/contractConsent.js';
 
 const router = express.Router();
 const applicationLimiter = rateLimit({ windowMs: 15 * 60_000, max: 5 });
@@ -99,7 +99,7 @@ router.post(
       const debitDay = Number(req.body.debit_day);
 
       if (!offer) return res.status(400).json({ ok: false, error: 'INVALID_PACKAGE' });
-      if (!firstName || !lastName || !isEmail(email) || !addressLine1 || !postalCode || !city) {
+      if (!firstName || !lastName || !isEmail(email) || !addressLine1 || !hasHouseNumber(addressLine1) || !postalCode || !city) {
         return res.status(400).json({ ok: false, error: 'INVALID_CONTACT_DATA' });
       }
       if (!isValidStartDate(startsOn)) {

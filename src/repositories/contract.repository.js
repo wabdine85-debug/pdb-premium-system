@@ -102,6 +102,18 @@ export async function findLatestApplicationByCustomer(customerId, db = pool) {
   return result.rows[0] || null;
 }
 
+export async function findActiveApplicationForBooking(memberId, db = pool) {
+  const result = await db.query(
+    `SELECT id, starts_on, early_start_requested_at, activated_at
+     FROM membership_applications
+     WHERE activated_member_id = $1 AND status = 'active'
+     ORDER BY activated_at DESC
+     LIMIT 1`,
+    [memberId]
+  );
+  return result.rows[0] || null;
+}
+
 export async function findApplicationForAdmin(id, db = pool) {
   const result = await db.query(
     `SELECT *, 'DE•• •••• •••• •••• ••' || iban_last4 AS masked_iban

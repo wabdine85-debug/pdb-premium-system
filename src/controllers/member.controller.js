@@ -7,6 +7,7 @@ import { pool } from '../config/pool.js';
 import { getNextBookingMonth } from '../utils/dates.js';
 import { getShopifyCustomer } from '../services/shopifyAdmin.service.js';
 import { findMemberByShopifyId } from '../repositories/member.repository.js';
+import { getMemberBookingAccess } from '../services/bookingAccess.service.js';
 
 async function getVerifiedMember(shopifyCustomerId) {
   try {
@@ -32,12 +33,14 @@ export async function getMe(req, res) {
     }
 
     const member = await getVerifiedMember(shopifyCustomerId);
+    const bookingAccess = await getMemberBookingAccess(member.id);
 
     const entitlements = await getEntitlements(member);
 
     res.json({
       member,
-      entitlements
+      entitlements,
+      bookingAccess
     });
   } catch (err) {
     console.error(err);
@@ -92,6 +95,7 @@ export async function getAllowed(req, res) {
       member,
       entitlements,
       nextMonthEntitlements,
+      bookingAccess,
       treatments
     });
   } catch (err) {

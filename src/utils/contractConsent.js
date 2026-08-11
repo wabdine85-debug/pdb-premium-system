@@ -7,3 +7,7 @@ export function hasRequiredContractConsents(body = {}) {
     body.account_holder_confirmed === true
   );
 }
+
+export function hasHouseNumber(address) {
+  return /\d/.test(String(address || ''));
+}

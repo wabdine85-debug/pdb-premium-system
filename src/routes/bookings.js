@@ -19,6 +19,7 @@ import {
   requireShopifyCustomer,
   verifyShopifyAppProxy
 } from "../middleware/shopifyAppProxy.js";
+import { getMemberBookingAccess } from "../services/bookingAccess.service.js";
 
 const router = express.Router();
 
@@ -62,6 +63,19 @@ router.post("/create", verifyShopifyAppProxy, requireShopifyCustomer, requireMat
       return res.status(404).json({
         ok: false,
         error: "MEMBER_NOT_FOUND"
+      });
+    }
+
+    if (member.status !== "active") {
+      return res.status(403).json({ ok: false, error: "MEMBER_NOT_ACTIVE" });
+    }
+
+    const bookingAccess = await getMemberBookingAccess(member.id);
+    if (!bookingAccess.allowed) {
+      return res.status(403).json({
+        ok: false,
+        error: bookingAccess.reason,
+        booking_available_at: bookingAccess.available_at
       });
     }
 
@@ -283,6 +297,15 @@ router.post("/validate-slot", verifyShopifyAppProxy, requireShopifyCustomer, req
       });
     }
 
+    const bookingAccess = await getMemberBookingAccess(bookingToken.member_id);
+    if (!bookingAccess.allowed) {
+      return res.status(403).json({
+        ok: false,
+        error: bookingAccess.reason,
+        booking_available_at: bookingAccess.available_at
+      });
+    }
+
     const allowedForPackage = getAllowedCategoriesForPackage(
       bookingToken.package_key
     );
@@ -460,6 +483,16 @@ router.post("/consume", verifyShopifyAppProxy, requireShopifyCustomer, requireMa
       return res.status(403).json({
         ok: false,
         error: "MEMBER_NOT_ACTIVE"
+      });
+    }
+
+    const bookingAccess = await getMemberBookingAccess(member.id, client);
+    if (!bookingAccess.allowed) {
+      await client.query("ROLLBACK");
+      return res.status(403).json({
+        ok: false,
+        error: bookingAccess.reason,
+        booking_available_at: bookingAccess.available_at
       });
     }
 

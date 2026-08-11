@@ -6,7 +6,8 @@ import {
   escapeHtml
 } from '../src/services/contractDocuments.service.js';
 import { ensureContractActionSchema } from '../src/services/schema.service.js';
-import { hasRequiredContractConsents } from '../src/utils/contractConsent.js';
+import { hasHouseNumber, hasRequiredContractConsents } from '../src/utils/contractConsent.js';
+import { calculateBookingAccess } from '../src/services/bookingAccess.service.js';
 
 const baseApplication = {
   first_name: 'Test',
@@ -77,4 +78,44 @@ test('membership application requires an explicit 18+ confirmation', () => {
   assert.equal(hasRequiredContractConsents(consents), true);
   assert.equal(hasRequiredContractConsents({ ...consents, confirm_age_18: false }), false);
   assert.equal(hasRequiredContractConsents({ ...consents, confirm_age_18: undefined }), false);
+});
+
+test('street address requires a house number', () => {
+  assert.equal(hasHouseNumber('Rheinstraße 59'), true);
+  assert.equal(hasHouseNumber('Rheinstraße 59a'), true);
+  assert.equal(hasHouseNumber('Rheinstraße'), false);
+});
+
+test('booking is blocked for 14 days when early performance was not requested', () => {
+  const application = {
+    starts_on: '2026-08-01',
+    activated_at: '2026-08-11T10:00:00.000Z',
+    early_start_requested_at: null
+  };
+  const blocked = calculateBookingAccess(application, new Date('2026-08-13T10:00:00.000Z'));
+  const allowed = calculateBookingAccess(application, new Date('2026-08-26T00:00:00.000Z'));
+  assert.equal(blocked.allowed, false);
+  assert.equal(blocked.reason, 'WITHDRAWAL_PERIOD_ACTIVE');
+  assert.equal(blocked.available_at, '2026-08-25T22:00:00.000Z');
+  assert.equal(allowed.allowed, true);
+});
+
+test('early performance permits booking from the contractual start date', () => {
+  const application = {
+    starts_on: '2026-08-01',
+    activated_at: '2026-08-11T10:00:00.000Z',
+    early_start_requested_at: '2026-08-11T09:00:00.000Z'
+  };
+  assert.equal(calculateBookingAccess(application, new Date('2026-08-11T10:01:00.000Z')).allowed, true);
+});
+
+test('future contract start still blocks booking despite early-performance request', () => {
+  const application = {
+    starts_on: '2026-09-01',
+    activated_at: '2026-08-11T10:00:00.000Z',
+    early_start_requested_at: '2026-08-11T09:00:00.000Z'
+  };
+  const access = calculateBookingAccess(application, new Date('2026-08-20T10:00:00.000Z'));
+  assert.equal(access.allowed, false);
+  assert.equal(access.reason, 'CONTRACT_NOT_STARTED');
 });
