@@ -1,28 +1,14 @@
-import { getOrCreateMember } from '../services/member.service.js';
 import {
   getEntitlements,
   getEntitlementsForMonth
 } from '../services/entitlement.service.js';
 import { pool } from '../config/pool.js';
 import { getNextBookingMonth } from '../utils/dates.js';
-import { getShopifyCustomer } from '../services/shopifyAdmin.service.js';
-import { findMemberByShopifyId } from '../repositories/member.repository.js';
 import { getMemberBookingAccess } from '../services/bookingAccess.service.js';
-
-async function getVerifiedMember(shopifyCustomerId) {
-  try {
-    const customer = await getShopifyCustomer(shopifyCustomerId);
-    return getOrCreateMember(customer);
-  } catch (error) {
-    if (!String(error.message || '').startsWith('SHOPIFY_')) throw error;
-
-    const existingMember = await findMemberByShopifyId(shopifyCustomerId);
-    if (!existingMember) throw error;
-
-    console.warn('Shopify customer verification unavailable; using existing local membership record.');
-    return existingMember;
-  }
-}
+import {
+  getAuthorizedMember,
+  isMemberAuthorizationError
+} from '../services/memberAuthorization.service.js';
 
 export async function getMe(req, res) {
   try {
@@ -32,7 +18,7 @@ export async function getMe(req, res) {
       return res.status(401).json({ error: 'CUSTOMER_NOT_LOGGED_IN' });
     }
 
-    const member = await getVerifiedMember(shopifyCustomerId);
+    const member = await getAuthorizedMember(shopifyCustomerId);
     const bookingAccess = await getMemberBookingAccess(member.id);
 
     const entitlements = await getEntitlements(member);
@@ -44,8 +30,10 @@ export async function getMe(req, res) {
     });
   } catch (err) {
     console.error(err);
-    const status = err.message === 'PREMIUM_TAG_REQUIRED' ? 403 : 500;
-    res.status(status).json({ error: err.message === 'PREMIUM_TAG_REQUIRED' ? err.message : 'Server error' });
+    const authorizationError = isMemberAuthorizationError(err);
+    res.status(authorizationError ? 403 : 500).json({
+      error: authorizationError ? err.message : 'Server error'
+    });
   }
 }
 
@@ -59,7 +47,7 @@ export async function getAllowed(req, res) {
       return res.status(401).json({ ok: false, error: 'CUSTOMER_NOT_LOGGED_IN' });
     }
 
-    const member = await getVerifiedMember(shopifyCustomerId);
+    const member = await getAuthorizedMember(shopifyCustomerId);
     const bookingAccess = await getMemberBookingAccess(member.id);
 
     const [entitlements, nextMonthEntitlements] = await Promise.all([
@@ -101,10 +89,11 @@ export async function getAllowed(req, res) {
     });
   } catch (err) {
     console.error('getAllowed error:', err);
-    const status = err.message === 'PREMIUM_TAG_REQUIRED' ? 403 : 500;
+    const authorizationError = isMemberAuthorizationError(err);
+    const status = authorizationError ? 403 : 500;
     res.status(status).json({
       ok: false,
-      error: err.message === 'PREMIUM_TAG_REQUIRED' ? err.message : 'SERVER_ERROR'
+      error: authorizationError ? err.message : 'SERVER_ERROR'
     });
   }
 }

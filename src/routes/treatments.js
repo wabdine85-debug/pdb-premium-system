@@ -5,9 +5,8 @@ import {
   getEntitlementsForMonth
 } from "../services/entitlement.service.js";
 import { getNextBookingMonth } from "../utils/dates.js";
-import { findMemberByShopifyId, createMember, updateMemberByShopifyId } from "../repositories/member.repository.js";
-import { resolvePackageFromTags } from "../utils/packageTags.js";
 import { requireShopifyCustomer, verifyShopifyAppProxy } from "../middleware/shopifyAppProxy.js";
+import { getAuthorizedMember, isMemberAuthorizationError } from "../services/memberAuthorization.service.js";
 
 
 
@@ -40,14 +39,6 @@ if (!proxyCustomerId) {
     error: "INVALID_CUSTOMER"
   });
 }
-    const email = String(req.query.email || "").trim();
-    const firstName = String(req.query.firstName || "").trim();
-    const lastName = String(req.query.lastName || "").trim();
-    const tags = String(req.query.tags || "")
-      .split(",")
-      .map(t => t.trim())
-      .filter(Boolean);
-
     if (!shopifyCustomerId) {
       return res.status(400).json({
         ok: false,
@@ -55,24 +46,7 @@ if (!proxyCustomerId) {
       });
     }
 
-    const packageKey = resolvePackageFromTags(tags);
-let member = await findMemberByShopifyId(shopifyCustomerId);
-
-if (!member) {
-  return res.status(404).json({
-    ok: false,
-    error: "MEMBER_NOT_FOUND"
-  });
-}
-
-if (email || firstName || lastName || packageKey) {
-  member = await updateMemberByShopifyId(shopifyCustomerId, {
-    email: email || member.email,
-    firstName: firstName || member.first_name,
-    lastName: lastName || member.last_name,
-    packageKey: packageKey || member.package_key
-  });
-}
+    const member = await getAuthorizedMember(shopifyCustomerId);
 
     const [entitlements, nextMonthEntitlements] = await Promise.all([
       getEntitlements(member),
@@ -105,9 +79,10 @@ if (email || firstName || lastName || packageKey) {
     });
   } catch (error) {
     console.error("GET /api/treatments/allowed error:", error);
-    return res.status(500).json({
+    const authorizationError = isMemberAuthorizationError(error);
+    return res.status(authorizationError ? 403 : 500).json({
       ok: false,
-      error: "INTERNAL_SERVER_ERROR"
+      error: authorizationError ? error.message : "INTERNAL_SERVER_ERROR"
     });
   }
 });

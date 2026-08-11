@@ -104,7 +104,7 @@ export async function findLatestApplicationByCustomer(customerId, db = pool) {
 
 export async function findActiveApplicationForBooking(memberId, db = pool) {
   const result = await db.query(
-    `SELECT id, starts_on, early_start_requested_at, activated_at
+    `SELECT id, package_key, status, starts_on, early_start_requested_at, activated_at
      FROM membership_applications
      WHERE activated_member_id = $1 AND status = 'active'
      ORDER BY activated_at DESC

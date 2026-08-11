@@ -1,6 +1,5 @@
 import express from "express";
 import { pool } from "../config/pool.js";
-import { findMemberByShopifyId } from "../repositories/member.repository.js";
 import {
   getEntitlements,
   getEntitlementsForMonth,
@@ -20,6 +19,10 @@ import {
   verifyShopifyAppProxy
 } from "../middleware/shopifyAppProxy.js";
 import { getMemberBookingAccess } from "../services/bookingAccess.service.js";
+import {
+  getAuthorizedMember,
+  isMemberAuthorizationError
+} from "../services/memberAuthorization.service.js";
 
 const router = express.Router();
 
@@ -57,14 +60,7 @@ router.post("/create", verifyShopifyAppProxy, requireShopifyCustomer, requireMat
       });
     }
 
-    const member = await findMemberByShopifyId(shopifyCustomerId);
-
-    if (!member) {
-      return res.status(404).json({
-        ok: false,
-        error: "MEMBER_NOT_FOUND"
-      });
-    }
+    const member = await getAuthorizedMember(shopifyCustomerId);
 
     if (member.status !== "active") {
       return res.status(403).json({ ok: false, error: "MEMBER_NOT_ACTIVE" });
@@ -143,9 +139,10 @@ if (availableBookingMonths.length === 0) {
 
   } catch (error) {
     console.error("POST /api/bookings/create error:", error);
-    return res.status(500).json({
+    const authorizationError = isMemberAuthorizationError(error);
+    return res.status(authorizationError ? 403 : 500).json({
       ok: false,
-      error: "INTERNAL_SERVER_ERROR"
+      error: authorizationError ? error.message : "INTERNAL_SERVER_ERROR"
     });
   }
 });
@@ -297,6 +294,14 @@ router.post("/validate-slot", verifyShopifyAppProxy, requireShopifyCustomer, req
       });
     }
 
+    const authorizedMember = await getAuthorizedMember(shopifyCustomerId);
+    if (
+      authorizedMember.id !== bookingToken.member_id ||
+      authorizedMember.package_key !== bookingToken.package_key
+    ) {
+      return res.status(403).json({ ok: false, error: "MEMBER_AUTHORIZATION_MISMATCH" });
+    }
+
     const bookingAccess = await getMemberBookingAccess(bookingToken.member_id);
     if (!bookingAccess.allowed) {
       return res.status(403).json({
@@ -343,9 +348,10 @@ router.post("/validate-slot", verifyShopifyAppProxy, requireShopifyCustomer, req
     });
   } catch (error) {
     console.error("POST /api/bookings/validate-slot error:", error);
-    return res.status(500).json({
+    const authorizationError = isMemberAuthorizationError(error);
+    return res.status(authorizationError ? 403 : 500).json({
       ok: false,
-      error: "INTERNAL_SERVER_ERROR"
+      error: authorizationError ? error.message : "INTERNAL_SERVER_ERROR"
     });
   }
 });
@@ -390,6 +396,8 @@ router.post("/consume", verifyShopifyAppProxy, requireShopifyCustomer, requireMa
         error: "APPOINTMENT_MONTH_NOT_ALLOWED"
       });
     }
+
+    const authorizedMember = await getAuthorizedMember(shopifyCustomerId);
 
     await client.query("BEGIN");
 
@@ -477,6 +485,17 @@ router.post("/consume", verifyShopifyAppProxy, requireShopifyCustomer, requireMa
       package_key: bookingToken.package_key,
       status: bookingToken.status
     };
+
+    if (
+      authorizedMember.id !== member.id ||
+      authorizedMember.package_key !== member.package_key
+    ) {
+      await client.query("ROLLBACK");
+      return res.status(403).json({
+        ok: false,
+        error: "MEMBER_AUTHORIZATION_MISMATCH"
+      });
+    }
 
     if (member.status !== "active") {
       await client.query("ROLLBACK");
@@ -608,9 +627,10 @@ router.post("/consume", verifyShopifyAppProxy, requireShopifyCustomer, requireMa
   } catch (error) {
     await client.query("ROLLBACK");
     console.error("POST /api/bookings/consume error:", error);
-    return res.status(500).json({
+    const authorizationError = isMemberAuthorizationError(error);
+    return res.status(authorizationError ? 403 : 500).json({
       ok: false,
-      error: "INTERNAL_SERVER_ERROR"
+      error: authorizationError ? error.message : "INTERNAL_SERVER_ERROR"
     });
   } finally {
     client.release();
