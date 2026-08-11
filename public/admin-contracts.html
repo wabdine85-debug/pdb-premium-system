@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="robots" content="noindex,nofollow,noarchive">
+    <meta name="theme-color" content="#f6f2ee">
+    <title>PDB PREMIUM Vertragsverwaltung</title>
+    <link rel="stylesheet" href="/admin/assets/contracts.css">
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Zum Inhalt</a>
+    <header class="site-header">
+      <div>
+        <span class="eyebrow">PDB Aesthetic Room</span>
+        <h1>PREMIUM Vertragsverwaltung</h1>
+      </div>
+      <button class="button button-secondary" id="logout-button" type="button" hidden>Abmelden</button>
+    </header>
+
+    <main id="main">
+      <section class="panel login-panel" id="login-panel" aria-labelledby="login-heading">
+        <div>
+          <span class="eyebrow">Geschützter Bereich</span>
+          <h2 id="login-heading">Admin-Zugang</h2>
+          <p>Der Token bleibt ausschließlich im Arbeitsspeicher dieses Tabs und wird nicht dauerhaft gespeichert.</p>
+        </div>
+        <form id="login-form" class="login-form">
+          <label for="admin-token">ADMIN_API_TOKEN</label>
+          <input id="admin-token" name="admin_token" type="password" autocomplete="off" spellcheck="false" required>
+          <button class="button" id="login-button" type="submit">Verträge laden</button>
+        </form>
+        <p class="status" id="login-status" role="status" aria-live="polite"></p>
+      </section>
+
+      <section id="admin-panel" hidden>
+        <div class="toolbar panel">
+          <div>
+            <span class="eyebrow">Vertragsanträge</span>
+            <h2>Übersicht</h2>
+          </div>
+          <label class="filter-label" for="status-filter">Status
+            <select id="status-filter" name="status_filter">
+              <option value="sepa_pending">SEPA ausstehend</option>
+              <option value="active">Aktiv</option>
+              <option value="cancel_requested">Kündigung angefordert</option>
+              <option value="cancelled">Beendet</option>
+              <option value="">Alle</option>
+            </select>
+          </label>
+        </div>
+        <p class="status" id="admin-status" role="status" aria-live="polite"></p>
+        <div class="application-list" id="application-list"></div>
+      </section>
+    </main>
+
+    <dialog id="sepa-dialog" aria-labelledby="sepa-heading">
+      <div class="dialog-body">
+        <span class="eyebrow">Vertrauliche Daten</span>
+        <h2 id="sepa-heading">SEPA-Daten</h2>
+        <p>Dieser Zugriff wurde im Vertragsprotokoll dokumentiert.</p>
+        <dl class="detail-list" id="sepa-details"></dl>
+        <form method="dialog"><button class="button button-secondary" type="submit">Schließen</button></form>
+      </div>
+    </dialog>
+
+    <dialog id="activate-dialog" aria-labelledby="activate-heading">
+      <div class="dialog-body">
+        <span class="eyebrow">Vertrag annehmen</span>
+        <h2 id="activate-heading">SEPA wirklich eingerichtet?</h2>
+        <p id="activate-copy"></p>
+        <label class="confirmation-check">
+          <input id="activate-confirmation" type="checkbox">
+          <span>Ich bestätige, dass das Mandat bei der Naspa eingerichtet wurde und der Vertrag angenommen werden soll.</span>
+        </label>
+        <div class="dialog-actions">
+          <form method="dialog"><button class="button button-secondary" type="submit">Abbrechen</button></form>
+          <button class="button" id="activate-confirm-button" type="button" disabled>Vertrag annehmen</button>
+        </div>
+      </div>
+    </dialog>
+
+    <script src="/admin/assets/contracts.js" defer></script>
+  </body>
+</html>

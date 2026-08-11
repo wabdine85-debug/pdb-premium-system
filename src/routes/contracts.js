@@ -25,6 +25,7 @@ import {
 import { createMember, findMemberByShopifyId, updateMemberByShopifyId } from '../repositories/member.repository.js';
 import { setPremiumCustomerTag } from '../services/shopifyAdmin.service.js';
 import {
+  adminApplicationNotificationHtml,
   applicationConfirmationHtml,
   contractActionReceiptHtml
 } from '../services/contractDocuments.service.js';
@@ -168,6 +169,26 @@ router.post(
             reason: 'DELIVERY_FAILED'
           }).catch((eventError) => console.error('Contract mail event failed:', eventError.message));
         });
+
+      if (env.contractAdminEmail) {
+        sendTransactionalHtml({
+          to: env.contractAdminEmail,
+          subject: `Neuer PREMIUM-Antrag · ${application.package_key.toUpperCase()} · ${application.mandate_reference}`,
+          html: adminApplicationNotificationHtml(application),
+          filename: `PDB-Admin-Antrag-${application.mandate_reference}.html`
+        })
+          .then((mailDelivery) => addContractEvent(id, 'admin_application_notification', 'system', {
+            emailSent: mailDelivery.sent,
+            reason: mailDelivery.reason || null
+          }))
+          .catch((mailError) => {
+            console.error('Contract admin notification failed:', mailError.message);
+            return addContractEvent(id, 'admin_application_notification', 'system', {
+              emailSent: false,
+              reason: 'DELIVERY_FAILED'
+            }).catch((eventError) => console.error('Contract admin mail event failed:', eventError.message));
+          });
+      }
 
       res.set('Cache-Control', 'no-store');
       return res.status(201).json({

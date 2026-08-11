@@ -44,6 +44,7 @@ The following environment variables are required in production:
 - `ADMIN_API_TOKEN` (a long random bearer token)
 - `CONTRACT_VERSION`
 - `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`
+- `CONTRACT_ADMIN_EMAIL` (receives new-application notices without full IBAN data)
 
 The Shopify app proxy must forward `/apps/pdb/*` to this service under
 `/api/*`. Contract and booking endpoints reject unsigned proxy requests.
@@ -59,6 +60,11 @@ direct debit in Naspa Online-Banking, and then activates the application. The
 activation adds the matching Shopify customer tag and enables the member in
 the local database. IBAN values must never be placed in Shopify notes, tags,
 emails or logs.
+
+The protected administration page is available at `/admin/contracts`. The
+administrator enters `ADMIN_API_TOKEN` for the current browser session; the
+page does not persist the token. Full SEPA data is revealed only on explicit
+request and the access is written to the contract event log.
 
 ## Contract confirmations and public contract actions
 

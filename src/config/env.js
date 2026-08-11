@@ -20,7 +20,8 @@ export const env = {
   smtpSecure: String(process.env.SMTP_SECURE || 'true').toLowerCase() !== 'false',
   smtpUser: process.env.SMTP_USER || '',
   smtpPass: process.env.SMTP_PASS || '',
-  smtpFrom: process.env.SMTP_FROM || ''
+  smtpFrom: process.env.SMTP_FROM || '',
+  contractAdminEmail: process.env.CONTRACT_ADMIN_EMAIL || ''
 };
 
 export function assertRuntimeEnv() {

@@ -9,7 +9,7 @@ test('PRIVATE offer includes 12 months and setup fee', () => {
   assert.deepEqual(getPackageOffer('private'), {
     name: 'PRIVATE',
     monthlyPriceCents: 39900,
-    monthlyClaim: '1 Behandlung aus PRIVATE',
+    monthlyClaim: '1 vollständiges PRIVATE-Protokoll',
     minimumTotalCents: 482700
   });
 });

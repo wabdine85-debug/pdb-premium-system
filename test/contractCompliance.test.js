@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
+  adminApplicationNotificationHtml,
   applicationConfirmationHtml,
   contractActionReceiptHtml,
   escapeHtml
@@ -10,6 +11,7 @@ import { hasHouseNumber, hasRequiredContractConsents } from '../src/utils/contra
 import { calculateBookingAccess } from '../src/services/bookingAccess.service.js';
 
 const baseApplication = {
+  id: 'application-123',
   first_name: 'Test',
   last_name: 'Person',
   package_key: 'private',
@@ -17,6 +19,7 @@ const baseApplication = {
   setup_fee_cents: 3900,
   minimum_total_cents: 482700,
   starts_on: '2026-09-01',
+  debit_day: 1,
   mandate_reference: 'PDB-2026-TEST',
   iban_last4: '1234',
   contract_version: '2026-08-11-v2',
@@ -36,6 +39,23 @@ test('active confirmation explicitly records PDB acceptance', () => {
   assert.match(html, /Annahme- und Vertragsbestätigung/);
   assert.match(html, /nimmt Ihre Bestellung ausdrücklich an/);
   assert.match(html, /Vertrag angenommen und Mitgliedschaft aktiv/);
+  assert.match(html, /1 vollständiges PRIVATE-Protokoll/);
+  assert.match(html, /438,00/);
+  assert.match(html, /Gläubiger-ID DE73ZZZ00002018874/);
+  assert.match(html, /12 Monate Mindestlaufzeit/);
+  assert.match(html, /Widerruf/);
+});
+
+test('admin notification contains no full IBAN or decryption material', () => {
+  const html = adminApplicationNotificationHtml({
+    ...baseApplication,
+    email: 'test@example.com',
+    status: 'sepa_pending'
+  });
+  assert.match(html, /Neuer PDB PREMIUM Vertragsantrag/);
+  assert.match(html, /PDB-2026-TEST/);
+  assert.match(html, /••1234/);
+  assert.doesNotMatch(html, /iban_ciphertext|iban_auth_tag|iban_iv/i);
 });
 
 test('withdrawal receipt contains durable receipt identifiers and escapes input', () => {
