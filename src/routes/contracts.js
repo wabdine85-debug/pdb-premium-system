@@ -151,17 +151,23 @@ router.post(
       });
 
       const confirmation = applicationConfirmationHtml(application);
-      let mailDelivery = { sent: false, reason: 'DELIVERY_FAILED' };
-      try {
-        mailDelivery = await sendTransactionalHtml({
-          to: application.email,
-          subject: `Eingangsbestätigung ${application.mandate_reference}`,
-          html: confirmation,
-          filename: `PDB-Eingangsbestaetigung-${application.mandate_reference}.html`
+      sendTransactionalHtml({
+        to: application.email,
+        subject: `Eingangsbestätigung ${application.mandate_reference}`,
+        html: confirmation,
+        filename: `PDB-Eingangsbestaetigung-${application.mandate_reference}.html`
+      })
+        .then((mailDelivery) => addContractEvent(id, 'application_confirmation_delivery', 'system', {
+          emailSent: mailDelivery.sent,
+          reason: mailDelivery.reason || null
+        }))
+        .catch((mailError) => {
+          console.error('Contract application confirmation email failed:', mailError.message);
+          return addContractEvent(id, 'application_confirmation_delivery', 'system', {
+            emailSent: false,
+            reason: 'DELIVERY_FAILED'
+          }).catch((eventError) => console.error('Contract mail event failed:', eventError.message));
         });
-      } catch (mailError) {
-        console.error('Contract application confirmation email failed:', mailError.message);
-      }
 
       res.set('Cache-Control', 'no-store');
       return res.status(201).json({
@@ -175,7 +181,8 @@ router.post(
         },
         public_token: publicToken,
         confirmation_url: `/apps/pdb/contracts/confirmation?token=${encodeURIComponent(publicToken)}`,
-        confirmation_email_sent: mailDelivery.sent
+        confirmation_email_sent: false,
+        confirmation_email_queued: true
       });
     } catch (error) {
       if (error.message === 'INVALID_IBAN') {

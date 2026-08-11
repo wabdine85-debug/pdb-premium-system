@@ -60,6 +60,7 @@ export async function getAllowed(req, res) {
     }
 
     const member = await getVerifiedMember(shopifyCustomerId);
+    const bookingAccess = await getMemberBookingAccess(member.id);
 
     const [entitlements, nextMonthEntitlements] = await Promise.all([
       getEntitlements(member),

@@ -17,6 +17,9 @@ function getTransporter() {
       user: env.smtpUser,
       pass: env.smtpPass
     },
+    connectionTimeout: 10_000,
+    greetingTimeout: 10_000,
+    socketTimeout: 15_000,
     disableFileAccess: true,
     disableUrlAccess: true
   });
