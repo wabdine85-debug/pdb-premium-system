@@ -34,32 +34,53 @@ export function isRetryableMailError(error) {
     || message.includes('socket timeout');
 }
 
-async function deliverHtmlMail(transport, { to, subject, html, filename }) {
-  await transport.sendMail({
+export function htmlToPlainText(html) {
+  return String(html || '')
+    .replace(/<style[\s\S]*?<\/style>/gi, '')
+    .replace(/<head[\s\S]*?<\/head>/gi, '')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/td>/gi, '\t')
+    .replace(/<\/(?:h[1-6]|p|div|tr|table)>/gi, '\n')
+    .replace(/<li[^>]*>/gi, '• ')
+    .replace(/<\/li>/gi, '\n')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#0*39;/gi, "'")
+    .replace(/[ \t]+\n/g, '\n')
+    .replace(/\n[ \t]+/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+export function buildTransactionalMessage({ to, subject, html, text }) {
+  return {
     from: env.smtpFrom,
     to,
     subject,
-    text: 'Die Bestätigung befindet sich im HTML-Anhang dieser E-Mail.',
-    html,
-    attachments: [{
-      filename,
-      content: html,
-      contentType: 'text/html; charset=utf-8'
-    }]
-  });
+    text: text || htmlToPlainText(html),
+    html
+  };
 }
 
-export async function sendTransactionalHtml({ to, subject, html, filename }) {
+async function deliverHtmlMail(transport, message) {
+  await transport.sendMail(buildTransactionalMessage(message));
+}
+
+export async function sendTransactionalHtml({ to, subject, html, text }) {
   let transport = getTransporter();
   if (!transport) return { sent: false, reason: 'SMTP_NOT_CONFIGURED' };
 
   try {
-    await deliverHtmlMail(transport, { to, subject, html, filename });
+    await deliverHtmlMail(transport, { to, subject, html, text });
   } catch (error) {
     if (!isRetryableMailError(error)) throw error;
     transporter = undefined;
     transport = getTransporter();
-    await deliverHtmlMail(transport, { to, subject, html, filename });
+    await deliverHtmlMail(transport, { to, subject, html, text });
   }
 
   return { sent: true };

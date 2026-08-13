@@ -12,7 +12,11 @@ import {
   calculateBookingAccess,
   calculateBookingAccessWithTestOverride
 } from '../src/services/bookingAccess.service.js';
-import { isRetryableMailError } from '../src/services/mail.service.js';
+import {
+  buildTransactionalMessage,
+  htmlToPlainText,
+  isRetryableMailError
+} from '../src/services/mail.service.js';
 
 const baseApplication = {
   id: 'application-123',
@@ -35,7 +39,27 @@ test('pending order confirmation does not claim that the contract is already for
   const html = applicationConfirmationHtml({ ...baseApplication, status: 'sepa_pending' });
   assert.match(html, /verbindlichen Bestellung/);
   assert.match(html, /erst mit der ausdrücklichen Annahme/);
+  assert.match(html, /Wie geht es weiter/);
+  assert.match(html, /01\.09\.2026/);
+  assert.doesNotMatch(html, /Coordinated Universal Time|Tue Sep/);
   assert.doesNotMatch(html, /nimmt Ihre Bestellung ausdrücklich an/);
+});
+
+test('transactional confirmation has a complete text alternative and no HTML attachment', () => {
+  const html = applicationConfirmationHtml({ ...baseApplication, status: 'sepa_pending' });
+  const message = buildTransactionalMessage({
+    to: 'test@example.com',
+    subject: 'Ihre Bestellung ist eingegangen',
+    html
+  });
+
+  assert.equal('attachments' in message, false);
+  assert.match(message.text, /Eingangsbestätigung Ihrer verbindlichen Bestellung/);
+  assert.match(message.text, /Mandatsreferenz/);
+  assert.match(message.text, /Wie geht es weiter/);
+  assert.match(message.text, /01\.09\.2026/);
+  assert.doesNotMatch(message.text, /HTML-Anhang/);
+  assert.equal(htmlToPlainText('<p>A &amp; B</p>'), 'A & B');
 });
 
 test('active confirmation explicitly records PDB acceptance', () => {

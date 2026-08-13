@@ -161,9 +161,8 @@ router.post(
       const confirmation = applicationConfirmationHtml(application);
       sendTransactionalHtml({
         to: application.email,
-        subject: `Eingangsbestätigung ${application.mandate_reference}`,
-        html: confirmation,
-        filename: `PDB-Eingangsbestaetigung-${application.mandate_reference}.html`
+        subject: `Ihre PDB PREMIUM Bestellung ist eingegangen · ${application.mandate_reference}`,
+        html: confirmation
       })
         .then((mailDelivery) => addContractEvent(id, 'application_confirmation_delivery', 'system', {
           emailSent: mailDelivery.sent,
@@ -181,8 +180,7 @@ router.post(
         sendTransactionalHtml({
           to: env.contractAdminEmail,
           subject: `Neuer PREMIUM-Antrag · ${application.package_key.toUpperCase()} · ${application.mandate_reference}`,
-          html: adminApplicationNotificationHtml(application),
-          filename: `PDB-Admin-Antrag-${application.mandate_reference}.html`
+          html: adminApplicationNotificationHtml(application)
         })
           .then((mailDelivery) => addContractEvent(id, 'admin_application_notification', 'system', {
             emailSent: mailDelivery.sent,
@@ -322,8 +320,7 @@ router.post('/action', verifyShopifyAppProxy, contractActionLimiter, async (req,
       mailDelivery = await sendTransactionalHtml({
         to: communicationEmail,
         subject: actionType === 'withdrawal' ? 'Eingangsbestätigung Ihres Widerrufs' : 'Eingangsbestätigung Ihrer Kündigung',
-        html: receipt,
-        filename: `PDB-${actionType === 'withdrawal' ? 'Widerruf' : 'Kuendigung'}-${action.id}.html`
+        html: receipt
       });
     } catch (mailError) {
       console.error('Contract action confirmation email failed:', mailError.message);
@@ -372,8 +369,7 @@ router.post('/cancel', verifyShopifyAppProxy, requireShopifyCustomer, async (req
     mailDelivery = await sendTransactionalHtml({
       to: application.email,
       subject: 'Eingangsbestätigung Ihrer Kündigung',
-      html: confirmationDocument,
-      filename: `PDB-Kuendigung-${application.mandate_reference}.html`
+      html: confirmationDocument
     });
   } catch (mailError) {
     console.error('Member cancellation confirmation email failed:', mailError.message);
@@ -481,9 +477,8 @@ router.post('/admin/:id/activate', requireAdminAccess, async (req, res) => {
     try {
       mailDelivery = await sendTransactionalHtml({
         to: activated.email,
-        subject: `Annahme- und Vertragsbestätigung ${activated.mandate_reference}`,
-        html: confirmation,
-        filename: `PDB-Vertragsbestaetigung-${activated.mandate_reference}.html`
+        subject: `Ihre PDB PREMIUM Mitgliedschaft ist bestätigt · ${activated.mandate_reference}`,
+        html: confirmation
       });
       await addContractEvent(application.id, 'acceptance_confirmation_delivery', 'system', {
         emailSent: mailDelivery.sent,
@@ -522,9 +517,8 @@ router.post('/admin/:id/resend-confirmation', requireAdminAccess, async (req, re
   try {
     const mailDelivery = await sendTransactionalHtml({
       to: application.email,
-      subject: `Annahme- und Vertragsbestätigung ${application.mandate_reference}`,
-      html: applicationConfirmationHtml(application),
-      filename: `PDB-Vertragsbestaetigung-${application.mandate_reference}.html`
+      subject: `Ihre PDB PREMIUM Mitgliedschaft ist bestätigt · ${application.mandate_reference}`,
+      html: applicationConfirmationHtml(application)
     });
     await addContractEvent(application.id, 'acceptance_confirmation_resent', 'admin', {
       emailSent: mailDelivery.sent,
