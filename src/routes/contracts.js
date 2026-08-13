@@ -2,7 +2,12 @@ import crypto from 'node:crypto';
 import express from 'express';
 import { env } from '../config/env.js';
 import { pool } from '../config/pool.js';
-import { requireAdminToken } from '../middleware/adminAuth.js';
+import {
+  adminSessionStatus,
+  createAdminSessionHandler,
+  deleteAdminSessionHandler,
+  requireAdminAccess
+} from '../middleware/adminAuth.js';
 import { rateLimit } from '../middleware/rateLimit.js';
 import {
   requireShopifyCustomer,
@@ -43,6 +48,7 @@ import { hasHouseNumber, hasRequiredContractConsents } from '../utils/contractCo
 const router = express.Router();
 const applicationLimiter = rateLimit({ windowMs: 15 * 60_000, max: 5 });
 const contractActionLimiter = rateLimit({ windowMs: 15 * 60_000, max: 5 });
+const adminLoginLimiter = rateLimit({ windowMs: 15 * 60_000, max: 8 });
 
 function cleanText(value, maxLength) {
   return String(value || '').trim().replace(/\s+/g, ' ').slice(0, maxLength);
@@ -400,17 +406,21 @@ router.get('/cancellation-confirmation', verifyShopifyAppProxy, requireShopifyCu
   return res.type('html').send(cancellationConfirmationHtml(application));
 });
 
-router.get('/admin', requireAdminToken, async (req, res) => {
+router.get('/admin/session', adminSessionStatus);
+router.post('/admin/session', adminLoginLimiter, createAdminSessionHandler);
+router.delete('/admin/session', deleteAdminSessionHandler);
+
+router.get('/admin', requireAdminAccess, async (req, res) => {
   const applications = await listApplications({ status: req.query.status, limit: req.query.limit });
   return res.json({ ok: true, applications: applications.map((item) => ({ ...item, masked_iban: maskIban(item.iban_last4) })) });
 });
 
-router.get('/admin-actions', requireAdminToken, async (req, res) => {
+router.get('/admin-actions', requireAdminAccess, async (req, res) => {
   const actions = await listContractActionRequests({ status: req.query.status, limit: req.query.limit });
   return res.json({ ok: true, actions });
 });
 
-router.get('/admin/:id/sepa', requireAdminToken, async (req, res) => {
+router.get('/admin/:id/sepa', requireAdminAccess, async (req, res) => {
   const application = await findApplicationForAdmin(req.params.id);
   if (!application) return res.status(404).json({ ok: false, error: 'APPLICATION_NOT_FOUND' });
   const iban = decryptIban({
@@ -434,7 +444,7 @@ router.get('/admin/:id/sepa', requireAdminToken, async (req, res) => {
   });
 });
 
-router.post('/admin/:id/activate', requireAdminToken, async (req, res) => {
+router.post('/admin/:id/activate', requireAdminAccess, async (req, res) => {
   const client = await pool.connect();
   try {
     const application = await findApplicationForAdmin(req.params.id, client);
@@ -502,7 +512,7 @@ router.post('/admin/:id/activate', requireAdminToken, async (req, res) => {
   }
 });
 
-router.post('/admin/:id/resend-confirmation', requireAdminToken, async (req, res) => {
+router.post('/admin/:id/resend-confirmation', requireAdminAccess, async (req, res) => {
   const application = await findApplicationForAdmin(req.params.id);
   if (!application) return res.status(404).json({ ok: false, error: 'APPLICATION_NOT_FOUND' });
   if (application.status !== 'active') {
@@ -538,7 +548,7 @@ router.post('/admin/:id/resend-confirmation', requireAdminToken, async (req, res
   }
 });
 
-router.post('/admin/:id/test-booking-access', requireAdminToken, async (req, res) => {
+router.post('/admin/:id/test-booking-access', requireAdminAccess, async (req, res) => {
   try {
     const application = await findApplicationForAdmin(req.params.id);
     if (!application) return res.status(404).json({ ok: false, error: 'APPLICATION_NOT_FOUND' });

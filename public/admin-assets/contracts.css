@@ -17,6 +17,14 @@ main{width:min(1180px,calc(100% - 32px));margin:32px auto 70px}
 .panel{border:1px solid var(--line);border-radius:20px;background:var(--paper);box-shadow:0 14px 40px rgba(43,32,23,.05)}
 .login-panel{display:grid;grid-template-columns:minmax(0,1fr) minmax(280px,.7fr);gap:32px;align-items:end;padding:clamp(24px,5vw,48px)}
 .login-form{display:grid;gap:10px}
+.security-notes{display:grid;gap:8px;margin:24px 0 0;padding:0;list-style:none;color:var(--muted)}
+.security-notes li{position:relative;padding-left:26px}
+.security-notes li::before{content:'✓';position:absolute;left:0;top:-1px;color:var(--accent);font-weight:900}
+.recovery-access{margin-top:8px;padding-top:14px;border-top:1px solid var(--line)}
+.recovery-access summary{color:var(--muted);font-size:13px;font-weight:750;cursor:pointer}
+.recovery-access p{margin:12px 0;font-size:13px}
+.recovery-access label{display:block;margin:12px 0 6px;font-size:13px}
+.recovery-access .button{width:100%;margin-top:10px}
 label{font-weight:750}
 input,select{width:100%;min-height:48px;border:1px solid #cfc5bc;border-radius:12px;background:#fff;color:var(--ink);padding:11px 13px}
 input:focus-visible,select:focus-visible,.button:focus-visible{outline:3px solid rgba(140,106,81,.28);outline-offset:2px}

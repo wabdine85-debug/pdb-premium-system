@@ -41,7 +41,9 @@ The following environment variables are required in production:
 - `SHOPIFY_CLIENT_SECRET`
 - `SHOPIFY_APP_SECRET`
 - `CONTRACT_ENCRYPTION_KEY` (32 random bytes encoded as Base64 or 64 hex characters)
-- `ADMIN_API_TOKEN` (a long random bearer token)
+- `ADMIN_API_TOKEN` (a long random bearer token; also signs browser sessions)
+- `ADMIN_PASSWORD` (minimum 12 characters; unique password for the browser administration)
+- `ADMIN_SESSION_HOURS` (optional, 1–24 hours; defaults to 8)
 - `CONTRACT_VERSION`
 - `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`
 - `CONTRACT_ADMIN_EMAIL` (receives new-application notices without full IBAN data)
@@ -62,9 +64,11 @@ the local database. IBAN values must never be placed in Shopify notes, tags,
 emails or logs.
 
 The protected administration page is available at `/admin/contracts`. The
-administrator enters `ADMIN_API_TOKEN` for the current browser session; the
-page does not persist the token. Full SEPA data is revealed only on explicit
-request and the access is written to the contract event log.
+administrator signs in with `ADMIN_PASSWORD`; the server creates an `HttpOnly`,
+`Secure`, `SameSite=Strict` cookie that expires automatically. `ADMIN_API_TOKEN`
+remains available as a recovery and private API credential and is never
+persisted by the page. Full SEPA data is revealed only on explicit request and
+the access is written to the contract event log.
 
 ## Contract confirmations and public contract actions
 

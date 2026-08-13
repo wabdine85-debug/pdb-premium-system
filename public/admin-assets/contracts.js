@@ -2,7 +2,9 @@
   const loginPanel = document.getElementById('login-panel');
   const loginForm = document.getElementById('login-form');
   const loginButton = document.getElementById('login-button');
+  const passwordInput = document.getElementById('admin-password');
   const tokenInput = document.getElementById('admin-token');
+  const tokenLoginButton = document.getElementById('token-login-button');
   const loginStatus = document.getElementById('login-status');
   const adminPanel = document.getElementById('admin-panel');
   const adminStatus = document.getElementById('admin-status');
@@ -24,7 +26,7 @@
 
   const currency = new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' });
   const date = new Intl.DateTimeFormat('de-DE', { dateStyle: 'medium', timeZone: 'Europe/Berlin' });
-  let adminToken = '';
+  let recoveryToken = '';
   let pendingActivation = null;
   let pendingAdminAction = null;
 
@@ -36,9 +38,12 @@
   async function adminRequest(path, options = {}) {
     const response = await fetch(`/api/contracts${path}`, {
       ...options,
+      cache: 'no-store',
+      credentials: 'same-origin',
       headers: {
         Accept: 'application/json',
-        Authorization: `Bearer ${adminToken}`,
+        'X-PDB-Admin': '1',
+        ...(recoveryToken ? { Authorization: `Bearer ${recoveryToken}` } : {}),
         ...(options.body ? { 'Content-Type': 'application/json' } : {}),
         ...(options.headers || {})
       }
@@ -52,17 +57,50 @@
     }
     if (!response.ok || !result.ok) {
       const messages = {
-        ADMIN_AUTH_REQUIRED: 'Admin-Token fehlt.',
-        ADMIN_AUTH_INVALID: 'Admin-Token ist ungültig.',
+        ADMIN_AUTH_REQUIRED: 'Ihre Sitzung ist abgelaufen. Bitte melden Sie sich erneut an.',
+        ADMIN_AUTH_INVALID: 'Der API-Key ist ungültig.',
+        ADMIN_PASSWORD_INVALID: 'Das Admin-Passwort ist nicht korrekt.',
+        ADMIN_PASSWORD_NOT_CONFIGURED: 'Der Passwort-Login ist noch nicht eingerichtet. Hinterlegen Sie ADMIN_PASSWORD bei Render.',
+        ADMIN_CSRF_REQUIRED: 'Die Sicherheitsprüfung ist fehlgeschlagen. Bitte laden Sie die Seite neu.',
+        TOO_MANY_REQUESTS: 'Zu viele Anmeldeversuche. Bitte warten Sie 15 Minuten.',
         APPLICATION_NOT_FOUND: 'Der Antrag wurde nicht gefunden.',
         APPLICATION_NOT_ACTIVATABLE: 'Dieser Antrag kann nicht aktiviert werden.',
         APPLICATION_NOT_ACTIVE: 'Diese Aktion ist nur für aktive Verträge möglich.',
         CONFIRMATION_EMAIL_NOT_SENT: 'Die E-Mail konnte nicht versendet werden. Bitte SMTP-Verbindung prüfen und erneut versuchen.',
         TEST_BOOKING_ACCESS_FAILED: 'Der Testzugang konnte nicht gespeichert werden. Bitte erneut versuchen.'
       };
+      if (result.error === 'ADMIN_AUTH_REQUIRED' && path !== '/admin/session') {
+        recoveryToken = '';
+        showLogin();
+      }
       throw new Error(messages[result.error] || 'Die Aktion konnte nicht ausgeführt werden.');
     }
     return result;
+  }
+
+  function showAdmin() {
+    loginPanel.hidden = true;
+    adminPanel.hidden = false;
+    logoutButton.hidden = false;
+  }
+
+  function showLogin() {
+    applicationList.replaceChildren();
+    adminPanel.hidden = true;
+    logoutButton.hidden = true;
+    loginPanel.hidden = false;
+    passwordInput.focus();
+  }
+
+  async function restoreSession() {
+    try {
+      const result = await adminRequest('/admin/session');
+      if (!result.authenticated) return;
+      showAdmin();
+      await loadApplications();
+    } catch {
+      showLogin();
+    }
   }
 
   function addDetail(container, label, value) {
@@ -187,34 +225,50 @@
 
   loginForm.addEventListener('submit', async (event) => {
     event.preventDefault();
-    adminToken = tokenInput.value.trim();
-    if (!adminToken) return;
+    const password = passwordInput.value;
+    if (!password) return;
     loginButton.disabled = true;
     loginButton.textContent = 'Zugang wird geprüft…';
     setStatus(loginStatus, '');
     try {
-      await adminRequest('/admin?status=sepa_pending&limit=1');
-      tokenInput.value = '';
-      loginPanel.hidden = true;
-      adminPanel.hidden = false;
-      logoutButton.hidden = false;
+      await adminRequest('/admin/session', { method: 'POST', body: JSON.stringify({ password }) });
+      passwordInput.value = '';
+      showAdmin();
       await loadApplications();
     } catch (error) {
-      adminToken = '';
       setStatus(loginStatus, error.message, true);
     } finally {
       loginButton.disabled = false;
-      loginButton.textContent = 'Verträge laden';
+      loginButton.textContent = 'Sicher anmelden';
     }
   });
 
-  logoutButton.addEventListener('click', () => {
-    adminToken = '';
-    applicationList.replaceChildren();
-    adminPanel.hidden = true;
-    logoutButton.hidden = true;
-    loginPanel.hidden = false;
-    tokenInput.focus();
+  tokenLoginButton.addEventListener('click', async () => {
+    recoveryToken = tokenInput.value.trim();
+    if (!recoveryToken) return;
+    tokenLoginButton.disabled = true;
+    setStatus(loginStatus, '');
+    try {
+      await adminRequest('/admin?status=sepa_pending&limit=1');
+      tokenInput.value = '';
+      showAdmin();
+      await loadApplications();
+    } catch (error) {
+      recoveryToken = '';
+      setStatus(loginStatus, error.message, true);
+    } finally {
+      tokenLoginButton.disabled = false;
+    }
+  });
+
+  logoutButton.addEventListener('click', async () => {
+    try {
+      if (!recoveryToken) await adminRequest('/admin/session', { method: 'DELETE' });
+    } finally {
+      recoveryToken = '';
+      setStatus(loginStatus, 'Sie wurden sicher abgemeldet.');
+      showLogin();
+    }
   });
 
   statusFilter.addEventListener('change', loadApplications);
@@ -340,4 +394,6 @@
         : '2 Stunden freigeben';
     }
   });
+
+  restoreSession();
 })();
