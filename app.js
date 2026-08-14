@@ -25,6 +25,14 @@ app.use(cors({ origin: env.frontendOrigin, credentials: true }));
 app.use(express.json());
 app.use(morgan('dev'));
 
+export function redirectRootToAdmin(_req, res) {
+  res.set('Cache-Control', 'no-store');
+  res.set('X-Robots-Tag', 'noindex, nofollow, noarchive');
+  return res.redirect(302, '/admin/contracts');
+}
+
+app.get('/', redirectRootToAdmin);
+
 app.get('/admin/contracts', (_req, res) => {
   res.set('Cache-Control', 'no-store');
   res.set('X-Robots-Tag', 'noindex, nofollow, noarchive');
