@@ -1,5 +1,6 @@
 :root{color-scheme:light;--ink:#171717;--muted:#6f6963;--paper:#fff;--canvas:#f6f2ee;--line:#ded5cd;--accent:#8c6a51;--danger:#8c3028}
 *{box-sizing:border-box}
+[hidden]{display:none!important}
 html{background:var(--canvas);scroll-behavior:smooth}
 body{margin:0;color:var(--ink);background:var(--canvas);font:15px/1.55 Arial,sans-serif}
 button,input,select{font:inherit}

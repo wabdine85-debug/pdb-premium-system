@@ -128,7 +128,7 @@ export default function PremiumAdministration({ crmMemberships = [] }) {
         <div>
           <span className="premium-admin__eyebrow">Render · geschützter Zugriff</span>
           <h3>Online-Kontingente & Verträge</h3>
-          <p>Hier erscheinen nur Member, die bereits für die Online-Buchung freigeschaltet sind. Die vollständige Memberverwaltung bleibt in der CRM-Liste darunter.</p>
+          <p>Hier erscheinen technische Online-Buchungskonten. Sie entstehen automatisch beim Premium-Zugang oder durch die Annahme eines neuen Vertrags. Die vollständige Memberverwaltung bleibt in der CRM-Liste darunter.</p>
         </div>
         <button className="premium-admin__refresh" onClick={loadOverview} disabled={loading}>Aktualisieren</button>
       </div>
@@ -146,7 +146,7 @@ export default function PremiumAdministration({ crmMemberships = [] }) {
         <div className="premium-admin__workspace">
           <div className="premium-admin__list">
             <div className="premium-admin__scope">
-              <strong>{members.length} online freigeschaltet</strong>
+              <strong>{members.length} Konten im Online-System</strong>
               <span>{activeCrmMemberCount} aktive Member stehen insgesamt im CRM.</span>
             </div>
             <div className="premium-admin__filters">
