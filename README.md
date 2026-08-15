@@ -84,6 +84,24 @@ Activation sends the explicit acceptance and contract confirmation when SMTP
 is configured. The latest order or contract confirmation remains downloadable
 from the signed customer area.
 
+## Internal member administration
+
+The existing contract administration endpoints remain unchanged. Additional
+member administration endpoints are available below `/api/admin` and require
+the same `Authorization: Bearer <ADMIN_API_TOKEN>` header:
+
+- `GET /api/admin/members` lists members and supports `q`, `status` and `limit`.
+- `GET /api/admin/members/:id` returns the member, two monthly entitlement
+  summaries, bookings, allowed treatments and the manual audit history.
+- `POST /api/admin/members/:id/manual-usage` records an already consumed
+  treatment with `treatment_key`, `booking_month`, `actor` and `reason`.
+- `POST /api/admin/bookings/:id/cancel-manual` reverses only a manually created
+  usage and requires `actor` and `reason`.
+
+Run `migrations/005_add_manual_booking_audit.sql` before enabling these routes
+in an environment. The migration only adds columns, indexes and an audit table;
+it does not modify or delete existing member or booking records.
+
 ## Shopify products
 
 The ten PRIVATE carrier products are created idempotently with:

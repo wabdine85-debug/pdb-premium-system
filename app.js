@@ -9,6 +9,7 @@ import memberRoutes from './src/routes/member.routes.js';
 import treatmentsRouter from "./src/routes/treatments.js";
 import bookingsRouter from "./src/routes/bookings.js";
 import contractsRouter from './src/routes/contracts.js';
+import adminMembersRouter from './src/routes/adminMembers.js';
 
 const app = express();
 const publicDirectory = path.join(path.dirname(fileURLToPath(import.meta.url)), 'public');
@@ -65,6 +66,7 @@ app.use('/api', treatmentsRouter);
 app.use('/api/treatments', treatmentsRouter);
 app.use('/api/bookings', bookingsRouter);
 app.use('/api/contracts', contractsRouter);
+app.use('/api/admin', adminMembersRouter);
 
 // Test Route
 app.get('/ping', (_req, res) => {
