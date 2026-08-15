@@ -47,7 +47,7 @@ function QuotaGrid({ months }) {
   );
 }
 
-export default function PremiumAdministration() {
+export default function PremiumAdministration({ crmMemberships = [] }) {
   const [view, setView] = useState("members");
   const [members, setMembers] = useState([]);
   const [contracts, setContracts] = useState([]);
@@ -60,6 +60,11 @@ export default function PremiumAdministration() {
   const [notice, setNotice] = useState("");
   const [usage, setUsage] = useState({ booking_month: "", treatment_key: "", actor: "", reason: "" });
   const [confirmUsage, setConfirmUsage] = useState(false);
+  const activeCrmMemberCount = useMemo(() => new Set(
+    crmMemberships
+      .filter(membership => membership.status === "aktiv")
+      .map(membership => membership.memberId),
+  ).size, [crmMemberships]);
 
   const filteredMembers = useMemo(() => members.filter(member => {
     const needle = query.trim().toLowerCase();
@@ -122,14 +127,14 @@ export default function PremiumAdministration() {
       <div className="premium-admin__header">
         <div>
           <span className="premium-admin__eyebrow">Render · geschützter Zugriff</span>
-          <h3>Online-Verwaltung</h3>
-          <p>Live-Kontingente und Vertragsstatus aus dem Premium-System. Lokale CRM-Daten werden dabei nicht überschrieben.</p>
+          <h3>Online-Kontingente & Verträge</h3>
+          <p>Hier erscheinen nur Member, die bereits für die Online-Buchung freigeschaltet sind. Die vollständige Memberverwaltung bleibt in der CRM-Liste darunter.</p>
         </div>
         <button className="premium-admin__refresh" onClick={loadOverview} disabled={loading}>Aktualisieren</button>
       </div>
 
       <div className="premium-admin__tabs">
-        <button className={view === "members" ? "is-active" : ""} onClick={() => setView("members")}>Kontingente</button>
+        <button className={view === "members" ? "is-active" : ""} onClick={() => setView("members")}>Online-Kontingente <span>{members.length}</span></button>
         <button className={view === "contracts" ? "is-active" : ""} onClick={() => setView("contracts")}>Verträge <span>{contracts.length}</span></button>
       </div>
 
@@ -140,6 +145,10 @@ export default function PremiumAdministration() {
       {!loading && !error && view === "members" && (
         <div className="premium-admin__workspace">
           <div className="premium-admin__list">
+            <div className="premium-admin__scope">
+              <strong>{members.length} online freigeschaltet</strong>
+              <span>{activeCrmMemberCount} aktive Member stehen insgesamt im CRM.</span>
+            </div>
             <div className="premium-admin__filters">
               <input value={query} onChange={event => setQuery(event.target.value)} placeholder="Name, E-Mail oder Shopify-ID" />
               <select value={status} onChange={event => setStatus(event.target.value)}>

@@ -17,7 +17,7 @@ p{color:var(--muted)}
 main{width:min(1180px,calc(100% - 32px));margin:32px auto 70px}
 .panel{border:1px solid var(--line);border-radius:20px;background:var(--paper);box-shadow:0 14px 40px rgba(43,32,23,.05)}
 .login-panel{display:grid;grid-template-columns:minmax(0,1fr) minmax(280px,.7fr);gap:32px;align-items:end;padding:clamp(24px,5vw,48px)}
-.login-form{display:grid;gap:10px}
+.login-controls,.login-form{display:grid;gap:10px}
 .security-notes{display:grid;gap:8px;margin:24px 0 0;padding:0;list-style:none;color:var(--muted)}
 .security-notes li{position:relative;padding-left:26px}
 .security-notes li::before{content:'✓';position:absolute;left:0;top:-1px;color:var(--accent);font-weight:900}

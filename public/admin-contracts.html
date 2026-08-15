@@ -33,21 +33,25 @@
             <li>Automatische Abmeldung nach Ablauf der Sitzung</li>
           </ul>
         </div>
-        <form id="login-form" class="login-form" autocomplete="on">
-          <label for="admin-username">Benutzername</label>
-          <input id="admin-username" name="username" type="text" value="admin" autocomplete="username" autocapitalize="none" spellcheck="false" required>
-          <label for="admin-password">Admin-Passwort</label>
-          <input id="admin-password" name="password" type="password" autocomplete="current-password" spellcheck="false" minlength="12" required>
-          <button class="button" id="login-button" type="submit">Sicher anmelden</button>
-          <details class="recovery-access">
-            <summary>Notfallzugang mit API-Key</summary>
-            <p>Nur verwenden, wenn der Passwort-Login nicht verfügbar ist. Der Key bleibt ausschließlich in diesem Tab.</p>
-            <label for="admin-token">ADMIN_API_TOKEN</label>
-            <input id="admin-token" name="admin_token" type="password" autocomplete="off" spellcheck="false">
-            <button class="button button-secondary" id="token-login-button" type="button">Mit API-Key anmelden</button>
-          </details>
-        </form>
-        <p class="status" id="login-status" role="status" aria-live="polite"></p>
+        <div class="login-controls">
+          <form id="login-form" class="login-form" autocomplete="on">
+            <label for="admin-username">Benutzername</label>
+            <input id="admin-username" name="username" type="text" value="admin" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" required>
+            <label for="admin-password">Admin-Passwort</label>
+            <input id="admin-password" name="password" type="password" autocomplete="current-password" autocapitalize="none" autocorrect="off" spellcheck="false" minlength="12" required>
+            <button class="button" id="login-button" type="submit">Sicher anmelden</button>
+          </form>
+          <form id="recovery-form" class="login-form" autocomplete="off">
+            <details class="recovery-access">
+              <summary>Notfallzugang mit API-Key</summary>
+              <p>Nur verwenden, wenn der Passwort-Login nicht verfügbar ist. Der Key bleibt ausschließlich in diesem Tab.</p>
+              <label for="admin-token">ADMIN_API_TOKEN</label>
+              <input id="admin-token" name="admin_token" type="password" autocomplete="off" spellcheck="false">
+              <button class="button button-secondary" id="token-login-button" type="button">Mit API-Key anmelden</button>
+            </details>
+          </form>
+          <p class="status" id="login-status" role="status" aria-live="polite"></p>
+        </div>
       </section>
 
       <section id="admin-panel" hidden>

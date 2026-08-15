@@ -3565,7 +3565,7 @@ function Memberships({ data, save }) {
         </div>
       </div>
 
-      {showPremiumAdministration && <PremiumAdministration />}
+      {showPremiumAdministration && <PremiumAdministration crmMemberships={memberships} />}
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 14, marginBottom: 22 }}>
         {[
@@ -4713,6 +4713,7 @@ export default function CRM() {
   });
   const [isCompact, setIsCompact] = useState(() => window.innerWidth < 760);
   const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth >= 760);
+  const [loggingOut, setLoggingOut] = useState(false);
 
   useEffect(() => {
     const media = window.matchMedia("(max-width: 759px)");
@@ -4744,6 +4745,22 @@ export default function CRM() {
     if (isCompact) setSidebarOpen(false);
   };
 
+  const logout = async () => {
+    setLoggingOut(true);
+    try {
+      const response = await fetch("/api/contracts/admin/session", {
+        method: "DELETE",
+        credentials: "same-origin",
+        cache: "no-store",
+      });
+      if (!response.ok) throw new Error("LOGOUT_FAILED");
+      window.location.replace("/admin/contracts");
+    } catch {
+      setLoggingOut(false);
+      window.alert("Die Abmeldung konnte nicht abgeschlossen werden. Bitte erneut versuchen.");
+    }
+  };
+
   const overdueCount = data.invoices.filter(i => i.status === "überfällig" || i.status?.includes("Mahnung")).length;
   const activeMemberCount = new Set((data.memberships || []).filter(membership => membership.status === "aktiv").map(membership => membership.memberId)).size;
 
@@ -4751,6 +4768,7 @@ export default function CRM() {
     <div className="crm-shell" style={{ display: "flex", height: "100vh", fontFamily: "'DM Sans', system-ui, sans-serif", background: "#f6f3ee", color: "#1e293b" }}>
       <a className="crm-skip-link" href="#crm-main">Zum Inhalt</a>
       <h1 className="crm-visually-hidden">PDB Office</h1>
+      {isCompact && sidebarOpen && <button className="crm-sidebar-backdrop" aria-label="Seitenleiste schließen" onClick={() => setSidebarOpen(false)} />}
       {/* Sidebar */}
       <aside className="crm-sidebar" style={{
         width: sidebarOpen ? 220 : 64, background: "#161616", display: "flex", flexDirection: "column",
@@ -4761,9 +4779,7 @@ export default function CRM() {
         <div style={{ padding: "20px 16px", borderBottom: "1px solid #2c2c2c", display: "flex", alignItems: "center", gap: 10 }}>
           <div style={{ width: 32, height: 32, background: "#d8c3a5", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 900, color: "#161616", flexShrink: 0 }}>PDB</div>
           {sidebarOpen && <span style={{ fontSize: 15, fontWeight: 800, color: "#fff", whiteSpace: "nowrap" }}>PDB Office</span>}
-          <button aria-label={sidebarOpen ? "Seitenleiste einklappen" : "Seitenleiste ausklappen"} onClick={() => setSidebarOpen(o => !o)} style={{ background: "none", border: "none", color: "#94a3b8", cursor: "pointer", marginLeft: "auto", fontSize: 18, flexShrink: 0 }}>
-            {sidebarOpen ? "◀" : "▶"}
-          </button>
+          {sidebarOpen && <button aria-label="Seitenleiste einklappen" onClick={() => setSidebarOpen(false)} style={{ background: "none", border: "none", color: "#94a3b8", cursor: "pointer", marginLeft: "auto", fontSize: 18, flexShrink: 0 }}>◀</button>}
         </div>
 
         <nav style={{ flex: 1, padding: "12px 8px" }}>
@@ -4796,6 +4812,22 @@ export default function CRM() {
 
       {/* Main */}
       <main id="crm-main" className="crm-main" style={{ flex: 1, minWidth: 0, overflow: "auto", padding: isCompact ? "18px 14px" : "32px 36px" }}>
+        <header className="crm-appbar">
+          <div className="crm-appbar__context">
+            <button className="crm-appbar__menu" aria-label={sidebarOpen ? "Seitenleiste einklappen" : "Seitenleiste ausklappen"} onClick={() => setSidebarOpen(open => !open)}>
+              <span aria-hidden="true">{sidebarOpen ? "◀" : "☰"}</span>
+              <span>{sidebarOpen ? "Menü schließen" : "Menü öffnen"}</span>
+            </button>
+            <div>
+              <span>PDB Office</span>
+              <strong>{NAV.find(item => item.id === page)?.label || "Verwaltung"}</strong>
+            </div>
+          </div>
+          <nav className="crm-appbar__actions" aria-label="Verwaltungsbereiche">
+            <a href="/admin/contracts">Vertragsverwaltung</a>
+            <button type="button" disabled={loggingOut} onClick={logout}>{loggingOut ? "Abmeldung…" : "Abmelden"}</button>
+          </nav>
+        </header>
         {page === "dashboard" && <Dashboard data={data} onNavigate={navigateToPage} />}
         {page === "members" && <Members data={data} save={save} />}
         {page === "memberships" && <Memberships data={data} save={save} />}

@@ -14,6 +14,9 @@ test('admin portal uses a password session without exposing credentials', async 
   assert.match(page, /Admin-Passwort/);
   assert.match(page, /name="username"[^>]+autocomplete="username"/);
   assert.match(page, /name="password"[^>]+autocomplete="current-password"/);
+  const loginForm = page.match(/<form id="login-form"[\s\S]*?<\/form>/)?.[0] || '';
+  assert.doesNotMatch(loginForm, /admin-token|ADMIN_API_TOKEN/);
+  assert.match(page, /<form id="recovery-form"/);
   assert.match(page, /ADMIN_API_TOKEN/);
   assert.doesNotMatch(page, /Bearer\s+[A-Za-z0-9_-]{16,}/);
   assert.match(script, /credentials: 'same-origin'/);
