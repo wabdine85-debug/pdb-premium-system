@@ -2,6 +2,7 @@
   const loginPanel = document.getElementById('login-panel');
   const loginForm = document.getElementById('login-form');
   const loginButton = document.getElementById('login-button');
+  const usernameInput = document.getElementById('admin-username');
   const passwordInput = document.getElementById('admin-password');
   const tokenInput = document.getElementById('admin-token');
   const tokenLoginButton = document.getElementById('token-login-button');
@@ -239,7 +240,10 @@
     loginButton.textContent = 'Zugang wird geprüft…';
     setStatus(loginStatus, '');
     try {
-      await adminRequest('/admin/session', { method: 'POST', body: JSON.stringify({ password }) });
+      await adminRequest('/admin/session', {
+        method: 'POST',
+        body: JSON.stringify({ username: usernameInput.value.trim() || 'admin', password })
+      });
       passwordInput.value = '';
       const next = new URLSearchParams(window.location.search).get('next');
       if (next === '/office/' || next === '/office') {

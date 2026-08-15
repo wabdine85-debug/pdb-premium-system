@@ -12,6 +12,8 @@ test('admin portal uses a password session without exposing credentials', async 
   assert.match(appSource, /Cache-Control', 'no-store'/);
   assert.match(appSource, /X-Robots-Tag', 'noindex, nofollow, noarchive'/);
   assert.match(page, /Admin-Passwort/);
+  assert.match(page, /name="username"[^>]+autocomplete="username"/);
+  assert.match(page, /name="password"[^>]+autocomplete="current-password"/);
   assert.match(page, /ADMIN_API_TOKEN/);
   assert.doesNotMatch(page, /Bearer\s+[A-Za-z0-9_-]{16,}/);
   assert.match(script, /credentials: 'same-origin'/);

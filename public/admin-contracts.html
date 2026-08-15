@@ -26,16 +26,18 @@
         <div>
           <span class="eyebrow">Geschützter Bereich</span>
           <h2 id="login-heading">Willkommen zurück</h2>
-          <p>Melden Sie sich mit Ihrem persönlichen Admin-Passwort an. Die Sitzung endet aus Sicherheitsgründen automatisch.</p>
+          <p>Melden Sie sich mit Ihrem Admin-Zugang an. Die Sitzung endet aus Sicherheitsgründen automatisch.</p>
           <ul class="security-notes" aria-label="Sicherheitshinweise">
             <li>Passwort wird nicht im Seitenspeicher abgelegt</li>
             <li>Geschützte, nicht auslesbare Sitzung</li>
             <li>Automatische Abmeldung nach Ablauf der Sitzung</li>
           </ul>
         </div>
-        <form id="login-form" class="login-form">
+        <form id="login-form" class="login-form" autocomplete="on">
+          <label for="admin-username">Benutzername</label>
+          <input id="admin-username" name="username" type="text" value="admin" autocomplete="username" autocapitalize="none" spellcheck="false" required>
           <label for="admin-password">Admin-Passwort</label>
-          <input id="admin-password" name="admin_password" type="password" autocomplete="current-password" spellcheck="false" minlength="12" required>
+          <input id="admin-password" name="password" type="password" autocomplete="current-password" spellcheck="false" minlength="12" required>
           <button class="button" id="login-button" type="submit">Sicher anmelden</button>
           <details class="recovery-access">
             <summary>Notfallzugang mit API-Key</summary>
