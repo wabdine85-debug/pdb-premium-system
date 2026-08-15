@@ -1,6 +1,11 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { buildBeyondReconciliation } from '../src/services/memberReconciliation.service.js';
+import {
+  applyBeyondUsagePlan,
+  buildBeyondReconciliation,
+  buildBeyondUsagePlan,
+  MemberReconciliationError
+} from '../src/services/memberReconciliation.service.js';
 
 test('BEYOND reconciliation is read-only and keeps ambiguous matches under review', () => {
   const crmData = {
@@ -44,4 +49,82 @@ test('BEYOND reconciliation is read-only and keeps ambiguous matches under revie
   assert.equal(result.rows.find((row) => row.crm_member_id === 'crm-3').state, 'review');
   assert.equal(result.rows.find((row) => row.crm_member_id === 'crm-4').state, 'missing_shopify');
   assert.equal(result.shopify_only[0].shopify_customer_id, '104');
+
+  const usagePlan = buildBeyondUsagePlan(result, ['crm-2']);
+  assert.equal(usagePlan.length, 2);
+  assert.equal(usagePlan.find((row) => row.crm_member_id === 'crm-1').imported_used_count, 1);
+  assert.equal(usagePlan.find((row) => row.crm_member_id === 'crm-2').august_remaining, 1);
+  assert.throws(
+    () => buildBeyondUsagePlan(result, ['crm-4']),
+    (error) => error instanceof MemberReconciliationError && error.code === 'AVAILABLE_MEMBER_NOT_ELIGIBLE'
+  );
+});
+
+test('BEYOND usage plan creates missing members and imports zero or one used session', async () => {
+  const members = new Map([['101', {
+    id: 1,
+    shopify_customer_id: '101',
+    email: 'linked@example.com',
+    first_name: 'Linked',
+    last_name: 'Member',
+    package_key: 'beyond'
+  }]]);
+  const imports = [];
+  const db = {
+    async query(sql, values) {
+      if (sql.includes('SELECT * FROM members')) {
+        return { rows: members.has(String(values[0])) ? [members.get(String(values[0]))] : [] };
+      }
+      if (sql.includes('INSERT INTO members')) {
+        const member = {
+          id: members.size + 1,
+          shopify_customer_id: String(values[0]),
+          email: values[1],
+          first_name: values[2],
+          last_name: values[3],
+          package_key: values[4]
+        };
+        members.set(String(values[0]), member);
+        return { rows: [member] };
+      }
+      if (sql.includes('SET\n      email = $2')) {
+        const member = { ...members.get(String(values[0])), email: values[1], first_name: values[2], last_name: values[3], package_key: values[4] };
+        members.set(String(values[0]), member);
+        return { rows: [member] };
+      }
+      if (sql.includes('SET status =')) return { rows: [] };
+      if (sql.includes('INSERT INTO member_monthly_usage_imports')) {
+        imports.push({ memberId: values[0], month: values[1], usedCount: values[2] });
+        return { rows: [] };
+      }
+      throw new Error(`Unexpected query: ${sql}`);
+    }
+  };
+  const reconciliation = {
+    month: '2026-08-01',
+    rows: [
+      {
+        crm_member_id: 'crm-1', state: 'linked', shopify_customer_id: '101',
+        shopify_email: 'linked@example.com', shopify_first_name: 'Linked', shopify_last_name: 'Member',
+        name: 'Linked Member', start_date: '2026-01-01'
+      },
+      {
+        crm_member_id: 'crm-2', state: 'ready', shopify_customer_id: '102',
+        shopify_email: 'ready@example.com', shopify_first_name: 'Ready', shopify_last_name: 'Member',
+        name: 'Ready Member', start_date: '2026-02-01'
+      }
+    ]
+  };
+
+  const result = await applyBeyondUsagePlan({
+    reconciliation,
+    availableCrmMemberIds: ['crm-2'],
+    actor: 'admin'
+  }, db);
+
+  assert.equal(result.applied.length, 2);
+  assert.equal(result.available, 1);
+  assert.equal(result.exhausted, 1);
+  assert.deepEqual(imports.map((entry) => entry.usedCount), [1, 0]);
+  assert.equal(members.has('102'), true);
 });

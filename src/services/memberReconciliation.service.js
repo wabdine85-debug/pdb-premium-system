@@ -1,6 +1,21 @@
 import { pool } from '../config/pool.js';
 import { listAdminMembers } from '../repositories/adminMember.repository.js';
+import {
+  createMember,
+  findMemberByShopifyId,
+  updateMemberByShopifyId
+} from '../repositories/member.repository.js';
 import { listShopifyCustomersByTag } from './shopifyAdmin.service.js';
+import { getBookingMonth } from '../utils/dates.js';
+
+export class MemberReconciliationError extends Error {
+  constructor(code, status = 400) {
+    super(code);
+    this.name = 'MemberReconciliationError';
+    this.code = code;
+    this.status = status;
+  }
+}
 
 function normalizeText(value) {
   return String(value || '')
@@ -36,9 +51,13 @@ function activeBeyondCrmMembers(crmData) {
       crm_member_id: membership.memberId || null,
       membership_ids: [],
       name: displayName(person, membership),
-      email: normalizeEmail(person?.email || membership.memberEmail) || null
+      email: normalizeEmail(person?.email || membership.memberEmail) || null,
+      start_date: membership.startDate || null
     };
     current.membership_ids.push(membership.id);
+    if (membership.startDate && (!current.start_date || membership.startDate < current.start_date)) {
+      current.start_date = membership.startDate;
+    }
     grouped.set(key, current);
   }
 
@@ -87,6 +106,8 @@ export function buildBeyondReconciliation({ crmData, shopifyCustomers, onlineMem
         ? [shopifyCustomer.firstName, shopifyCustomer.lastName].filter(Boolean).join(' ') || null
         : null,
       shopify_email: shopifyCustomer?.email || null,
+      shopify_first_name: shopifyCustomer?.firstName || null,
+      shopify_last_name: shopifyCustomer?.lastName || null,
       online_member_id: onlineMember?.id || null
     };
   });
@@ -101,7 +122,7 @@ export function buildBeyondReconciliation({ crmData, shopifyCustomers, onlineMem
     }));
 
   return {
-    month: '2026-08-01',
+    month: getBookingMonth(),
     summary: {
       crm_contracts: rows.reduce((sum, row) => sum + row.membership_ids.length, 0),
       crm_members: rows.length,
@@ -113,6 +134,94 @@ export function buildBeyondReconciliation({ crmData, shopifyCustomers, onlineMem
     },
     rows,
     shopify_only: shopifyOnly
+  };
+}
+
+export function buildBeyondUsagePlan(reconciliation, availableCrmMemberIds = []) {
+  const eligibleRows = (reconciliation?.rows || []).filter((row) =>
+    ['linked', 'ready'].includes(row.state)
+  );
+  const eligibleIds = new Set(eligibleRows.map((row) => String(row.crm_member_id)));
+  const availableIds = new Set(availableCrmMemberIds.map(String));
+
+  for (const crmMemberId of availableIds) {
+    if (!eligibleIds.has(crmMemberId)) {
+      throw new MemberReconciliationError('AVAILABLE_MEMBER_NOT_ELIGIBLE', 409);
+    }
+  }
+
+  return eligibleRows.map((row) => ({
+    ...row,
+    imported_used_count: availableIds.has(String(row.crm_member_id)) ? 0 : 1,
+    august_remaining: availableIds.has(String(row.crm_member_id)) ? 1 : 0
+  }));
+}
+
+export async function applyBeyondUsagePlan({
+  reconciliation,
+  availableCrmMemberIds,
+  actor = 'admin'
+}, db) {
+  const plan = buildBeyondUsagePlan(reconciliation, availableCrmMemberIds);
+  const reason = 'Bestandsübernahme des bisherigen Monatskontingents';
+  const applied = [];
+
+  for (const row of plan) {
+    let member = await findMemberByShopifyId(row.shopify_customer_id, db);
+    if (!member) {
+      member = await createMember({
+        shopifyCustomerId: row.shopify_customer_id,
+        email: row.shopify_email || row.email,
+        firstName: row.shopify_first_name || row.name.split(' ')[0] || '',
+        lastName: row.shopify_last_name || row.name.split(' ').slice(1).join(' '),
+        packageKey: 'beyond'
+      }, db);
+    } else {
+      member = await updateMemberByShopifyId(row.shopify_customer_id, {
+        email: row.shopify_email || member.email,
+        firstName: row.shopify_first_name || member.first_name,
+        lastName: row.shopify_last_name || member.last_name,
+        packageKey: 'beyond'
+      }, db);
+    }
+
+    const startDate = /^\d{4}-\d{2}-\d{2}$/.test(String(row.start_date || ''))
+      ? row.start_date
+      : null;
+    await db.query(
+      `UPDATE members
+       SET status = 'active',
+           started_at = CASE WHEN $2::date IS NULL THEN started_at ELSE $2::date END,
+           updated_at = NOW()
+       WHERE id = $1`,
+      [member.id, startDate]
+    );
+    await db.query(
+      `INSERT INTO member_monthly_usage_imports (
+         member_id, booking_month, category_key, used_count, actor, reason
+       ) VALUES ($1, $2, 'beyond', $3, $4, $5)
+       ON CONFLICT (member_id, booking_month, category_key)
+       DO UPDATE SET
+         used_count = EXCLUDED.used_count,
+         actor = EXCLUDED.actor,
+         reason = EXCLUDED.reason,
+         updated_at = NOW()`,
+      [member.id, reconciliation.month, row.imported_used_count, actor, reason]
+    );
+
+    applied.push({
+      crm_member_id: row.crm_member_id,
+      member_id: member.id,
+      name: row.name,
+      remaining: row.august_remaining
+    });
+  }
+
+  return {
+    month: reconciliation.month,
+    applied,
+    available: applied.filter((row) => row.remaining === 1).length,
+    exhausted: applied.filter((row) => row.remaining === 0).length
   };
 }
 

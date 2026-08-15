@@ -18,7 +18,11 @@ import {
 } from '../services/adminUsage.service.js';
 import { getEntitlementsForMonth } from '../services/entitlement.service.js';
 import { getBookingMonth } from '../utils/dates.js';
-import { getBeyondReconciliation } from '../services/memberReconciliation.service.js';
+import {
+  applyBeyondUsagePlan,
+  getBeyondReconciliation,
+  MemberReconciliationError
+} from '../services/memberReconciliation.service.js';
 
 const router = express.Router();
 const adminWriteLimiter = rateLimit({ windowMs: 60_000, max: 30 });
@@ -31,7 +35,7 @@ function parsePositiveId(value) {
 }
 
 function sendAdminError(res, error, operation) {
-  if (error instanceof AdminUsageError) {
+  if (error instanceof AdminUsageError || error instanceof MemberReconciliationError) {
     return res.status(error.status).json({ ok: false, error: error.code });
   }
   console.error(`${operation} failed:`, error.message);
@@ -72,6 +76,23 @@ router.get('/reconciliation/beyond', async (_req, res) => {
     return res.json({ ok: true, ...reconciliation });
   } catch (error) {
     return sendAdminError(res, error, 'GET /api/admin/reconciliation/beyond');
+  }
+});
+
+router.post('/reconciliation/beyond/apply-month', adminWriteLimiter, async (req, res) => {
+  try {
+    const availableCrmMemberIds = Array.isArray(req.body?.available_crm_member_ids)
+      ? req.body.available_crm_member_ids.slice(0, 100)
+      : [];
+    const reconciliation = await getBeyondReconciliation();
+    const result = await inTransaction((client) => applyBeyondUsagePlan({
+      reconciliation,
+      availableCrmMemberIds,
+      actor: 'admin'
+    }, client));
+    return res.json({ ok: true, ...result });
+  } catch (error) {
+    return sendAdminError(res, error, 'POST /api/admin/reconciliation/beyond/apply-month');
   }
 });
 

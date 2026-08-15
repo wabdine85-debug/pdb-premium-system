@@ -29,8 +29,8 @@ export async function getEntitlementsForMonth(member, bookingMonth, db = pool) {
   }
 
   // Alle Buchungen im aktuellen Monat holen
-  const result = await db.query(
-    `
+  const [bookingResult, importedUsageResult] = await Promise.all([
+    db.query(`
     SELECT t.category_key, t.treatment_key
     FROM bookings b
     JOIN treatments t ON t.id = b.treatment_id
@@ -38,10 +38,16 @@ export async function getEntitlementsForMonth(member, bookingMonth, db = pool) {
     AND b.booking_month = $2
     AND b.status IN ('reserved', 'confirmed')
     `,
-    [member.id, bookingMonth]
-  );
+    [member.id, bookingMonth]),
+    db.query(
+      `SELECT category_key, used_count
+       FROM member_monthly_usage_imports
+       WHERE member_id = $1 AND booking_month = $2`,
+      [member.id, bookingMonth]
+    )
+  ]);
 
-  const bookings = result.rows;
+  const bookings = bookingResult.rows;
 
   // Zählen nach Kategorie
   const usage = createEmptyCategoryCounts();
@@ -49,6 +55,15 @@ export async function getEntitlementsForMonth(member, bookingMonth, db = pool) {
   for (const b of bookings) {
     if (Object.hasOwn(usage, b.category_key)) {
       usage[b.category_key]++;
+    }
+  }
+
+  for (const imported of importedUsageResult.rows) {
+    if (Object.hasOwn(usage, imported.category_key)) {
+      usage[imported.category_key] = Math.max(
+        usage[imported.category_key],
+        Number(imported.used_count) || 0
+      );
     }
   }
 

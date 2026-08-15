@@ -10,7 +10,8 @@ import { getPrivateProtocolSessionLimit } from "../src/utils/privateProtocolRule
 
 function createFakeDb(bookings) {
   return {
-    async query() {
+    async query(sql) {
+      if (sql.includes("member_monthly_usage_imports")) return { rows: [] };
       return {
         rows: bookings.map((booking) =>
           typeof booking === "string"

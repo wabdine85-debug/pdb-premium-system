@@ -46,6 +46,12 @@ automatisch übernommen. Der Abgleich legt keine Online-Konten an und verändert
 keine Monatskontingente. Vor der Übernahme historischer Member muss zunächst
 der tatsächliche Verbrauch des laufenden Monats feststehen.
 
+Nach der Freigabe speichert die Übernahme den bekannten Altverbrauch getrennt
+von echten Buchungen. Dadurch entstehen keine erfundenen Behandlungstermine.
+Jede Übernahme enthält Bearbeiter, Grund und Monat und kann erneut sicher mit
+dem korrigierten Stand gespeichert werden. Offene Shopify-Zuordnungen bleiben
+unangetastet.
+
 ## Bewusste Grenzen
 
 - Der Abgleich über Namen oder E-Mail-Adressen ist eine schreibgeschützte

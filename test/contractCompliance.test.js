@@ -6,7 +6,10 @@ import {
   contractActionReceiptHtml,
   escapeHtml
 } from '../src/services/contractDocuments.service.js';
-import { ensureContractActionSchema } from '../src/services/schema.service.js';
+import {
+  ensureContractActionSchema,
+  ensureMemberMonthlyUsageImportSchema
+} from '../src/services/schema.service.js';
 import { hasHouseNumber, hasRequiredContractConsents } from '../src/utils/contractConsent.js';
 import {
   calculateBookingAccess,
@@ -113,6 +116,15 @@ test('contract action schema bootstrap is additive and idempotent SQL', async ()
   assert.match(queries[0], /CREATE TABLE IF NOT EXISTS contract_action_requests/);
   assert.match(queries[1], /CREATE INDEX IF NOT EXISTS/);
   assert.match(queries[2], /CREATE INDEX IF NOT EXISTS/);
+});
+
+test('member usage import schema is additive and auditable', async () => {
+  const queries = [];
+  await ensureMemberMonthlyUsageImportSchema({ query: async (sql) => queries.push(sql) });
+  assert.equal(queries.length, 2);
+  assert.match(queries[0], /CREATE TABLE IF NOT EXISTS member_monthly_usage_imports/);
+  assert.match(queries[0], /UNIQUE \(member_id, booking_month, category_key\)/);
+  assert.match(queries[1], /CREATE INDEX IF NOT EXISTS/);
 });
 
 test('membership application requires an explicit 18+ confirmation', () => {

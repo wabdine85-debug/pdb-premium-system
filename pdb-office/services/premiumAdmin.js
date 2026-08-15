@@ -56,6 +56,13 @@ export function getBeyondReconciliation() {
   return requestPremiumAdmin("/reconciliation/beyond");
 }
 
+export function applyBeyondMonthlyUsage(availableCrmMemberIds) {
+  return requestPremiumAdmin("/reconciliation/beyond/apply-month", {
+    method: "POST",
+    body: JSON.stringify({ available_crm_member_ids: availableCrmMemberIds }),
+  });
+}
+
 export function recordPremiumManualUsage(memberId, input) {
   return requestPremiumAdmin(`/members/${memberId}/manual-usage`, {
     method: "POST",

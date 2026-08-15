@@ -38,6 +38,9 @@ function createUsageDb({ member, treatment, existingBookings = [] }) {
             }))
         };
       }
+      if (sql.includes('FROM member_monthly_usage_imports')) {
+        return { rows: [] };
+      }
       if (sql.includes('INSERT INTO bookings')) {
         const booking = {
           id: bookings.length + 1,
