@@ -56,7 +56,7 @@ export default function InvoicePrintView({ inv, profile, onClose, Button }) {
                 ⬇️ PDF herunterladen
               </button>
             </form>
-            <button onClick={onClose} style={{ background: "none", border: "none", fontSize: 17, cursor: "pointer", color: "#94a3b8" }}>×</button>
+            <button aria-label="PDF-Vorschau schließen" onClick={onClose} style={{ background: "none", border: "none", fontSize: 17, cursor: "pointer", color: "#94a3b8" }}>×</button>
           </div>
         </div>
         <div style={{ padding: "8px 24px", borderBottom: "1px solid #f1f5f9", fontSize: 11, color: "#64748b" }}>

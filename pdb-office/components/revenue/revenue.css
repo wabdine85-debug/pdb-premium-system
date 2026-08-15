@@ -83,6 +83,7 @@
   overflow-x: auto;
   scrollbar-width: none;
   padding: 3px;
+  overscroll-behavior-inline: contain;
 }
 
 .revenue-month-switcher::-webkit-scrollbar { display: none; }
@@ -261,7 +262,7 @@
   padding: 18px;
 }
 
-.revenue-modal { width: min(560px, 100%); max-height: 88vh; overflow: auto; background: #f8f5f0; border-radius: 24px; padding: 24px; box-shadow: 0 30px 90px rgba(0,0,0,.25); }
+.revenue-modal { width: min(560px, 100%); max-height: 88vh; overflow: auto; overscroll-behavior: contain; background: #f8f5f0; border-radius: 24px; padding: 24px; box-shadow: 0 30px 90px rgba(0,0,0,.25); }
 .revenue-modal h3 { margin: 4px 0 20px; font-size: 24px; }
 
 .revenue-empty { padding: 22px; text-align: center; color: #8f887f; font-size: 13px; border: 1px dashed #d7cfc5; border-radius: 14px; }
@@ -281,6 +282,9 @@
   .revenue-field.span-2, .revenue-field.span-3 { grid-column: span 1; }
   .revenue-staff-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .revenue-card { padding: 16px; border-radius: 16px; }
+  .revenue-month-switcher { width: 100%; max-width: 100%; }
+  .revenue-inline-actions { width: 100%; flex-wrap: wrap; justify-content: flex-start; }
+  .revenue-inline-actions .revenue-button { min-height: 40px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

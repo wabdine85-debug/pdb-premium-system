@@ -1,5 +1,8 @@
 export const REVENUE_CHANNELS = [
-  { key: "cash", label: "BAR", shortLabel: "Bar", group: "personal", color: "#171717" },
+  // Keep the historical `cash` bucket untouched. Older imports used it for
+  // private cash movements, so reclassifying it would change closed reports.
+  { key: "cash", label: "BAR PRIVAT (BESTAND)", shortLabel: "Bar privat", group: "personal", color: "#8a8176" },
+  { key: "cashBusiness", label: "BAR", shortLabel: "Bar", group: "business", color: "#171717" },
   { key: "card", label: "KARTE", shortLabel: "Karte", group: "business", color: "#75624a" },
   { key: "shopify", label: "SHOPIFY", shortLabel: "Shopify", group: "business", color: "#6c7f65" },
   { key: "paypalPrivate", label: "PAYPAL PRIVAT", shortLabel: "PayPal Privat", group: "personal", color: "#9a8d7b" },

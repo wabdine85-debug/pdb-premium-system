@@ -11,10 +11,18 @@ const seed = hasPrivateSeed
   : { entries: [], premiumFallbacks: {} };
 
 test("daily totals separate business and personal inflows", () => {
-  assert.deepEqual(entryTotals({ cash: 100, card: 200, paypalPrivate: 50, shopify: 20 }), {
-    business: 220,
+  assert.deepEqual(entryTotals({ cash: 100, cashBusiness: 80, card: 200, paypalPrivate: 50, shopify: 20 }), {
+    business: 300,
     personal: 150,
-    total: 370,
+    total: 450,
+  });
+});
+
+test("customer cash payments remain business revenue without reclassifying historical cash", () => {
+  assert.deepEqual(entryTotals({ cash: 75, cashBusiness: 125 }), {
+    business: 125,
+    personal: 75,
+    total: 200,
   });
 });
 

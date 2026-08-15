@@ -6,10 +6,10 @@ Die CRM-Rubrik `Umsätze` ersetzt die bisherige monatliche Excel-Erfassung. Sie 
 
 ## Berechnungslogik
 
-- Geschäftsumsatz: Karte, Shopify, PayPal Business, Treatwell und Premium.
-- Persönliche Zuflüsse: Bar und PayPal Privat.
+- Geschäftsumsatz: Bar, Karte, Shopify, PayPal Business, Treatwell und Premium.
+- Persönliche Zuflüsse: historischer Bar-Privat-Bestand und PayPal Privat.
 - Gesamtzufluss: Geschäftsumsatz plus persönliche Zuflüsse.
-- Premium wird bevorzugt aus `public/member-finance-data.json` gelesen. Fehlt dort ein Monat, dient der importierte Excel-Wert als Fallback.
+- Premium wird bevorzugt aus der zentralen Schnittstelle `/api/office/member-finance` gelesen. Fehlt dort ein Monat, dient der importierte Excel-Wert als Fallback.
 - Die fachlich richtige Einordnung einer Zahlung bleibt Aufgabe des Anwenders. Geschäftliche Einnahmen dürfen nicht als persönliche Zuflüsse klassifiziert werden.
 
 ## Monatsabschluss
@@ -21,6 +21,11 @@ Jede Berichtsversion kann als CSV heruntergeladen oder über die Druckansicht al
 ## Offene Zahlungen
 
 Eine offene Kundenzahlung enthält Name, Betrag, Leistungsdatum, optionales Fälligkeitsdatum und Notiz. Beim Buchen als bezahlt wird der Betrag automatisch am Zahlungstag dem ausgewählten geschäftlichen Zahlungsweg zugerechnet.
+
+Historische Werte im bisherigen Feld `cash` bleiben unverändert als persönliche
+Zuflüsse erhalten. Neue geschäftliche Barzahlungen werden getrennt im Feld
+`cashBusiness` gespeichert. Dadurch ändern sich abgeschlossene Monatsberichte
+nicht rückwirkend.
 
 ## Mitarbeiterkonten
 

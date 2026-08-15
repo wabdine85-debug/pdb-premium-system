@@ -102,55 +102,6 @@ function hasMeaningfulData(data) {
     || (data.workTimeEntries || []).length > 0;
 }
 
-function dataWeight(data) {
-  return (data.members || []).length
-    + ((data.memberships || []).length * 10)
-    + ((data.invoices || []).length * 5)
-    + ((data.revenueEntries || []).length * 2)
-    + ((data.revenueReports || []).length * 3)
-    + ((data.staffMembers || []).length * 2)
-    + ((data.workTimeEntries || []).length * 2);
-}
-
-function dataTimestamp(data) {
-  const explicitTimestamp = Date.parse(data?._storageUpdatedAt || "");
-  if (Number.isFinite(explicitTimestamp)) return explicitTimestamp;
-
-  const collections = [
-    data?.members,
-    data?.memberships,
-    data?.invoices,
-    data?.reminders,
-    data?.bankTransactions,
-    data?.revenueEntries,
-    data?.revenueReceivables,
-    data?.revenueReports,
-    data?.staffLedger,
-    data?.staffMembers,
-    data?.workTimeEntries,
-  ];
-
-  return collections.reduce((latest, collection) => (
-    (collection || []).reduce((collectionLatest, record) => {
-      const recordTimestamp = Math.max(
-        Date.parse(record?.updatedAt || "") || 0,
-        Date.parse(record?.createdAt || "") || 0,
-      );
-      return Math.max(collectionLatest, recordTimestamp);
-    }, latest)
-  ), 0);
-}
-
-function compareDataFreshness(left, right) {
-  const revisionDelta = getStorageRevision(left) - getStorageRevision(right);
-  if (revisionDelta) return revisionDelta;
-
-  const timestampDelta = dataTimestamp(left) - dataTimestamp(right);
-  if (timestampDelta) return timestampDelta;
-
-  return dataWeight(left) - dataWeight(right);
-}
-
 function stampData(previous, next) {
   return {
     ...next,
@@ -174,6 +125,7 @@ async function persistFile(data) {
 
 export function useStorage() {
   const [data, setData] = useState(loadData);
+  const [syncStatus, setSyncStatus] = useState("loading");
   const dataRef = useRef(data);
 
   useEffect(() => {
@@ -181,27 +133,24 @@ export function useStorage() {
     fetch(FILE_STORAGE_ENDPOINT, { cache: "no-store" })
       .then(response => response.ok ? response.json() : null)
       .then(raw => {
-        if (cancelled || !raw) return;
+        if (cancelled) return;
+        if (!raw) {
+          setSyncStatus("error");
+          return;
+        }
         const fileData = migrateData(raw);
-        const localHasEncodingDamage = JSON.stringify(data).includes("�");
-        if (!hasMeaningfulData(fileData)) return;
-        if (!hasMeaningfulData(data) || localHasEncodingDamage || compareDataFreshness(fileData, data) > 0) {
-          persistLocal(fileData);
-          dataRef.current = fileData;
-          setData(fileData);
+        if (!hasMeaningfulData(fileData)) {
+          setSyncStatus("error");
           return;
         }
-        if (getStorageRevision(fileData) === getStorageRevision(data) && JSON.stringify(data) !== JSON.stringify(fileData)) {
-          persistLocal(fileData);
-          dataRef.current = fileData;
-          setData(fileData);
-          return;
-        }
-        if (compareDataFreshness(data, fileData) >= 0 && JSON.stringify(data) !== JSON.stringify(fileData)) {
-          persistFile(data);
-        }
+        // The server is authoritative. A stale browser cache must never upload
+        // itself automatically and overwrite changes made on another device.
+        persistLocal(fileData);
+        dataRef.current = fileData;
+        setData(fileData);
+        setSyncStatus("saved");
       })
-      .catch(() => {});
+      .catch(() => setSyncStatus("error"));
     return () => { cancelled = true; };
   }, []);
 
@@ -212,8 +161,16 @@ export function useStorage() {
     dataRef.current = next;
     persistLocal(next);
     setData(next);
+    setSyncStatus("saving");
     persistFile(next).then(async response => {
-      if (response?.status !== 409) return;
+      if (response?.ok) {
+        setSyncStatus("saved");
+        return;
+      }
+      if (response?.status !== 409) {
+        setSyncStatus("error");
+        return;
+      }
       try {
         const currentResponse = await fetch(FILE_STORAGE_ENDPOINT, { cache: "no-store" });
         if (!currentResponse.ok) return;
@@ -221,10 +178,13 @@ export function useStorage() {
         dataRef.current = fileData;
         persistLocal(fileData);
         setData(fileData);
+        setSyncStatus("saved");
         window.alert("Ein neuerer CRM-Datenstand wurde geladen. Bitte prüfen Sie Ihre letzte Änderung und führen Sie sie bei Bedarf erneut aus.");
-      } catch {}
+      } catch {
+        setSyncStatus("error");
+      }
     });
   }, []);
 
-  return [data, save];
+  return [data, save, syncStatus];
 }

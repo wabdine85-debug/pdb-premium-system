@@ -6,7 +6,9 @@ import PremiumAdministration from "./components/memberships/PremiumAdministratio
 import { createMembershipExportRows, downloadMembershipCsv, downloadMembershipPdf } from "./modules/memberships/membershipExports.js";
 import { useStorage, migrateData } from "./services/crmStorage.js";
 import { DEFAULT_INVOICE_PROFILE_ID, INVOICE_PAYMENT_TERMS, PDB_INVOICE_CATEGORIES, buildInvoiceNumber, calculateInvoiceDueDate, calculateInvoiceTotals, defaultInvoiceProfiles, getInvoiceCategoryLabel, getInvoiceDueLabel, getInvoicePositionDateLabel, getInvoiceProfile, isMedicalInvoiceProfile } from "./modules/invoices/invoiceProfiles.js";
+import { monthSummary } from "./modules/revenue/revenueUtils.js";
 import { addDays, fmt, fmtDate, today } from "./utils/formatters.js";
+import "./crm-system.css";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const uid = () => Math.random().toString(36).slice(2, 10);
@@ -132,12 +134,13 @@ function formatCustomerAddress(customer) {
 }
 
 function Modal({ title, onClose, children, wide }) {
+  const titleId = React.useId();
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
-      <div style={{ background: "#fff", borderRadius: 16, width: wide ? 720 : 520, maxWidth: "100%", maxHeight: "90vh", overflow: "auto", boxShadow: "0 24px 64px rgba(0,0,0,0.18)" }}>
+      <div role="dialog" aria-modal="true" aria-labelledby={titleId} className="crm-modal" style={{ background: "#fff", borderRadius: 16, width: wide ? 720 : 520, maxWidth: "100%", maxHeight: "90vh", overflow: "auto", boxShadow: "0 24px 64px rgba(0,0,0,0.18)" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 24px 0" }}>
-          <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: "#1e293b" }}>{title}</h3>
-          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 22, color: "#94a3b8", lineHeight: 1 }}>×</button>
+          <h3 id={titleId} style={{ margin: 0, fontSize: 18, fontWeight: 700, color: "#1e293b" }}>{title}</h3>
+          <button aria-label="Fenster schließen" onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 22, color: "#94a3b8", lineHeight: 1 }}>×</button>
         </div>
         <div style={{ padding: 24 }}>{children}</div>
       </div>
@@ -146,12 +149,16 @@ function Modal({ title, onClose, children, wide }) {
 }
 
 function Field({ label, children, required }) {
+  const fieldId = React.useId();
+  const directControl = React.isValidElement(children) && ["input", "select", "textarea"].includes(children.type);
+  const controlId = directControl ? (children.props.id || fieldId) : undefined;
+  const control = directControl ? React.cloneElement(children, { id: controlId }) : children;
   return (
     <div style={{ marginBottom: 16 }}>
-      <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#475569", marginBottom: 6 }}>
+      <label htmlFor={controlId} style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#475569", marginBottom: 6 }}>
         {label}{required && <span style={{ color: "#ef4444" }}> *</span>}
       </label>
-      {children}
+      {control}
     </div>
   );
 }
@@ -159,7 +166,7 @@ function Field({ label, children, required }) {
 const inp = { width: "100%", border: "1px solid #e2e8f0", borderRadius: 8, padding: "9px 12px", fontSize: 14, color: "#1e293b", background: "#fff", boxSizing: "border-box", outline: "none" };
 const sel = { ...inp, cursor: "pointer" };
 
-function Btn({ onClick, children, variant = "primary", small, style: s, disabled }) {
+function Btn({ onClick, children, variant = "primary", small, style: s, disabled, ...props }) {
   const base = { border: "none", borderRadius: 8, cursor: disabled ? "not-allowed" : "pointer", fontWeight: 600, fontSize: small ? 13 : 14, padding: small ? "6px 14px" : "9px 18px", transition: "opacity 0.15s", opacity: disabled ? 0.5 : 1, ...s };
   const variants = {
     primary: { background: "#1e40af", color: "#fff" },
@@ -168,14 +175,14 @@ function Btn({ onClick, children, variant = "primary", small, style: s, disabled
     success: { background: "#059669", color: "#fff" },
     outline: { background: "#fff", color: "#1e40af", border: "1px solid #1e40af" },
   };
-  return <button disabled={disabled} onClick={disabled ? undefined : onClick} style={{ ...base, ...variants[variant] }}>{children}</button>;
+  return <button type="button" disabled={disabled} onClick={disabled ? undefined : onClick} style={{ ...base, ...variants[variant] }} {...props}>{children}</button>;
 }
 
 // ─── Confirm Dialog (replaces window.confirm) ────────────────────────────────
 function ConfirmDialog({ message, detail, confirmLabel = "Löschen", variant = "danger", onConfirm, onCancel }) {
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 2000, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
-      <div style={{ background: "#fff", borderRadius: 16, width: 420, maxWidth: "100%", padding: 28, boxShadow: "0 24px 64px rgba(0,0,0,0.2)" }}>
+      <div role="alertdialog" aria-modal="true" style={{ background: "#fff", borderRadius: 16, width: 420, maxWidth: "100%", padding: 28, boxShadow: "0 24px 64px rgba(0,0,0,0.2)" }}>
         <div style={{ fontSize: 32, marginBottom: 12, textAlign: "center" }}>{variant === "danger" ? "🗑️" : "⚠️"}</div>
         <h3 style={{ margin: "0 0 8px", fontSize: 17, fontWeight: 700, color: "#1e293b", textAlign: "center" }}>{message}</h3>
         {detail && <p style={{ margin: "0 0 24px", fontSize: 13, color: "#64748b", textAlign: "center" }}>{detail}</p>}
@@ -192,21 +199,35 @@ function ConfirmDialog({ message, detail, confirmLabel = "Löschen", variant = "
 // ─── Dashboard ────────────────────────────────────────────────────────────────
 function Dashboard({ data, onNavigate }) {
   const { members, invoices, bankTransactions } = data;
+  const currentMonth = today().slice(0, 7);
+  const [premiumAmount, setPremiumAmount] = useState(() => Number(data.revenuePremiumFallbacks?.[currentMonth]) || 0);
+  useEffect(() => {
+    let active = true;
+    fetch("/api/office/member-finance", { cache: "no-store" })
+      .then(response => response.ok ? response.json() : null)
+      .then(finance => {
+        if (!active || !finance) return;
+        const month = (finance.months || []).find(item => item.month === currentMonth);
+        if (month) setPremiumAmount(Number(month.amount) || 0);
+      })
+      .catch(() => {});
+    return () => { active = false; };
+  }, [currentMonth]);
   const memberships = data.memberships || [];
   const memberById = new Map(members.map(member => [member.id, member]));
   const activeMemberIds = new Set(
     memberships.filter(membership => membership.status === "aktiv").map(membership => membership.memberId)
   );
   const aktiv = activeMemberIds.size;
-  const offenRechnungen = invoices.filter(i => i.status === "ausstehend" || i.status === "überfällig");
-  const offenSumme = offenRechnungen.reduce((s, i) => s + (i.total || 0), 0);
-  const monatsUmsatz = invoices.filter(i => i.status === "bezahlt" && i.date?.startsWith(today().slice(0, 7))).reduce((s, i) => s + (i.total || 0), 0);
+  const openReceivables = (data.revenueReceivables || []).filter(item => item.status === "offen");
+  const openReceivableTotal = openReceivables.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+  const revenue = monthSummary(data.revenueEntries || [], currentMonth, premiumAmount);
   const ueberfaellig = invoices.filter(i => i.status === "überfällig").length;
 
   const cards = [
     { label: "Aktive Member", value: aktiv, icon: "💎", color: "#1e40af", bg: "#eff6ff", action: () => onNavigate("memberships") },
-    { label: "Monatsumsatz", value: fmt(monatsUmsatz), icon: "💰", color: "#059669", bg: "#f0fdf4", action: () => onNavigate("invoices") },
-    { label: "Offene Rechnungen", value: fmt(offenSumme), icon: "📄", color: "#d97706", bg: "#fffbeb", action: () => onNavigate("invoices") },
+    { label: "Gesamtzufluss im Monat", value: fmt(revenue.total), icon: "💰", color: "#059669", bg: "#f0fdf4", action: () => onNavigate("revenue") },
+    { label: "Offene Zahlungen", value: fmt(openReceivableTotal), icon: "📄", color: "#d97706", bg: "#fffbeb", action: () => onNavigate("revenue") },
     { label: "Überfällig", value: ueberfaellig + " Rechnungen", icon: "⚠️", color: "#dc2626", bg: "#fef2f2", action: () => onNavigate("reminders") },
   ];
 
@@ -218,19 +239,19 @@ function Dashboard({ data, onNavigate }) {
   return (
     <div>
       <h2 style={{ margin: "0 0 24px", fontSize: 26, fontWeight: 800, color: "#1e293b" }}>Dashboard</h2>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16, marginBottom: 32 }}>
+      <div className="crm-dashboard-cards" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16, marginBottom: 32 }}>
         {cards.map(c => (
-          <div key={c.label} onClick={c.action} style={{ background: c.bg, borderRadius: 14, padding: "20px 22px", cursor: "pointer", border: `1.5px solid ${c.color}22`, transition: "box-shadow 0.15s" }}
+          <button type="button" key={c.label} onClick={c.action} style={{ background: c.bg, borderRadius: 14, padding: "20px 22px", cursor: "pointer", border: `1.5px solid ${c.color}22`, transition: "box-shadow 0.15s", textAlign: "left", font: "inherit" }}
             onMouseEnter={e => e.currentTarget.style.boxShadow = "0 4px 20px rgba(0,0,0,0.1)"}
             onMouseLeave={e => e.currentTarget.style.boxShadow = "none"}>
             <div style={{ fontSize: 28 }}>{c.icon}</div>
             <div style={{ fontSize: 24, fontWeight: 800, color: c.color, margin: "8px 0 4px" }}>{c.value}</div>
             <div style={{ fontSize: 13, color: "#64748b", fontWeight: 600 }}>{c.label}</div>
-          </div>
+          </button>
         ))}
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+      <div className="crm-dashboard-columns" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
         <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #e2e8f0", padding: 20 }}>
           <h3 style={{ margin: "0 0 16px", fontSize: 16, fontWeight: 700, color: "#1e293b" }}>Neue Member</h3>
           {recentMemberships.length === 0 ? <p style={{ color: "#94a3b8", fontSize: 14 }}>Noch keine Member</p> :
@@ -1059,8 +1080,8 @@ function Invoices({ data, save }) {
       </div>
 
       <div style={{ display: "flex", gap: 12, marginBottom: 20 }}>
-        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Suche…" style={{ ...inp, flex: 1 }} />
-        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} style={{ ...sel, width: 180 }}>
+        <input aria-label="Rechnungen durchsuchen" value={search} onChange={e => setSearch(e.target.value)} placeholder="Suche…" style={{ ...inp, flex: 1 }} />
+        <select aria-label="Rechnungsstatus filtern" value={filterStatus} onChange={e => setFilterStatus(e.target.value)} style={{ ...sel, width: 180 }}>
           <option value="alle">Alle Status</option>
           <option value="ausstehend">Ausstehend</option>
           <option value="bezahlt">Bezahlt</option>
@@ -1070,7 +1091,8 @@ function Invoices({ data, save }) {
       </div>
 
       <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #e2e8f0", overflow: "hidden" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+        <div className="crm-table-wrap">
+        <table style={{ width: "100%", minWidth: 900, borderCollapse: "collapse" }}>
           <thead>
             <tr style={{ background: "#f8fafc" }}>
               {["Nummer", "Profil", "Kunde", "Datum", "Fällig", "Betrag", "Status", ""].map(h => (
@@ -1095,14 +1117,15 @@ function Invoices({ data, save }) {
                   <td style={{ padding: "14px 16px" }} onClick={e => e.stopPropagation()}>
                     <div style={{ display: "flex", gap: 6 }}>
                       <Btn small variant="ghost" onClick={() => openEditInvoice(inv)}>Bearbeiten</Btn>
-                      {inv.status !== "bezahlt" && <Btn small variant="success" onClick={() => updateStatus(inv.id, "bezahlt")}>✓</Btn>}
-                      <Btn small variant="danger" onClick={() => deleteInvoice(inv.id)}>🗑️</Btn>
+                      {inv.status !== "bezahlt" && <Btn small variant="success" aria-label={`${inv.number} als bezahlt markieren`} onClick={() => updateStatus(inv.id, "bezahlt")}>✓</Btn>}
+                      <Btn small variant="danger" aria-label={`Rechnung ${inv.number} löschen`} onClick={() => deleteInvoice(inv.id)}>🗑️</Btn>
                     </div>
                   </td>
                 </tr>
               ))}
           </tbody>
         </table>
+        </div>
       </div>
 
       {viewing && <InvoiceView inv={viewing} />}
@@ -1321,16 +1344,24 @@ function Reminders({ data, save }) {
     const levels = ["1. Mahnung", "2. Mahnung", "3. Mahnung"];
     const current = levels.indexOf(inv.status);
     const nextStatus = current === -1 ? "1. Mahnung" : current < 2 ? levels[current + 1] : "3. Mahnung";
-    const fee = current === -1 ? 0 : current === 0 ? 5 : current === 1 ? 15 : 40;
+    const fee = { "1. Mahnung": 5, "2. Mahnung": 15, "3. Mahnung": 40 }[nextStatus];
 
     save(d => ({
       ...d,
-      invoices: d.invoices.map(i => i.id === inv.id ? { ...i, status: nextStatus, reminderFee: (i.reminderFee || 0) + fee, lastReminder: today() } : i),
+      invoices: d.invoices.map(i => i.id === inv.id ? { ...i, status: nextStatus, reminderFee: fee, lastReminder: today() } : i),
     }));
-    alert(`${nextStatus} für ${inv.memberName} wurde ausgestellt.\nMahngebühr: ${fmt(fee)}`);
+    alert(`${nextStatus} für ${inv.memberName} wurde im CRM vermerkt.\nMahngebühr: ${fmt(fee)}\nEs wurde keine E-Mail versendet.`);
   };
 
-  const markPaid = (id) => save(d => ({ ...d, invoices: d.invoices.map(i => i.id === id ? { ...i, status: "bezahlt" } : i) }));
+  const markPaid = (id) => save(d => ({
+    ...d,
+    invoices: d.invoices.map(i => i.id === id ? {
+      ...i,
+      status: "bezahlt",
+      paidDate: i.paidDate || today(),
+      paymentMethod: i.paymentMethod || "Nicht angegeben",
+    } : i),
+  }));
 
   const daysSince = (d) => d ? Math.floor((Date.now() - new Date(d)) / 86400000) : "—";
 
@@ -1353,7 +1384,8 @@ function Reminders({ data, save }) {
       </div>
 
       <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #e2e8f0", overflow: "hidden" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+        <div className="crm-table-wrap">
+        <table style={{ width: "100%", minWidth: 900, borderCollapse: "collapse" }}>
           <thead>
             <tr style={{ background: "#f8fafc" }}>
               {["Kunde", "Rechnung", "Betrag", "Fällig seit", "Status", "Letzte Mahnung", ""].map(h => (
@@ -1373,7 +1405,7 @@ function Reminders({ data, save }) {
                   <td style={{ padding: "14px 16px", color: "#64748b", fontSize: 13 }}>{fmtDate(inv.lastReminder)}</td>
                   <td style={{ padding: "14px 16px" }}>
                     <div style={{ display: "flex", gap: 6 }}>
-                      <Btn small variant="outline" onClick={() => sendReminder(inv)}>📨 Mahnen</Btn>
+                      <Btn small variant="outline" onClick={() => sendReminder(inv)}>Mahnstufe erhöhen</Btn>
                       <Btn small variant="success" onClick={() => markPaid(inv.id)}>✓ Bezahlt</Btn>
                     </div>
                   </td>
@@ -1381,6 +1413,7 @@ function Reminders({ data, save }) {
               ))}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   );
@@ -1436,7 +1469,12 @@ function BankUpload({ data, save }) {
     save(d => ({
       ...d,
       bankTransactions: d.bankTransactions.map(t => t.id === txId ? { ...t, matched: true, invoiceId } : t),
-      invoices: invoiceId ? d.invoices.map(i => i.id === invoiceId ? { ...i, status: "bezahlt" } : i) : d.invoices,
+      invoices: invoiceId ? d.invoices.map(i => i.id === invoiceId ? {
+        ...i,
+        status: "bezahlt",
+        paidDate: d.bankTransactions.find(t => t.id === txId)?.date || today(),
+        paymentMethod: "Überweisung",
+      } : i) : d.invoices,
     }));
   };
 
@@ -1452,12 +1490,21 @@ function BankUpload({ data, save }) {
         onDragLeave={() => setDragging(false)}
         onDrop={e => { e.preventDefault(); setDragging(false); handleFile(e.dataTransfer.files[0]); }}
         onClick={() => fileRef.current?.click()}
+        onKeyDown={event => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            fileRef.current?.click();
+          }
+        }}
+        role="button"
+        tabIndex={0}
+        aria-label="Bank-CSV auswählen"
         style={{
           border: `2px dashed ${dragging ? "#1e40af" : "#cbd5e1"}`,
           borderRadius: 16, padding: "48px 32px", textAlign: "center", cursor: "pointer",
-          background: dragging ? "#eff6ff" : "#f8fafc", marginBottom: 28, transition: "all 0.2s",
+          background: dragging ? "#eff6ff" : "#f8fafc", marginBottom: 28, transition: "background-color 0.2s, border-color 0.2s",
         }}>
-        <input ref={fileRef} type="file" accept=".csv,.txt" style={{ display: "none" }} onChange={e => handleFile(e.target.files[0])} />
+        <input ref={fileRef} aria-label="Bank-CSV-Datei" type="file" accept=".csv,.txt" style={{ display: "none" }} onChange={e => handleFile(e.target.files[0])} />
         <div style={{ fontSize: 40, marginBottom: 12 }}>📂</div>
         <div style={{ fontSize: 16, fontWeight: 700, color: "#1e293b" }}>CSV-Datei hier ablegen</div>
         <div style={{ fontSize: 13, color: "#94a3b8", marginTop: 6 }}>oder klicken zum Auswählen · Sparkasse, DKB, Commerzbank, ING-Format</div>
@@ -1499,7 +1546,8 @@ function BankUpload({ data, save }) {
             <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "#1e293b" }}>Importierte Transaktionen</h3>
             <span style={{ fontSize: 13, color: "#94a3b8" }}>{data.bankTransactions.length} gesamt</span>
           </div>
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <div className="crm-table-wrap">
+          <table style={{ width: "100%", minWidth: 980, borderCollapse: "collapse" }}>
             <thead><tr style={{ background: "#f8fafc" }}>
               {["Datum", "Name", "Betrag", "Verwendungszweck", "Zuordnung", ""].map(h => <th key={h} style={{ padding: "12px 16px", textAlign: "left", fontSize: 12, fontWeight: 700, color: "#64748b", textTransform: "uppercase" }}>{h}</th>)}
             </tr></thead>
@@ -1525,6 +1573,7 @@ function BankUpload({ data, save }) {
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       )}
     </div>
@@ -1534,6 +1583,7 @@ function BankUpload({ data, save }) {
 // ─── Settings ─────────────────────────────────────────────────────────────────
 function Settings({ data, save }) {
   const [profiles, setProfiles] = useState(data.invoiceProfiles || defaultInvoiceProfiles);
+  const [pendingImport, setPendingImport] = useState(null);
 
   const saveSettings = () => {
     const primaryProfile = profiles.find(profile => profile.id === DEFAULT_INVOICE_PROFILE_ID) || profiles[0];
@@ -1596,9 +1646,11 @@ function Settings({ data, save }) {
     reader.onload = (ev) => {
       try {
         const imported = JSON.parse(ev.target.result);
-        save(() => migrateData(imported));
-        alert("Daten erfolgreich importiert!");
-      } catch { alert("Ungültige Datei."); }
+        if (!imported || typeof imported !== "object" || !Array.isArray(imported.members) || !Array.isArray(imported.memberships)) {
+          throw new Error("INVALID_BACKUP");
+        }
+        setPendingImport(migrateData(imported));
+      } catch { alert("Ungültige CRM-Sicherungsdatei. Member- und Membership-Daten fehlen."); }
     };
     reader.readAsText(file);
   };
@@ -1625,7 +1677,7 @@ function Settings({ data, save }) {
               </div>
               <Badge status={profile.pdfDesignVariant || "pdb-premium"} />
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 16px" }}>
+            <div className="crm-settings-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 16px" }}>
               <Field label="Profilname"><input style={inp} value={profile.name || ""} onChange={e => updateProfile(profile.id, { name: e.target.value })} /></Field>
               <Field label="Firmen-/Praxisname"><input style={inp} value={profile.companyName || ""} onChange={e => updateProfile(profile.id, { companyName: e.target.value })} /></Field>
               <Field label="E-Mail"><input style={inp} value={profile.companyEmail || ""} onChange={e => updateProfile(profile.id, { companyEmail: e.target.value })} /></Field>
@@ -1655,15 +1707,29 @@ function Settings({ data, save }) {
 
       <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #e2e8f0", padding: 24 }}>
         <h3 style={{ margin: "0 0 16px", fontSize: 16, fontWeight: 700, color: "#1e293b" }}>Daten-Backup</h3>
-        <div style={{ display: "flex", gap: 12 }}>
+        <div className="crm-backup-actions" style={{ display: "flex", gap: 12 }}>
           <Btn variant="outline" onClick={exportData}>📥 Daten exportieren (JSON)</Btn>
           <label style={{ cursor: "pointer" }}>
             <input type="file" accept=".json" style={{ display: "none" }} onChange={importData} />
             <span style={{ display: "inline-block", background: "#f1f5f9", color: "#475569", borderRadius: 8, padding: "9px 18px", fontWeight: 600, fontSize: 14, cursor: "pointer" }}>📤 Daten importieren</span>
           </label>
         </div>
-        <p style={{ margin: "12px 0 0", fontSize: 12, color: "#94a3b8" }}>Alle Daten werden lokal in deinem Browser gespeichert. Regelmäßige Backups empfohlen.</p>
+        <p style={{ margin: "12px 0 0", fontSize: 12, color: "#64748b", lineHeight: 1.55 }}>Die zentralen CRM-Daten werden im geschützten PDB-Server gespeichert. Der Browser hält zusätzlich einen lokalen Arbeitsstand. JSON-Backups enthalten personenbezogene und finanzielle Daten und müssen geschützt aufbewahrt werden.</p>
       </div>
+      {pendingImport && (
+        <ConfirmDialog
+          message="CRM-Sicherung wirklich importieren?"
+          detail="Der aktuelle zentrale CRM-Stand wird durch den Inhalt der ausgewählten Sicherung ersetzt. Exportiere vorher bei Bedarf ein aktuelles Backup."
+          confirmLabel="Sicherung importieren"
+          variant="danger"
+          onCancel={() => setPendingImport(null)}
+          onConfirm={() => {
+            save(() => pendingImport);
+            setPendingImport(null);
+            alert("CRM-Sicherung wurde importiert.");
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -2265,7 +2331,9 @@ function Memberships({ data, save }) {
   const [membershipPlanFilter, setMembershipPlanFilter] = useState("alle");
   const [membershipStatusFilter, setMembershipStatusFilter] = useState("alle");
   const [newPerson, setNewPerson] = useState(null);
+  const [showMemberCreate, setShowMemberCreate] = useState(false);
   const [showPremiumAdministration, setShowPremiumAdministration] = useState(false);
+  const [membershipPage, setMembershipPage] = useState(1);
   const [form, setForm] = useState({
     plan: "Pure",
     contractSignedAt: today(),
@@ -2350,6 +2418,16 @@ function Memberships({ data, save }) {
     if (membershipSort === "amount-desc") return (Number(b.monthlyAmount) || 0) - (Number(a.monthlyAmount) || 0);
     return getMemberDisplayName(a).localeCompare(getMemberDisplayName(b));
   });
+  const membershipPageSize = 20;
+  const membershipPageCount = Math.max(1, Math.ceil(sortedMemberships.length / membershipPageSize));
+  const visibleMembershipPage = Math.min(membershipPage, membershipPageCount);
+  const pagedMemberships = sortedMemberships.slice(
+    (visibleMembershipPage - 1) * membershipPageSize,
+    visibleMembershipPage * membershipPageSize,
+  );
+  useEffect(() => {
+    setMembershipPage(1);
+  }, [deferredMembershipSearch, membershipPlanFilter, membershipStatusFilter, membershipSort]);
   const exportRows = createMembershipExportRows(sortedMemberships, memberById, getMemberDisplayName);
   const exportFilterLabel = [
     membershipPlanFilter === "alle" ? "Alle Pakete" : `Paket ${membershipPlanFilter}`,
@@ -2798,6 +2876,7 @@ function Memberships({ data, save }) {
   const setStartDate = (startDate) => setForm(f => ({ ...f, startDate, endDate: addOneYear(startDate) }));
 
   const startNewMember = () => {
+    setShowMemberCreate(true);
     setSelectedId("");
     setQuery("");
     setNewPerson({ name: "", email: "", phone: "", address: "", zip: "", city: "" });
@@ -2891,6 +2970,7 @@ function Memberships({ data, save }) {
     setQuery("");
     setSelectedId("");
     setNewPerson(null);
+    setShowMemberCreate(false);
     setForm(f => ({ ...f, mandateReference: "", notes: "", setupBankingStatus: "offen", setupBankingDoneAt: "", setupBankingNote: "", setupFeeAmount: 39, setupFeeStatus: "offen", setupFeeDoneAt: "" }));
   };
 
@@ -3474,7 +3554,7 @@ function Memberships({ data, save }) {
 
   return (
     <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 20, marginBottom: 24 }}>
+      <div className="crm-member-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 20, marginBottom: 24 }}>
         <div>
           <h2 style={{ margin: 0, fontSize: 26, fontWeight: 800, color: "#1e293b" }}>Member</h2>
           <p style={{ margin: "6px 0 0", color: "#64748b", fontSize: 14 }}>Übersicht und Verwaltung aller Memberships, Verträge und offenen Aufgaben.</p>
@@ -3557,7 +3637,7 @@ function Memberships({ data, save }) {
                   ? `${name} ist pausiert`
                 : `${name}: Änderung auf ${m.scheduledPlan} ab ${fmtDate(m.scheduledStartDate)}`;
               return (
-                <div key={`${alert.type}-${m.id}`} style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", background: "#fff", borderRadius: 10, padding: "10px 12px", border: "1px solid #ffedd5" }}>
+                <div className="crm-member-alert" key={`${alert.type}-${m.id}`} style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", background: "#fff", borderRadius: 10, padding: "10px 12px", border: "1px solid #ffedd5" }}>
                   <div>
                     <div style={{ fontSize: 13, fontWeight: 800, color: "#1e293b" }}>{text}</div>
                     {isCancellation && m.notes && <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>{m.notes}</div>}
@@ -3653,7 +3733,7 @@ function Memberships({ data, save }) {
                     )}
                     {doneAt && <div style={{ fontSize: 12, color: "#047857", marginTop: 4, fontWeight: 800 }}>Alles erledigt am {fmtDate(doneAt)}</div>}
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", flexWrap: "wrap", gap: 8, flexShrink: 0 }}>
+                  <div className="crm-member-alert-actions" style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", flexWrap: "wrap", gap: 8, flexShrink: 0 }}>
                     <Badge status={doneAt ? "erledigt" : isCancellation || isPaused ? (m.status || alert.type) : isNewMember ? "erledigt" : isSetupFee ? "Gebühr offen" : isSetupBanking ? (alert.planned ? "SEPA geplant" : "Einrichtung offen") : isAppliedPlan ? (hasDetailedAppliedWorkflow ? (appliedImmediateChargeStatus === "offen" ? "Abbuchung offen" : appliedSetupFeeStatus === "offen" ? "Gebühr offen" : "SEPA offen") : appliedBankingStatus !== "erledigt" ? `Banking ${appliedBankingStatus}` : "Gebühr offen") : isPreparation ? `Banking ${setupBankingStatus}` : `Banking ${bankingStatus}`} />
                     {isNewMember
                       ? doneAt ? <Btn small variant="ghost" onClick={() => reopenAlert(m, alert.type)}>Wieder öffnen</Btn> : <Btn small variant="outline" onClick={() => markAlertDone(m, alert.type)}>Alles erledigt</Btn>
@@ -3892,13 +3972,15 @@ function Memberships({ data, save }) {
         />
       )}
 
-      <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 14, padding: 18, marginBottom: 24 }}>
+      <details className="crm-maintenance">
+        <summary>Import &amp; Datenpflege</summary>
+      <div style={{ background: "#fff", borderTop: "1px solid #e2e8f0", padding: 18 }}>
         <div style={{ display: "flex", justifyContent: "space-between", gap: 16, alignItems: "center", marginBottom: 14 }}>
           <div>
             <h3 style={{ margin: 0, fontSize: 16 }}>SEPA-XML importieren</h3>
             <p style={{ margin: "4px 0 0", color: "#64748b", fontSize: 13 }}>Liest pain.008-Lastschriftdateien aus dem Online-Banking und erstellt daraus Member-Kandidaten.</p>
           </div>
-          <input type="file" accept=".xml,text/xml,application/xml" onChange={e => handleSepaFile(e.target.files?.[0])} style={{ ...inp, width: 260 }} />
+          <input aria-label="SEPA-XML auswählen" type="file" accept=".xml,text/xml,application/xml" onChange={e => handleSepaFile(e.target.files?.[0])} style={{ ...inp, width: 260 }} />
         </div>
         {importError && <div style={{ background: "#fee2e2", color: "#991b1b", borderRadius: 10, padding: 12, fontSize: 13, marginBottom: 12 }}>{importError}</div>}
         {importRows.length > 0 && (
@@ -3959,10 +4041,21 @@ function Memberships({ data, save }) {
           </div>
         )}
       </div>
+      </details>
 
-      <div id="member-create" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 420px), 1fr))", gap: 18, marginBottom: 24, scrollMarginTop: 24 }}>
+      {showMemberCreate && (
+      <section id="member-create" className="crm-member-create-section">
+        <div className="crm-member-create-heading">
+          <div>
+            <h3>Member anlegen</h3>
+            <p>Zuerst eine vorhandene Person auswählen oder neue Kontaktdaten erfassen, danach die Membership festlegen.</p>
+          </div>
+          <Btn variant="ghost" onClick={() => { setShowMemberCreate(false); setNewPerson(null); setSelectedId(""); setQuery(""); }}>Schließen</Btn>
+        </div>
+      <div className="crm-member-create" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 420px), 1fr))", gap: 18 }}>
         <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 14, padding: 18 }}>
-          <h3 style={{ margin: "0 0 12px", fontSize: 16 }}>Person</h3>
+          <h3 style={{ margin: "0 0 6px", fontSize: 16 }}>1. Person auswählen</h3>
+          <p style={{ margin: "0 0 14px", color: "#64748b", fontSize: 12 }}>Kontaktdaten und Vertrag bleiben getrennt, damit Rechnungen und Verlauf korrekt zugeordnet werden.</p>
           <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
             <Btn small variant={!newPerson ? "outline" : "ghost"} onClick={() => setNewPerson(null)}>Vorhandene Person</Btn>
             <Btn small variant={newPerson ? "outline" : "ghost"} onClick={startNewMember}>Neue Person</Btn>
@@ -4020,7 +4113,7 @@ function Memberships({ data, save }) {
         </div>
 
         <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 14, padding: 18 }}>
-          <h3 style={{ margin: "0 0 14px", fontSize: 16 }}>Vertrag</h3>
+          <h3 style={{ margin: "0 0 14px", fontSize: 16 }}>2. Membership festlegen</h3>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 12px" }}>
             <Field label="Membership">
               <select style={sel} value={form.plan} onChange={e => setPlan(e.target.value)}>
@@ -4110,6 +4203,8 @@ function Memberships({ data, save }) {
           </Btn>
         </div>
       </div>
+      </section>
+      )}
 
       <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #e2e8f0", overflow: "hidden" }}>
         <div style={{ display: "grid", gap: 14, padding: "16px", borderBottom: "1px solid #e2e8f0", background: "linear-gradient(180deg, #fff 0%, #fcfbf9 100%)" }}>
@@ -4156,20 +4251,21 @@ function Memberships({ data, save }) {
             </label>
           </div>
         </div>
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+        <div className="crm-table-wrap">
+        <table style={{ width: "100%", minWidth: 1450, borderCollapse: "collapse" }}>
           <thead><tr style={{ background: "#f8fafc" }}>
             {["Nr.", "Name", "Aktuell", "Unterschrift", "Eintritt", "Vertragsende", "Monat", "Upgrade / Planung", "Status", "Notiz", ""].map(h => <th key={h} style={{ padding: "12px 14px", textAlign: "left", fontSize: 12, fontWeight: 700, color: "#64748b", textTransform: "uppercase" }}>{h}</th>)}
           </tr></thead>
           <tbody>
             {sortedMemberships.length === 0 ? <tr><td colSpan={11} style={{ padding: 36, textAlign: "center", color: "#94a3b8" }}>Noch keine Member angelegt</td></tr> :
-              sortedMemberships.map((m, index) => {
+              pagedMemberships.map((m, index) => {
                 const displayName = getMemberDisplayName(m);
                 const scheduledAmount = getScheduledAmount(m);
                 const canApplyScheduledPlan = m.scheduledPlan && m.scheduledStartDate && m.scheduledStartDate <= today();
                 const scheduledDelta = m.scheduledPlan ? scheduledAmount - (Number(m.monthlyAmount) || 0) : 0;
                 return (
                 <tr key={m.id} style={{ borderTop: "1px solid #f1f5f9" }}>
-                  <td style={{ padding: "12px 14px", color: "#94a3b8", fontSize: 13, fontWeight: 700 }}>{index + 1}</td>
+                  <td style={{ padding: "12px 14px", color: "#94a3b8", fontSize: 13, fontWeight: 700 }}>{(visibleMembershipPage - 1) * membershipPageSize + index + 1}</td>
                   <td style={{ padding: "12px 14px", fontWeight: 700, minWidth: 220 }}>
                     <div>{displayName}</div>
                     {m.packageLabel && <div style={{ fontSize: 11, color: "#64748b", fontWeight: 700, marginTop: 3 }}>{m.packageLabel}</div>}
@@ -4177,17 +4273,17 @@ function Memberships({ data, save }) {
                   <td style={{ padding: "12px 14px", fontSize: 13, color: "#1e293b", fontWeight: 800 }}>
                     {m.plan}
                   </td>
-                  <td style={{ padding: "12px 14px" }}><input style={{ ...inp, minWidth: 128 }} type="date" value={m.contractSignedAt || ""} onChange={e => updateMembership(m.id, { contractSignedAt: e.target.value })} /></td>
+                  <td style={{ padding: "12px 14px" }}><input aria-label={`Vertragsunterschrift ${displayName}`} style={{ ...inp, minWidth: 128 }} type="date" value={m.contractSignedAt || ""} onChange={e => updateMembership(m.id, { contractSignedAt: e.target.value })} /></td>
                   <td style={{ padding: "12px 14px", color: "#64748b", fontSize: 13 }}>{fmtDate(m.startDate)}</td>
-                  <td style={{ padding: "12px 14px" }}><input style={{ ...inp, minWidth: 128 }} type="date" value={m.endDate || ""} onChange={e => updateMembership(m.id, { endDate: e.target.value })} /></td>
+                  <td style={{ padding: "12px 14px" }}><input aria-label={`Vertragsende ${displayName}`} style={{ ...inp, minWidth: 128 }} type="date" value={m.endDate || ""} onChange={e => updateMembership(m.id, { endDate: e.target.value })} /></td>
                   <td style={{ padding: "12px 14px", fontWeight: 700 }}>
                     {m.plan === "Individuell"
-                      ? <input style={{ ...inp, minWidth: 92 }} type="number" step="0.01" value={m.monthlyAmount || ""} onChange={e => updateMembership(m.id, { monthlyAmount: e.target.value })} />
+                      ? <input aria-label={`Monatsbetrag ${displayName}`} style={{ ...inp, minWidth: 92 }} type="number" step="0.01" value={m.monthlyAmount || ""} onChange={e => updateMembership(m.id, { monthlyAmount: e.target.value })} />
                       : fmt(m.monthlyAmount)}
                   </td>
                   <td style={{ padding: "12px 14px", minWidth: 230 }}>
                     <div style={{ display: "grid", gap: 6 }}>
-                      <select style={{ ...sel, minWidth: 128, fontSize: 12, padding: "7px 9px" }} value={m.scheduledPlan || ""} onChange={e => updateMembership(m.id, {
+                      <select aria-label={`Paketänderung ${displayName}`} style={{ ...sel, minWidth: 128, fontSize: 12, padding: "7px 9px" }} value={m.scheduledPlan || ""} onChange={e => updateMembership(m.id, {
                         scheduledPlan: e.target.value,
                         scheduledStartDate: e.target.value ? (m.scheduledStartDate || "") : "",
                         scheduledMonthlyAmount: e.target.value === "Individuell" ? (m.scheduledMonthlyAmount || m.monthlyAmount || "") : "",
@@ -4202,9 +4298,9 @@ function Memberships({ data, save }) {
                       </select>
                       {m.scheduledPlan && (
                         <>
-                          <input style={{ ...inp, minWidth: 128, fontSize: 12, padding: "7px 9px" }} type="date" value={m.scheduledStartDate || ""} onChange={e => updateMembership(m.id, { scheduledStartDate: e.target.value, scheduledContractEndDate: addOneYear(e.target.value) })} />
+                          <input aria-label={`Start der Paketänderung ${displayName}`} style={{ ...inp, minWidth: 128, fontSize: 12, padding: "7px 9px" }} type="date" value={m.scheduledStartDate || ""} onChange={e => updateMembership(m.id, { scheduledStartDate: e.target.value, scheduledContractEndDate: addOneYear(e.target.value) })} />
                           {m.scheduledPlan === "Individuell" && (
-                            <input style={{ ...inp, minWidth: 92, fontSize: 12, padding: "7px 9px" }} type="number" step="0.01" value={m.scheduledMonthlyAmount || ""} placeholder="Betrag" onChange={e => updateMembership(m.id, { scheduledMonthlyAmount: e.target.value })} />
+                            <input aria-label={`Geplanter Monatsbetrag ${displayName}`} style={{ ...inp, minWidth: 92, fontSize: 12, padding: "7px 9px" }} type="number" step="0.01" value={m.scheduledMonthlyAmount || ""} placeholder="Betrag" onChange={e => updateMembership(m.id, { scheduledMonthlyAmount: e.target.value })} />
                           )}
                           <div style={{ fontSize: 11, color: "#64748b" }}>
                             ab {fmtDate(m.scheduledStartDate)} · {scheduledAmount ? fmt(scheduledAmount) : "Betrag offen"}
@@ -4212,9 +4308,9 @@ function Memberships({ data, save }) {
                           </div>
                           <div style={{ display: "grid", gap: 6, padding: 8, borderRadius: 8, background: "#f8fafc", border: "1px solid #e2e8f0" }}>
                             <div style={{ fontSize: 11, color: "#475569", fontWeight: 800 }}>Neuer Vertrag</div>
-                          <input style={{ ...inp, minWidth: 128, fontSize: 12, padding: "7px 9px" }} type="date" value={m.scheduledContractSignedAt || ""} onChange={e => updateMembership(m.id, { scheduledContractSignedAt: e.target.value })} />
+                          <input aria-label={`Neue Vertragsunterschrift ${displayName}`} style={{ ...inp, minWidth: 128, fontSize: 12, padding: "7px 9px" }} type="date" value={m.scheduledContractSignedAt || ""} onChange={e => updateMembership(m.id, { scheduledContractSignedAt: e.target.value })} />
                           <div style={{ fontSize: 11, color: "#64748b" }}>unterschrieben am</div>
-                            <input style={{ ...inp, minWidth: 128, fontSize: 12, padding: "7px 9px" }} type="date" value={m.scheduledContractEndDate || ""} onChange={e => updateMembership(m.id, { scheduledContractEndDate: e.target.value })} />
+                            <input aria-label={`Neues Vertragsende ${displayName}`} style={{ ...inp, minWidth: 128, fontSize: 12, padding: "7px 9px" }} type="date" value={m.scheduledContractEndDate || ""} onChange={e => updateMembership(m.id, { scheduledContractEndDate: e.target.value })} />
                             <div style={{ fontSize: 11, color: "#64748b" }}>neues Vertragsende</div>
                           </div>
                           {m.scheduledStartDate > today() && (
@@ -4222,14 +4318,14 @@ function Memberships({ data, save }) {
                           )}
                           <div style={{ display: "grid", gap: 6, padding: 8, borderRadius: 8, background: "#f8fafc", border: "1px solid #e2e8f0" }}>
                             <div style={{ fontSize: 11, color: "#475569", fontWeight: 800 }}>Onlinebanking</div>
-                            <select style={{ ...sel, minWidth: 128, fontSize: 12, padding: "7px 9px" }} value={m.scheduledBankingStatus === "geprüft" ? "erledigt" : (m.scheduledBankingStatus || "offen")} onChange={e => updateScheduledBanking(m, e.target.value)}>
+                            <select aria-label={`Onlinebanking-Status ${displayName}`} style={{ ...sel, minWidth: 128, fontSize: 12, padding: "7px 9px" }} value={m.scheduledBankingStatus === "geprüft" ? "erledigt" : (m.scheduledBankingStatus || "offen")} onChange={e => updateScheduledBanking(m, e.target.value)}>
                               <option value="offen">offen</option>
                               <option value="erledigt">erledigt</option>
                             </select>
                             {(["erledigt", "geprüft"].includes(m.scheduledBankingStatus)) && (
-                              <input style={{ ...inp, minWidth: 128, fontSize: 12, padding: "7px 9px" }} type="date" value={m.scheduledBankingDoneAt || today()} onChange={e => updateMembership(m.id, { scheduledBankingDoneAt: e.target.value })} />
+                              <input aria-label={`Onlinebanking erledigt am ${displayName}`} style={{ ...inp, minWidth: 128, fontSize: 12, padding: "7px 9px" }} type="date" value={m.scheduledBankingDoneAt || today()} onChange={e => updateMembership(m.id, { scheduledBankingDoneAt: e.target.value })} />
                             )}
-                            <input style={{ ...inp, minWidth: 160, fontSize: 12, padding: "7px 9px" }} value={m.scheduledBankingNote || ""} placeholder="Banking-Notiz, z.B. am 09.06. geändert" onChange={e => updateMembership(m.id, { scheduledBankingNote: e.target.value })} />
+                            <input aria-label={`Onlinebanking-Notiz ${displayName}`} style={{ ...inp, minWidth: 160, fontSize: 12, padding: "7px 9px" }} value={m.scheduledBankingNote || ""} placeholder="Banking-Notiz, z. B. am 09.06. geändert" onChange={e => updateMembership(m.id, { scheduledBankingNote: e.target.value })} />
                           </div>
                           <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                             {(m.scheduledBankingStatus || "offen") === "offen" && <Btn small variant="outline" onClick={() => updateScheduledBanking(m, "erledigt")}>Banking erledigt</Btn>}
@@ -4241,12 +4337,12 @@ function Memberships({ data, save }) {
                     </div>
                   </td>
                   <td style={{ padding: "12px 14px" }}>
-                    <select style={{ ...sel, minWidth: 112 }} value={m.status || "aktiv"} onChange={e => updateMembership(m.id, { status: e.target.value })}>
+                    <select aria-label={`Memberstatus ${displayName}`} style={{ ...sel, minWidth: 112 }} value={m.status || "aktiv"} onChange={e => updateMembership(m.id, { status: e.target.value })}>
                       {["aktiv", "vorbereitung", "pausiert", "gekündigt", "abgelaufen"].map(status => <option key={status} value={status}>{status}</option>)}
                     </select>
                   </td>
                   <td style={{ padding: "12px 14px", minWidth: 220 }}>
-                    <input style={inp} value={m.notes || ""} placeholder="Notiz hinzufügen…" onChange={e => updateMembership(m.id, { notes: e.target.value })} />
+                    <input aria-label={`Member-Notiz ${displayName}`} style={inp} value={m.notes || ""} placeholder="Notiz hinzufügen…" onChange={e => updateMembership(m.id, { notes: e.target.value })} />
                   </td>
                   <td style={{ padding: "12px 14px", textAlign: "right" }}>
                     <div style={{ display: "flex", gap: 6, justifyContent: "flex-end", flexWrap: "wrap" }}>
@@ -4259,6 +4355,14 @@ function Memberships({ data, save }) {
               );})}
           </tbody>
         </table>
+        </div>
+        {sortedMemberships.length > membershipPageSize && (
+          <div className="crm-pagination" aria-label="Seitennavigation Member-Liste">
+            <Btn small variant="ghost" disabled={visibleMembershipPage <= 1} onClick={() => setMembershipPage(page => Math.max(1, page - 1))}>Zurück</Btn>
+            <span>Seite {visibleMembershipPage} von {membershipPageCount}</span>
+            <Btn small variant="ghost" disabled={visibleMembershipPage >= membershipPageCount} onClick={() => setMembershipPage(page => Math.min(membershipPageCount, page + 1))}>Weiter</Btn>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -4444,7 +4548,7 @@ function MemberFinance({ data }) {
           <p style={{ margin: 0, color: "#64748b", fontSize: 14 }}>Auswertung der SEPA-XMLs aus dem Ordner {financeData.sourceFolder}.</p>
           {financeData.monthRule && <p style={{ margin: "6px 0 0", color: "#64748b", fontSize: 12 }}>{financeData.monthRule}</p>}
         </div>
-        <select style={{ ...sel, width: 220 }} value={selectedMonth} onChange={e => setSelectedMonth(e.target.value)}>
+        <select aria-label="Finanzmonat auswählen" style={{ ...sel, width: 220 }} value={selectedMonth} onChange={e => setSelectedMonth(e.target.value)}>
           {months.map(month => <option key={month.month} value={month.month}>{monthLabel(month.month)}</option>)}
         </select>
       </div>
@@ -4602,8 +4706,11 @@ const NAV = [
 ];
 
 export default function CRM() {
-  const [data, save] = useStorage();
-  const [page, setPage] = useState("dashboard");
+  const [data, save, syncStatus] = useStorage();
+  const [page, setPage] = useState(() => {
+    const requested = window.location.hash.replace(/^#/, "");
+    return NAV.some(item => item.id === requested) ? requested : "dashboard";
+  });
   const [isCompact, setIsCompact] = useState(() => window.innerWidth < 760);
   const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth >= 760);
 
@@ -4617,13 +4724,35 @@ export default function CRM() {
     return () => media.removeEventListener("change", syncLayout);
   }, []);
 
+  useEffect(() => {
+    const handleHashChange = () => {
+      const requested = window.location.hash.replace(/^#/, "");
+      if (NAV.some(item => item.id === requested)) setPage(requested);
+    };
+    window.addEventListener("hashchange", handleHashChange);
+    return () => window.removeEventListener("hashchange", handleHashChange);
+  }, []);
+
+  useEffect(() => {
+    if (window.location.hash !== `#${page}`) {
+      window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}#${page}`);
+    }
+  }, [page]);
+
+  const navigateToPage = nextPage => {
+    setPage(nextPage);
+    if (isCompact) setSidebarOpen(false);
+  };
+
   const overdueCount = data.invoices.filter(i => i.status === "überfällig" || i.status?.includes("Mahnung")).length;
   const activeMemberCount = new Set((data.memberships || []).filter(membership => membership.status === "aktiv").map(membership => membership.memberId)).size;
 
   return (
-    <div style={{ display: "flex", height: "100vh", fontFamily: "'DM Sans', system-ui, sans-serif", background: "#f6f3ee", color: "#1e293b" }}>
+    <div className="crm-shell" style={{ display: "flex", height: "100vh", fontFamily: "'DM Sans', system-ui, sans-serif", background: "#f6f3ee", color: "#1e293b" }}>
+      <a className="crm-skip-link" href="#crm-main">Zum Inhalt</a>
+      <h1 className="crm-visually-hidden">PDB Office</h1>
       {/* Sidebar */}
-      <aside style={{
+      <aside className="crm-sidebar" style={{
         width: sidebarOpen ? 220 : 64, background: "#161616", display: "flex", flexDirection: "column",
         transition: "width 0.2s", flexShrink: 0, overflow: "hidden",
         position: isCompact && sidebarOpen ? "fixed" : "relative", inset: isCompact && sidebarOpen ? "0 auto 0 0" : undefined,
@@ -4639,14 +4768,14 @@ export default function CRM() {
 
         <nav style={{ flex: 1, padding: "12px 8px" }}>
           {NAV.map(n => (
-            <button key={n.id} aria-label={n.label} onClick={() => setPage(n.id)} style={{
+            <button key={n.id} aria-label={n.label} aria-current={page === n.id ? "page" : undefined} onClick={() => navigateToPage(n.id)} style={{
               display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "10px 10px",
               background: page === n.id ? "#2c2c2c" : "none", border: "none", borderRadius: 8,
               color: page === n.id ? "#fff" : "#94a3b8", cursor: "pointer", marginBottom: 2,
               fontSize: 14, fontWeight: page === n.id ? 700 : 500, textAlign: "left", transition: "all 0.15s",
               position: "relative",
             }}>
-              <span style={{ width: 22, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 18, lineHeight: 1, flexShrink: 0 }}>{n.icon}</span>
+              <span aria-hidden="true" style={{ width: 22, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 18, lineHeight: 1, flexShrink: 0 }}>{n.icon}</span>
               {sidebarOpen && <span style={{ whiteSpace: "nowrap" }}>{n.label}</span>}
               {n.id === "reminders" && overdueCount > 0 && (
                 <span style={{ background: "#dc2626", color: "#fff", borderRadius: 20, fontSize: 11, fontWeight: 700, padding: "1px 7px", marginLeft: "auto", flexShrink: 0 }}>{overdueCount}</span>
@@ -4657,12 +4786,17 @@ export default function CRM() {
 
         <div style={{ padding: "12px 16px", borderTop: "1px solid #2c2c2c" }}>
           {sidebarOpen && <div style={{ fontSize: 11, color: "#475569" }}>v1.0 · {activeMemberCount} aktive Member</div>}
+          {sidebarOpen && (
+            <div role="status" aria-live="polite" style={{ marginTop: 6, fontSize: 11, color: syncStatus === "error" ? "#fca5a5" : syncStatus === "saving" ? "#d8c3a5" : "#94a3b8" }}>
+              {syncStatus === "loading" ? "Daten werden geladen…" : syncStatus === "saving" ? "Änderungen werden gespeichert…" : syncStatus === "error" ? "Nicht mit Server synchronisiert" : "Mit Server synchronisiert"}
+            </div>
+          )}
         </div>
       </aside>
 
       {/* Main */}
-      <main style={{ flex: 1, minWidth: 0, overflow: "auto", padding: isCompact ? "18px 14px" : "32px 36px" }}>
-        {page === "dashboard" && <Dashboard data={data} onNavigate={setPage} />}
+      <main id="crm-main" className="crm-main" style={{ flex: 1, minWidth: 0, overflow: "auto", padding: isCompact ? "18px 14px" : "32px 36px" }}>
+        {page === "dashboard" && <Dashboard data={data} onNavigate={navigateToPage} />}
         {page === "members" && <Members data={data} save={save} />}
         {page === "memberships" && <Memberships data={data} save={save} />}
         {page === "member-finance" && <MemberFinance data={data} />}
@@ -4671,7 +4805,6 @@ export default function CRM() {
         {page === "invoices" && <Invoices data={data} save={save} />}
         {page === "reminders" && <Reminders data={data} save={save} />}
         {page === "bank" && <BankUpload data={data} save={save} />}
-        {page === "shopify" && <ShopifyImport data={data} save={save} onNavigate={setPage} />}
         {page === "settings" && <Settings data={data} save={save} />}
       </main>
     </div>

@@ -22,6 +22,7 @@ const emptyEntry = date => ({
   id: `revenue-${date}`,
   date,
   cash: 0,
+  cashBusiness: 0,
   card: 0,
   shopify: 0,
   paypalPrivate: 0,
@@ -31,7 +32,11 @@ const emptyEntry = date => ({
 });
 
 function Field({ label, span = 1, children }) {
-  return <div className={`revenue-field span-${span}`}><label>{label}</label>{children}</div>;
+  const fieldId = React.useId();
+  const directControl = React.isValidElement(children) && ["input", "select", "textarea"].includes(children.type);
+  const controlId = directControl ? (children.props.id || fieldId) : undefined;
+  const control = directControl ? React.cloneElement(children, { id: controlId }) : children;
+  return <div className={`revenue-field span-${span}`}><label htmlFor={controlId}>{label}</label>{control}</div>;
 }
 
 function Modal({ kicker, title, children, onClose }) {
@@ -328,7 +333,7 @@ export default function RevenueWorkspace({ data, save }) {
         {[
           ["Geschäftsumsatz", summary.business, `${fmt(summary.businessWithoutPremium)} Tagesgeschäft`],
           ["Premium", summary.premium, financeMonths[selectedMonth] != null ? "live aus Member Finanzen" : "Excel-Fallback"],
-          ["Persönliche Zuflüsse", summary.personal, "Bar + PayPal Privat"],
+          ["Persönliche Zuflüsse", summary.personal, "Bar privat (Bestand) + PayPal Privat"],
           ["Offene Zahlungen", openReceivableTotal, `${openReceivables.length} offen`],
         ].map(([label, value, hint]) => (
           <div className="revenue-card revenue-metric" key={label}>
@@ -491,7 +496,7 @@ function SettleModal({ receivable, onClose, onSave }) {
         <Field label="Bezahlt am"><input className="revenue-input" type="date" value={form.paidAt} onChange={event => setForm(current => ({ ...current, paidAt: event.target.value }))} /></Field>
         <Field label="Zahlungsart" span={2}><select className="revenue-input" value={form.paymentMethod} onChange={event => setForm(current => ({ ...current, paymentMethod: event.target.value }))}>{REVENUE_CHANNELS.filter(channel => channel.group === "business").map(channel => <option key={channel.key} value={channel.key}>{channel.shortLabel}</option>)}</select></Field>
       </div>
-      <p className="revenue-section-copy">Der Betrag wird automatisch am Zahlungstag in das Tagesjournal übernommen.</p>
+      <p className="revenue-section-copy">Der Betrag wird automatisch am Zahlungstag als Geschäftsumsatz in das Tagesjournal übernommen.</p>
       <div className="revenue-inline-actions" style={{ justifyContent: "flex-end", marginTop: 18 }}><button className="revenue-button secondary" onClick={onClose}>Abbrechen</button><button className="revenue-button" onClick={() => onSave(form)}>Als bezahlt buchen</button></div>
     </Modal>
   );
