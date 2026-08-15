@@ -36,9 +36,20 @@ Die CRM-Dokumente liegen getrennt von den Premium-Tabellen im PostgreSQL-Schema
 `pdb_office`. Änderungen verwenden eine Revisionsprüfung, damit ein älterer
 Browserstand keine neueren Daten überschreibt.
 
+## BEYOND-Abgleich
+
+Die Ansicht **BEYOND-Abgleich** führt aktive BEYOND-Mitgliedschaften aus dem
+CRM lesend mit Shopify-Kunden zusammen, die den Tag `premium-beyond` tragen.
+Eine Zuordnung über eine eindeutige E-Mail-Adresse gilt als bestätigt. Eine
+reine Namensübereinstimmung wird nur zur Prüfung angezeigt und niemals
+automatisch übernommen. Der Abgleich legt keine Online-Konten an und verändert
+keine Monatskontingente. Vor der Übernahme historischer Member muss zunächst
+der tatsächliche Verbrauch des laufenden Monats feststehen.
+
 ## Bewusste Grenzen
 
-- Es gibt keine automatische Zuordnung über Namen oder E-Mail-Adressen.
+- Der Abgleich über Namen oder E-Mail-Adressen ist eine schreibgeschützte
+  Vorschau und löst keine automatische Freischaltung aus.
 - Die lokale CRM-Personenliste bleibt die führende Quelle für das bisherige
   PDB Office.
 - Shopify-IDs werden nur dort angezeigt, wo das Premium-System sie bereits als

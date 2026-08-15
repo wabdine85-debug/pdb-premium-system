@@ -42,6 +42,46 @@ async function graphql(query, variables) {
   return body.data;
 }
 
+function numericCustomerId(gid) {
+  return String(gid || '').split('/').pop() || '';
+}
+
+export async function listShopifyCustomersByTag(tag) {
+  const customers = [];
+  let after = null;
+
+  do {
+    const data = await graphql(
+      `query ListPremiumCustomers($after: String, $query: String!) {
+        customers(first: 250, after: $after, query: $query) {
+          nodes {
+            id
+            defaultEmailAddress { emailAddress }
+            firstName
+            lastName
+            tags
+          }
+          pageInfo { hasNextPage endCursor }
+        }
+      }`,
+      { after, query: `tag:'${tag}'` }
+    );
+
+    customers.push(...data.customers.nodes.map((customer) => ({
+      id: numericCustomerId(customer.id),
+      email: customer.defaultEmailAddress?.emailAddress || null,
+      firstName: customer.firstName || null,
+      lastName: customer.lastName || null,
+      tags: customer.tags || []
+    })));
+    after = data.customers.pageInfo.hasNextPage
+      ? data.customers.pageInfo.endCursor
+      : null;
+  } while (after);
+
+  return customers;
+}
+
 export async function getShopifyCustomer(customerId) {
   const id = `gid://shopify/Customer/${customerId}`;
   const data = await graphql(

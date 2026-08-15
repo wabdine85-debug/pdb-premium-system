@@ -18,6 +18,7 @@ import {
 } from '../services/adminUsage.service.js';
 import { getEntitlementsForMonth } from '../services/entitlement.service.js';
 import { getBookingMonth } from '../utils/dates.js';
+import { getBeyondReconciliation } from '../services/memberReconciliation.service.js';
 
 const router = express.Router();
 const adminWriteLimiter = rateLimit({ windowMs: 60_000, max: 30 });
@@ -62,6 +63,15 @@ router.get('/members', async (req, res) => {
     return res.json({ ok: true, members });
   } catch (error) {
     return sendAdminError(res, error, 'GET /api/admin/members');
+  }
+});
+
+router.get('/reconciliation/beyond', async (_req, res) => {
+  try {
+    const reconciliation = await getBeyondReconciliation();
+    return res.json({ ok: true, ...reconciliation });
+  } catch (error) {
+    return sendAdminError(res, error, 'GET /api/admin/reconciliation/beyond');
   }
 });
 

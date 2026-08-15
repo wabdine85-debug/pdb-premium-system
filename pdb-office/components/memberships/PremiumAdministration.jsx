@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import {
+  getBeyondReconciliation,
   getPremiumMember,
   listPremiumContracts,
   listPremiumMembers,
@@ -9,6 +10,12 @@ import "./premium-administration.css";
 
 const PACKAGE_LABELS = { pure: "PURE", define: "DEFINE", beyond: "BEYOND", private: "PRIVATE" };
 const CATEGORY_LABELS = { pure: "PURE", define: "DEFINE", beyond: "BEYOND", private: "PRIVATE" };
+const RECONCILIATION_STATES = {
+  linked: { label: "Verbunden", tone: "linked" },
+  ready: { label: "Shopify bestätigt", tone: "ready" },
+  review: { label: "Zuordnung prüfen", tone: "review" },
+  missing_shopify: { label: "Nicht in Shopify gefunden", tone: "missing" },
+};
 
 function displayName(member) {
   return [member?.first_name, member?.last_name].filter(Boolean).join(" ") || member?.email || "Name fehlt";
@@ -60,6 +67,9 @@ export default function PremiumAdministration({ crmMemberships = [] }) {
   const [notice, setNotice] = useState("");
   const [usage, setUsage] = useState({ booking_month: "", treatment_key: "", actor: "", reason: "" });
   const [confirmUsage, setConfirmUsage] = useState(false);
+  const [reconciliation, setReconciliation] = useState(null);
+  const [reconciliationLoading, setReconciliationLoading] = useState(false);
+  const [reconciliationError, setReconciliationError] = useState(null);
   const activeCrmMemberCount = useMemo(() => new Set(
     crmMemberships
       .filter(membership => membership.status === "aktiv")
@@ -91,6 +101,23 @@ export default function PremiumAdministration({ crmMemberships = [] }) {
   };
 
   useEffect(() => { loadOverview(); }, [status]);
+
+  const loadReconciliation = async () => {
+    setReconciliationLoading(true);
+    setReconciliationError(null);
+    try {
+      setReconciliation(await getBeyondReconciliation());
+    } catch (nextError) {
+      setReconciliationError(nextError);
+    } finally {
+      setReconciliationLoading(false);
+    }
+  };
+
+  const openReconciliation = () => {
+    setView("reconciliation");
+    if (!reconciliation && !reconciliationLoading) loadReconciliation();
+  };
 
   const openMember = async memberId => {
     setSelectedId(memberId);
@@ -130,11 +157,12 @@ export default function PremiumAdministration({ crmMemberships = [] }) {
           <h3>Online-Kontingente & Verträge</h3>
           <p>Hier erscheinen technische Online-Buchungskonten. Sie entstehen automatisch beim Premium-Zugang oder durch die Annahme eines neuen Vertrags. Die vollständige Memberverwaltung bleibt in der CRM-Liste darunter.</p>
         </div>
-        <button className="premium-admin__refresh" onClick={loadOverview} disabled={loading}>Aktualisieren</button>
+        <button className="premium-admin__refresh" onClick={view === "reconciliation" ? loadReconciliation : loadOverview} disabled={loading || reconciliationLoading}>Aktualisieren</button>
       </div>
 
       <div className="premium-admin__tabs">
         <button className={view === "members" ? "is-active" : ""} onClick={() => setView("members")}>Online-Kontingente <span>{members.length}</span></button>
+        <button className={view === "reconciliation" ? "is-active" : ""} onClick={openReconciliation}>BEYOND-Abgleich <span>{reconciliation?.summary?.crm_members ?? "–"}</span></button>
         <button className={view === "contracts" ? "is-active" : ""} onClick={() => setView("contracts")}>Verträge <span>{contracts.length}</span></button>
       </div>
 
@@ -213,6 +241,55 @@ export default function PremiumAdministration({ crmMemberships = [] }) {
             </div>
           ))}
           {!contracts.length && <div className="premium-admin__empty">Keine Verträge vorhanden.</div>}
+        </div>
+      )}
+
+      {view === "reconciliation" && (
+        <div className="premium-admin__reconciliation">
+          <div className="premium-admin__safety-note">
+            <strong>August bleibt unverändert</strong>
+            <span>Dieser Abgleich prüft nur CRM, Shopify-Tag und Online-System. Neue Konten und Kontingente werden erst nach deiner August-Freigabe angelegt.</span>
+          </div>
+
+          {reconciliationLoading && <div className="premium-admin__state">BEYOND-Member werden mit Shopify abgeglichen…</div>}
+          {reconciliationError && <div className="premium-admin__state premium-admin__state--error">{errorMessage(reconciliationError)}</div>}
+
+          {!reconciliationLoading && reconciliation && (
+            <>
+              <div className="premium-admin__reconciliation-summary">
+                <div><strong>{reconciliation.summary.crm_members}</strong><span>aktive BEYOND-Member</span></div>
+                <div><strong>{reconciliation.summary.linked}</strong><span>bereits verbunden</span></div>
+                <div><strong>{reconciliation.summary.ready}</strong><span>Shopify bestätigt</span></div>
+                <div><strong>{reconciliation.summary.needs_review}</strong><span>manuell prüfen</span></div>
+              </div>
+
+              <div className="premium-admin__reconciliation-table-wrap">
+                <table className="premium-admin__reconciliation-table">
+                  <thead><tr><th>CRM-Member</th><th>Shopify</th><th>Online-System</th><th>August</th></tr></thead>
+                  <tbody>
+                    {reconciliation.rows.map(row => {
+                      const state = RECONCILIATION_STATES[row.state] || RECONCILIATION_STATES.missing_shopify;
+                      return (
+                        <tr key={row.crm_member_id || row.membership_ids.join("-")}>
+                          <td><strong>{row.name}</strong><small>{row.email || "E-Mail fehlt"}{row.membership_ids.length > 1 ? ` · ${row.membership_ids.length} Verträge` : ""}</small></td>
+                          <td><span className={`premium-admin__match premium-admin__match--${state.tone}`}>{state.label}</span><small>{row.match_method === "name" ? "nur über Namen gefunden" : row.shopify_email || "keine eindeutige Zuordnung"}</small></td>
+                          <td><strong>{row.online_member_id ? "Vorhanden" : "Noch nicht angelegt"}</strong></td>
+                          <td><strong className="premium-admin__august-lock">Noch nicht übernommen</strong></td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              {reconciliation.shopify_only?.length > 0 && (
+                <div className="premium-admin__shopify-only">
+                  <strong>{reconciliation.shopify_only.length} Shopify-BEYOND-Konten ohne aktive CRM-Zuordnung</strong>
+                  <span>Diese werden nicht automatisch übernommen und müssen separat geprüft werden.</span>
+                </div>
+              )}
+            </>
+          )}
         </div>
       )}
 

@@ -2,7 +2,7 @@ function premiumAdminEndpoint(path) {
   if (path === "/contracts" || path.startsWith("/contracts?")) {
     return `/api/contracts/admin${path.slice("/contracts".length)}`;
   }
-  if (path.startsWith("/members") || path.startsWith("/bookings")) return `/api/admin${path}`;
+  if (path.startsWith("/members") || path.startsWith("/bookings") || path.startsWith("/reconciliation")) return `/api/admin${path}`;
   throw new Error("ADMIN_ROUTE_NOT_ALLOWED");
 }
 
@@ -50,6 +50,10 @@ export function listPremiumContracts({ status = "", limit = 100 } = {}) {
   const params = new URLSearchParams({ limit: String(limit) });
   if (status) params.set("status", status);
   return requestPremiumAdmin(`/contracts?${params.toString()}`);
+}
+
+export function getBeyondReconciliation() {
+  return requestPremiumAdmin("/reconciliation/beyond");
 }
 
 export function recordPremiumManualUsage(memberId, input) {
