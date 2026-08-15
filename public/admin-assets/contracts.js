@@ -244,14 +244,15 @@
         method: 'POST',
         body: JSON.stringify({ username: usernameInput.value.trim() || 'admin', password })
       });
-      passwordInput.value = '';
       const next = new URLSearchParams(window.location.search).get('next');
       if (next === '/office/' || next === '/office') {
         window.location.replace('/office/');
         return;
       }
-      showAdmin();
-      await loadApplications();
+      // Keep the completed form intact until navigation. Mobile password
+      // managers use the successful page transition to offer credential saving.
+      window.location.replace('/admin/contracts');
+      return;
     } catch (error) {
       setStatus(loginStatus, error.message, true);
     } finally {

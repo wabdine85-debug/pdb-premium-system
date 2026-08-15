@@ -17,6 +17,8 @@ test('admin portal uses a password session without exposing credentials', async 
   assert.match(page, /ADMIN_API_TOKEN/);
   assert.doesNotMatch(page, /Bearer\s+[A-Za-z0-9_-]{16,}/);
   assert.match(script, /credentials: 'same-origin'/);
+  assert.match(script, /window\.location\.replace\('\/admin\/contracts'\)/);
+  assert.doesNotMatch(script, /passwordInput\.value = ''/);
   assert.match(script, /Authorization: `Bearer \$\{recoveryToken\}`/);
   assert.match(script, /X-PDB-Admin/);
   assert.doesNotMatch(script, /localStorage|sessionStorage/);
