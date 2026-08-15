@@ -26,8 +26,23 @@ applications with encrypted SEPA data.
 
 ```sh
 npm test
+npm run test:pdb-office
+npm run build:pdb-office
 npm run validate:treatments
 shopify theme check --path shopify-theme-premium-dummy-clean
+```
+
+## PDB Office
+
+PDB Office is served by this same application at `/office/`. It uses the
+existing contract-administration login and keeps its CRM documents in the
+separate PostgreSQL schema `pdb_office`. No second Render service or browser
+API token is required.
+
+The production build command must include the frontend build:
+
+```sh
+npm install && npm run build:pdb-office
 ```
 
 ## Production configuration

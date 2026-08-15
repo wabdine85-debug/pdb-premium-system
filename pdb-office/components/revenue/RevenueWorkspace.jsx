@@ -99,7 +99,7 @@ export default function RevenueWorkspace({ data, save }) {
 
   useEffect(() => {
     let alive = true;
-    fetch("/member-finance-data.json", { cache: "no-store" })
+    fetch("/api/office/member-finance", { cache: "no-store" })
       .then(response => response.ok ? response.json() : null)
       .then(json => {
         if (!alive) return;

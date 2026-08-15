@@ -3283,9 +3283,9 @@ function Memberships({ data, save }) {
 
     setMailStatus({ type: "pending", message: `Sende Kündigungsbestätigung an ${email}…` });
     try {
-      const res = await fetch("/api/send-cancellation-email", {
+      const res = await fetch("/api/office/send-cancellation-email", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "X-PDB-Admin": "1" },
         body: JSON.stringify({
           email,
           memberName,
@@ -4272,7 +4272,7 @@ function MemberFinance({ data }) {
 
   useEffect(() => {
     let alive = true;
-    fetch("/member-finance-data.json")
+    fetch("/api/office/member-finance")
       .then(response => {
         if (!response.ok) throw new Error("Member-Finanzdaten konnten nicht geladen werden.");
         return response.json();

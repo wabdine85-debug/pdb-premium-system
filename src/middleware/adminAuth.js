@@ -63,13 +63,31 @@ export function verifyAdminSession(token, now = Date.now()) {
 
 function sessionCookie(token, maxAgeSeconds) {
   const secure = env.nodeEnv === 'production' ? '; Secure' : '';
-  return `${ADMIN_SESSION_COOKIE}=${token}; Path=/api/contracts; HttpOnly; SameSite=Strict; Max-Age=${maxAgeSeconds}${secure}`;
+  return `${ADMIN_SESSION_COOKIE}=${token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${maxAgeSeconds}${secure}`;
+}
+
+export function hasAdminSession(req) {
+  const token = parseCookies(req.get('cookie'))[ADMIN_SESSION_COOKIE];
+  return verifyAdminSession(token);
+}
+
+export function requireAdminPageSession(req, res, next) {
+  if (hasAdminSession(req)) return next();
+  const nextPath = req.originalUrl.startsWith('/office') ? '/office/' : '/admin/contracts';
+  return res.redirect(302, `/admin/contracts?next=${encodeURIComponent(nextPath)}`);
+}
+
+export function requireAdminSession(req, res, next) {
+  if (!hasAdminSession(req)) {
+    return res.status(401).json({ ok: false, error: 'ADMIN_AUTH_REQUIRED' });
+  }
+  req.adminAuthMethod = 'session';
+  return next();
 }
 
 export function adminSessionStatus(req, res) {
-  const token = parseCookies(req.get('cookie'))[ADMIN_SESSION_COOKIE];
   res.set('Cache-Control', 'no-store');
-  return res.json({ ok: true, authenticated: verifyAdminSession(token) });
+  return res.json({ ok: true, authenticated: hasAdminSession(req) });
 }
 
 export function createAdminSessionHandler(req, res) {

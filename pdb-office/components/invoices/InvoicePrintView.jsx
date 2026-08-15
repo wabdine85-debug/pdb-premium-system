@@ -45,7 +45,8 @@ export default function InvoicePrintView({ inv, profile, onClose, Button }) {
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 24px", borderBottom: "1px solid #e2e8f0" }}>
           <h3 style={{ margin: 0, fontSize: 10, fontWeight: 700 }}>Druckvorschau — {inv.number}</h3>
           <div style={{ display: "flex", gap: 10 }}>
-            <form action="/api/invoice-pdf" method="post" onSubmit={() => setDownloadState("done")} style={{ margin: 0 }}>
+            <form action="/api/office/invoice-pdf" method="post" onSubmit={() => setDownloadState("done")} style={{ margin: 0 }}>
+              <input type="hidden" name="admin_csrf" value="1" />
               <input type="hidden" name="filename" value={pdfDownload.fileName} />
               <input type="hidden" name="pdf" value={pdfDownload.base64} />
               <button

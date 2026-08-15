@@ -64,7 +64,7 @@ test('password login creates a protected cookie and rejects a wrong password', (
     assert.match(success.headers['Set-Cookie'], /HttpOnly/);
     assert.match(success.headers['Set-Cookie'], /SameSite=Strict/);
     assert.match(success.headers['Set-Cookie'], /Secure/);
-    assert.match(success.headers['Set-Cookie'], /Path=\/api\/contracts/);
+    assert.match(success.headers['Set-Cookie'], /Path=\//);
     assert.doesNotMatch(success.headers['Set-Cookie'], new RegExp(env.adminPassword));
   } finally {
     Object.assign(env, {

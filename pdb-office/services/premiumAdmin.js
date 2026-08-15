@@ -1,4 +1,10 @@
-const PREMIUM_ADMIN_ENDPOINT = "/api/premium-admin";
+function premiumAdminEndpoint(path) {
+  if (path === "/contracts" || path.startsWith("/contracts?")) {
+    return `/api/contracts/admin${path.slice("/contracts".length)}`;
+  }
+  if (path.startsWith("/members") || path.startsWith("/bookings")) return `/api/admin${path}`;
+  throw new Error("ADMIN_ROUTE_NOT_ALLOWED");
+}
 
 export class PremiumAdminError extends Error {
   constructor(code, status) {
@@ -10,11 +16,11 @@ export class PremiumAdminError extends Error {
 }
 
 async function requestPremiumAdmin(path, options = {}) {
-  const response = await fetch(`${PREMIUM_ADMIN_ENDPOINT}${path}`, {
+  const response = await fetch(premiumAdminEndpoint(path), {
     ...options,
     headers: {
       Accept: "application/json",
-      ...(options.body ? { "Content-Type": "application/json" } : {}),
+      ...(options.body ? { "Content-Type": "application/json", "X-PDB-Admin": "1" } : {}),
       ...(options.headers || {}),
     },
     cache: "no-store",

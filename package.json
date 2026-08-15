@@ -7,7 +7,10 @@
   "scripts": {
     "dev": "node --watch src/server.js",
     "start": "node server.js",
-    "test": "node --test",
+    "test": "node --test test/*.test.js",
+    "test:pdb-office": "npm --prefix pdb-office test",
+    "test:all": "npm test && npm run test:pdb-office",
+    "build:pdb-office": "npm --prefix pdb-office ci && npm --prefix pdb-office run build",
     "sync:treatments": "node src/scripts/syncTreatments.js",
     "validate:treatments": "node src/scripts/syncTreatments.js --validate-only",
     "audit:shopify-treatments": "node src/scripts/auditShopifyTreatmentHandles.js",

@@ -155,6 +155,7 @@ export default defineConfig(({ mode }) => {
   });
 
   return {
+    base: "/office/",
     plugins: [
       react(),
       crmPersistencePlugin(),

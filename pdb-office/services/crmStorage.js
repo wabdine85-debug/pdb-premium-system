@@ -4,7 +4,7 @@ import revenueSeed from "../data/revenue-seed-default.json";
 import { getStorageRevision } from "./storageRevision.js";
 
 const STORAGE_KEY = "crm_data_v1";
-const FILE_STORAGE_ENDPOINT = "/api/crm-data";
+const FILE_STORAGE_ENDPOINT = "/api/office/crm-data";
 const REMOVED_MEMBERSHIP_IDS = new Set(["4znpbozb", "kat3nvr9"]);
 
 const defaultData = {
@@ -167,7 +167,7 @@ async function persistFile(data) {
   if (!hasMeaningfulData(data)) return null;
   return fetch(FILE_STORAGE_ENDPOINT, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", "X-PDB-Admin": "1" },
     body: JSON.stringify(data),
   }).catch(() => null);
 }

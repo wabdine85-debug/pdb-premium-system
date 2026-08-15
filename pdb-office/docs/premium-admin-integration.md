@@ -9,45 +9,32 @@ zusammengeführt.
 
 ## Sicherheitsmodell
 
-- Der Browser spricht ausschließlich mit `/api/premium-admin` auf derselben
-  Herkunft wie PDB Office.
-- Der Admin-Token liegt nur in der Server-Umgebung und darf niemals mit dem
-  Präfix `VITE_` konfiguriert werden.
-- Der Proxy erlaubt nur die benötigten Member-, Kontingent- und Vertragsrouten.
+- PDB Office läuft im bestehenden Premium-Service unter `/office/`.
+- Die Vertragsverwaltung und PDB Office verwenden dieselbe geschützte
+  Admin-Sitzung. Das Admin-Passwort oder der API-Token gelangen nicht in den
+  Browser-Code.
+- Der Browser spricht ausschließlich mit den freigegebenen `/api/office`-,
+  `/api/admin`- und `/api/contracts/admin`-Routen derselben Herkunft.
 - Schreibvorgänge benötigen Bearbeiter und Begründung und werden vor dem
   Absenden bestätigt.
 - Kontingentänderungen werden im Premium-System protokolliert. Lokale
   Membership-Datensätze in PDB Office bleiben unverändert.
 
-## Lokale Konfiguration
-
-Die Werte aus `.env.example` in der lokalen Server-Umgebung setzen:
-
-```text
-PREMIUM_API_BASE_URL=https://<premium-system-host>
-PREMIUM_ADMIN_API_TOKEN=<serverseitiger-admin-token>
-```
-
-Anschließend PDB Office über den Vite-Entwicklungsserver starten. Ohne diese
-Werte zeigt die Oberfläche bewusst nur einen Konfigurationshinweis.
-
 ## Produktions-Rollout
 
-Die jetzige Proxy-Einbindung läuft im Vite-Entwicklungsserver. Für einen
-weltweit erreichbaren Betrieb ist zusätzlich ein authentifizierter Node-Server
-oder eine gleichwertige Backend-for-Frontend-Schicht für PDB Office nötig. Eine
-reine statische Veröffentlichung darf den Admin-Token nicht enthalten.
+Der vorhandene Render-Service baut PDB Office zusammen mit dem Premium-System:
 
-Sichere Reihenfolge:
+```sh
+npm install && npm run build:pdb-office
+```
 
-1. Datenbankmigration und neue Admin-Routen des Premium-Systems sichern und
-   auf einer Testumgebung prüfen.
-2. Premium-System bereitstellen, ohne bestehende Vertragsrouten zu entfernen.
-3. PDB-Office-Server mit den beiden geheimen Umgebungswerten konfigurieren.
-4. Zugriffsschutz für PDB Office aktivieren und Rollen/Berechtigungen prüfen.
-5. Kontingente zunächst nur lesen, danach eine Testbuchung mit Audit-Protokoll
-   durchführen.
-6. Erst nach erfolgreicher Abnahme den weltweiten Zugriff freigeben.
+Die Oberfläche ist danach unter `/office/` erreichbar. Nicht angemeldete
+Aufrufe werden zur bestehenden Vertragsverwaltung weitergeleitet und kehren
+nach erfolgreicher Anmeldung automatisch zu PDB Office zurück.
+
+Die CRM-Dokumente liegen getrennt von den Premium-Tabellen im PostgreSQL-Schema
+`pdb_office`. Änderungen verwenden eine Revisionsprüfung, damit ein älterer
+Browserstand keine neueren Daten überschreibt.
 
 ## Bewusste Grenzen
 
@@ -56,5 +43,5 @@ Sichere Reihenfolge:
   PDB Office.
 - Shopify-IDs werden nur dort angezeigt, wo das Premium-System sie bereits als
   technische Referenz liefert; sie werden nicht als neue CRM-ID eingeführt.
-- Produktionsmigration, Deployment und geheime Werte sind nicht Bestandteil
-  der lokalen Implementierung.
+- Shopify- und Appointly-Bereiche werden nicht als eigene CRM-Navigation
+  eingeführt. Neue Kontakte werden im Bereich **Member** angelegt.

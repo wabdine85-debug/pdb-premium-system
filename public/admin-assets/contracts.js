@@ -9,6 +9,7 @@
   const adminPanel = document.getElementById('admin-panel');
   const adminStatus = document.getElementById('admin-status');
   const logoutButton = document.getElementById('logout-button');
+  const officeLink = document.getElementById('office-link');
   const statusFilter = document.getElementById('status-filter');
   const applicationList = document.getElementById('application-list');
   const sepaDialog = document.getElementById('sepa-dialog');
@@ -82,12 +83,14 @@
     loginPanel.hidden = true;
     adminPanel.hidden = false;
     logoutButton.hidden = false;
+    officeLink.hidden = Boolean(recoveryToken);
   }
 
   function showLogin() {
     applicationList.replaceChildren();
     adminPanel.hidden = true;
     logoutButton.hidden = true;
+    officeLink.hidden = true;
     loginPanel.hidden = false;
     passwordInput.focus();
   }
@@ -96,6 +99,11 @@
     try {
       const result = await adminRequest('/admin/session');
       if (!result.authenticated) return;
+      const next = new URLSearchParams(window.location.search).get('next');
+      if (next === '/office/' || next === '/office') {
+        window.location.replace('/office/');
+        return;
+      }
       showAdmin();
       await loadApplications();
     } catch {
@@ -233,6 +241,11 @@
     try {
       await adminRequest('/admin/session', { method: 'POST', body: JSON.stringify({ password }) });
       passwordInput.value = '';
+      const next = new URLSearchParams(window.location.search).get('next');
+      if (next === '/office/' || next === '/office') {
+        window.location.replace('/office/');
+        return;
+      }
       showAdmin();
       await loadApplications();
     } catch (error) {

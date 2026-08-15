@@ -10,9 +10,12 @@ import treatmentsRouter from "./src/routes/treatments.js";
 import bookingsRouter from "./src/routes/bookings.js";
 import contractsRouter from './src/routes/contracts.js';
 import adminMembersRouter from './src/routes/adminMembers.js';
+import officeRouter from './src/routes/office.js';
+import { requireAdminPageSession } from './src/middleware/adminAuth.js';
 
 const app = express();
 const publicDirectory = path.join(path.dirname(fileURLToPath(import.meta.url)), 'public');
+const officeDirectory = path.join(path.dirname(fileURLToPath(import.meta.url)), 'pdb-office', 'dist');
 app.set('trust proxy', 1);
 app.use((req, res, next) => {
   if (req.headers['x-shopify-shop-domain']) {
@@ -23,6 +26,7 @@ app.use((req, res, next) => {
 
 app.use(helmet());
 app.use(cors({ origin: env.frontendOrigin, credentials: true }));
+app.use('/api/office', officeRouter);
 app.use(express.json());
 app.use(morgan('dev'));
 
@@ -44,6 +48,16 @@ app.use('/admin/assets', express.static(path.join(publicDirectory, 'admin-assets
   immutable: false,
   maxAge: 0
 }));
+app.use('/office', requireAdminPageSession, express.static(officeDirectory, {
+  fallthrough: true,
+  immutable: false,
+  maxAge: 0
+}));
+app.get('/office/*', requireAdminPageSession, (_req, res) => {
+  res.set('Cache-Control', 'private, no-store');
+  res.set('X-Robots-Tag', 'noindex, nofollow, noarchive');
+  return res.sendFile('index.html', { root: officeDirectory });
+});
 
 // ✅ HIER EINFÜGEN (Block 1)
 app.get('/api', (req, res) => {
