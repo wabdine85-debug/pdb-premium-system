@@ -1,0 +1,12 @@
+.env
+node_modules/
+dist/
+.DS_Store
+.playwright-mcp/
+data/backups/
+data/crm-data-v1.json
+data/revenue-seed-2026.json
+kontoauszüge/
+scripts/member-finance-import-config.json
+public/member-finance-data.json
+public/recovered-crm-data-v1.json
