@@ -71,6 +71,7 @@ if (!proxyCustomerId) {
         first_name: member.first_name,
         last_name: member.last_name,
         package_key: member.package_key,
+        entitlement_multiplier: member.entitlement_multiplier,
         status: member.status
       },
       entitlements,

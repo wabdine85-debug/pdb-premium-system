@@ -6,6 +6,28 @@ import {
 import { getBookingMonth } from '../utils/dates.js';
 import { getPrivateProtocolSessionLimit } from '../utils/privateProtocolRules.js';
 
+function toCalendarMonth(value) {
+  if (!value) return '';
+  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+    const year = value.getFullYear();
+    const month = String(value.getMonth() + 1).padStart(2, '0');
+    return `${year}-${month}`;
+  }
+  return String(value).match(/\d{4}-\d{2}/)?.[0] || '';
+}
+
+function isEligibleForBookingMonth(member, bookingMonth) {
+  if (member?.status && member.status !== 'active') return false;
+
+  const month = toCalendarMonth(bookingMonth);
+  const startsInMonth = toCalendarMonth(member?.started_at);
+  const endsInMonth = toCalendarMonth(member?.ends_at);
+
+  if (startsInMonth && month < startsInMonth) return false;
+  if (endsInMonth && month > endsInMonth) return false;
+  return true;
+}
+
 /**
  * Berechnet, was der Kunde diesen Monat noch darf
  */
@@ -18,8 +40,12 @@ export async function getEntitlements(member, db = pool) {
  */
 export async function getEntitlementsForMonth(member, bookingMonth, db = pool) {
   const rules = PACKAGE_RULES[member?.package_key];
+  const entitlementMultiplier = Math.max(
+    1,
+    Number(member?.entitlement_multiplier) || 1
+  );
 
-  if (!member || !rules) {
+  if (!member || !rules || !isEligibleForBookingMonth(member, bookingMonth)) {
     return {
       month: bookingMonth,
       usage: createEmptyCategoryCounts(),
@@ -70,7 +96,11 @@ export async function getEntitlementsForMonth(member, bookingMonth, db = pool) {
   const remaining = Object.fromEntries(
     Object.entries(rules.limits).map(([categoryKey, limit]) => [
       categoryKey,
-      Math.max(0, limit - (usage[categoryKey] || 0))
+      Math.max(
+        0,
+        (member.package_key === 'private' ? limit : limit * entitlementMultiplier)
+          - (usage[categoryKey] || 0)
+      )
     ])
   );
 

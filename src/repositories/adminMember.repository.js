@@ -7,6 +7,7 @@ const MEMBER_COLUMNS = `
   first_name,
   last_name,
   package_key,
+  entitlement_multiplier,
   status,
   started_at,
   ends_at,
