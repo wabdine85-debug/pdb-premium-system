@@ -2337,6 +2337,7 @@ function Memberships({ data, save }) {
   const [showMemberCreate, setShowMemberCreate] = useState(false);
   const [showPremiumAdministration, setShowPremiumAdministration] = useState(false);
   const [membershipPage, setMembershipPage] = useState(1);
+  const [membershipSaving, setMembershipSaving] = useState(false);
   const [form, setForm] = useState({
     plan: "Pure",
     contractSignedAt: today(),
@@ -2889,7 +2890,8 @@ function Memberships({ data, save }) {
     window.requestAnimationFrame(() => document.getElementById("member-create")?.scrollIntoView({ behavior: "smooth", block: "start" }));
   };
 
-  const addMembership = () => {
+  const addMembership = async () => {
+    if (membershipSaving) return;
     const creatingPerson = Boolean(newPerson);
     const cleanName = (newPerson?.name || "").trim();
     const cleanEmail = (newPerson?.email || "").trim().toLowerCase();
@@ -2917,6 +2919,22 @@ function Memberships({ data, save }) {
     }
 
     if (!creatingPerson && !selectedCustomer) return;
+
+    let mandateReference = "";
+    setMembershipSaving(true);
+    try {
+      const response = await fetch('/api/office/mandate-reference', {
+        method: 'POST',
+        headers: { 'X-PDB-Admin': '1' },
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok || !payload.mandateReference) throw new Error('MANDATE_REFERENCE_FAILED');
+      mandateReference = payload.mandateReference;
+    } catch {
+      setMembershipSaving(false);
+      setMaintenanceStatus({ type: "error", message: "Die eindeutige Mandatsreferenz konnte nicht vergeben werden. Bitte erneut versuchen." });
+      return;
+    }
     const targetCustomer = creatingPerson ? {
       id: uid(),
       name: cleanName,
@@ -2950,7 +2968,7 @@ function Memberships({ data, save }) {
       paymentMethod: "SEPA",
       sepaIban: "",
       debitDay: form.debitDay || "1",
-      mandateReference: form.mandateReference.trim() || nextMandateReference,
+      mandateReference,
       notes: form.notes || "",
       setupBankingStatus: needsSetupBanking ? (form.setupBankingStatus || "offen") : "",
       setupBankingDoneAt: needsSetupBanking ? (form.setupBankingDoneAt || "") : "",
@@ -2978,6 +2996,7 @@ function Memberships({ data, save }) {
     setNewPerson(null);
     setShowMemberCreate(false);
     setForm(f => ({ ...f, mandateReference: "", notes: "", setupBankingStatus: "offen", setupBankingDoneAt: "", setupBankingNote: "", setupFeeAmount: 39, setupFeeStatus: "offen", setupFeeDoneAt: "" }));
+    setMembershipSaving(false);
   };
 
   const updateMembership = (id, patch) => save(d => ({
@@ -4321,16 +4340,18 @@ function Memberships({ data, save }) {
             </div>
           </div>
           <Field label="SEPA-Mandatsreferenz">
-            <input style={inp} value={form.mandateReference} placeholder={nextMandateReference} onChange={e => setForm(f => ({ ...f, mandateReference: e.target.value }))} />
+            <div style={{ ...inp, background: "#f8fafc", color: "#475569" }}>Wird beim Speichern automatisch vergeben</div>
             <div style={{ fontSize: 11, color: "#64748b", marginTop: 5 }}>
-              Leer lassen: Das CRM vergibt automatisch {nextMandateReference}.
+              Online- und Studio-Verträge verwenden dieselbe fortlaufende Nummer (Format PDB-M-JJJJ-0000). Eine manuelle Doppelvergabe ist ausgeschlossen.
             </div>
           </Field>
           <Field label="Notiz">
             <textarea style={{ ...inp, minHeight: 62, resize: "vertical" }} value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} />
           </Field>
-          <Btn onClick={addMembership} disabled={!selectedCustomer && !newPerson}>
-            {newPerson
+          <Btn onClick={addMembership} disabled={membershipSaving || (!selectedCustomer && !newPerson)}>
+            {membershipSaving
+              ? "Mandatsreferenz wird vergeben…"
+              : newPerson
               ? "Member anlegen"
               : selectedCustomer
               ? `${selectedCustomer.name} ${memberships.some(m => m.memberId === selectedCustomer.id && m.status === "aktiv") ? "weiteres Paket hinzufügen" : "hinzufügen"}`

@@ -22,9 +22,9 @@ test('PDB Office production client uses protected same-origin endpoints', async 
   assert.match(premiumView, /Konten im Online-System/);
   assert.match(premiumView, /technische Online-Buchungskonten/);
   assert.match(premiumView, /aktive Member stehen insgesamt im CRM/);
-  assert.match(premiumView, /August bleibt unverändert/);
+  assert.match(premiumView, /Aktueller August-Stand/);
   assert.match(premiumView, /BEYOND-Abgleich/);
-  assert.match(premiumView, /August-Stand übernehmen/);
+  assert.match(premiumView, /Änderungen speichern/);
   assert.match(crm, /\/api\/office\/send-cancellation-email/);
   assert.match(crm, /\/api\/contracts\/admin\/session/);
   assert.match(crm, /Vertragsverwaltung/);

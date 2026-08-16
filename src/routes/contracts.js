@@ -36,6 +36,8 @@ import {
   contractActionReceiptHtml
 } from '../services/contractDocuments.service.js';
 import { sendTransactionalHtml } from '../services/mail.service.js';
+import { reserveNextMandateReference } from '../services/mandateReference.service.js';
+import { syncAcceptedContractToCrm } from '../services/crmContractSync.service.js';
 import { getPackageOffer, SETUP_FEE_CENTS } from '../utils/packageCatalog.js';
 import {
   decryptIban,
@@ -123,7 +125,7 @@ router.post(
       const encryptedIban = encryptIban(req.body.iban, env.contractEncryptionKey);
       const id = crypto.randomUUID();
       const publicToken = crypto.randomBytes(32).toString('base64url');
-      const mandateReference = `PDB-${new Date().getUTCFullYear()}-${crypto.randomBytes(6).toString('hex').toUpperCase()}`;
+      const mandateReference = await reserveNextMandateReference();
       const acceptedAt = new Date();
       const application = await createApplication({
         id,
@@ -470,7 +472,13 @@ router.post('/admin/:id/activate', requireAdminAccess, async (req, res) => {
       await client.query(`UPDATE members SET started_at = $2 WHERE id = $1`, [member.id, application.starts_on]);
     }
     const activated = await activateApplication(application.id, member.id, client);
-    await addContractEvent(application.id, 'membership_activated', 'admin', { memberId: member.id }, client);
+    const crmSync = await syncAcceptedContractToCrm(application, client);
+    await addContractEvent(application.id, 'membership_activated', 'admin', {
+      memberId: member.id,
+      crmMemberId: crmSync.memberId,
+      crmMembershipId: crmSync.membershipId,
+      crmPersonCreated: crmSync.createdPerson
+    }, client);
     await client.query('COMMIT');
     const confirmation = applicationConfirmationHtml(activated);
     let mailDelivery = { sent: false, reason: 'DELIVERY_FAILED' };

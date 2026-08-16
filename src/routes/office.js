@@ -2,6 +2,7 @@ import express from 'express';
 import { pool } from '../config/pool.js';
 import { requireAdminAccess, requireAdminSession } from '../middleware/adminAuth.js';
 import { sendTransactionalHtml } from '../services/mail.service.js';
+import { reserveNextMandateReference } from '../services/mandateReference.service.js';
 import { classifyStorageWrite, getStorageRevision } from '../../pdb-office/services/storageRevision.js';
 
 const router = express.Router();
@@ -87,6 +88,12 @@ router.post('/crm-data', requireAdminAccess, jsonParser, async (req, res) => {
   } finally {
     client.release();
   }
+});
+
+router.post('/mandate-reference', requireAdminAccess, async (_req, res) => {
+  const mandateReference = await reserveNextMandateReference();
+  noStore(res);
+  return res.status(201).json({ ok: true, mandateReference });
 });
 
 router.get('/member-finance', requireAdminAccess, async (_req, res) => {

@@ -41,6 +41,7 @@ test('BEYOND reconciliation is read-only and keeps ambiguous matches under revie
     linked: 1,
     ready: 1,
     needs_review: 2,
+    upcoming: 0,
     shopify_only: 1
   });
   assert.equal(result.rows.find((row) => row.crm_member_id === 'crm-1').state, 'linked');
@@ -60,7 +61,31 @@ test('BEYOND reconciliation is read-only and keeps ambiguous matches under revie
   );
 });
 
-test('BEYOND usage plan creates missing members and imports zero or one used session', async () => {
+test('planned BEYOND upgrades are shown separately from unassigned Shopify accounts', () => {
+  const reconciliation = buildBeyondReconciliation({
+    crmData: {
+      members: [{ id: 'peter', name: 'Peter Bruch', email: 'peter@example.com' }],
+      memberships: [{
+        id: 'contract-peter',
+        memberId: 'peter',
+        memberName: 'Peter Bruch',
+        status: 'aktiv',
+        plan: 'Individuell',
+        scheduledPlan: 'Beyond',
+        scheduledStartDate: '2026-09-01'
+      }]
+    },
+    shopifyCustomers: [{ id: 'shop-peter', firstName: 'Peter', lastName: 'Bruch', email: 'peter@example.com' }],
+    onlineMembers: [{ id: 42, shopify_customer_id: 'shop-peter' }]
+  });
+
+  assert.equal(reconciliation.summary.upcoming, 1);
+  assert.equal(reconciliation.summary.shopify_only, 0);
+  assert.equal(reconciliation.upcoming[0].name, 'Peter Bruch');
+  assert.equal(reconciliation.upcoming[0].online_member_id, 42);
+});
+
+test('BEYOND usage plan creates missing members and exhausts the full entitlement multiplier', async () => {
   const members = new Map([['101', {
     id: 1,
     shopify_customer_id: '101',
@@ -106,7 +131,7 @@ test('BEYOND usage plan creates missing members and imports zero or one used ses
       {
         crm_member_id: 'crm-1', state: 'linked', shopify_customer_id: '101',
         shopify_email: 'linked@example.com', shopify_first_name: 'Linked', shopify_last_name: 'Member',
-        name: 'Linked Member', start_date: '2026-01-01'
+        name: 'Linked Member', start_date: '2026-01-01', online_entitlement_multiplier: 2
       },
       {
         crm_member_id: 'crm-2', state: 'ready', shopify_customer_id: '102',
@@ -125,6 +150,6 @@ test('BEYOND usage plan creates missing members and imports zero or one used ses
   assert.equal(result.applied.length, 2);
   assert.equal(result.available, 1);
   assert.equal(result.exhausted, 1);
-  assert.deepEqual(imports.map((entry) => entry.usedCount), [1, 0]);
+  assert.deepEqual(imports.map((entry) => entry.usedCount), [2, 0]);
   assert.equal(members.has('102'), true);
 });

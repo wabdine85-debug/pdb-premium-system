@@ -6,6 +6,7 @@ import {
   updateMemberByShopifyId
 } from '../repositories/member.repository.js';
 import { listShopifyCustomersByTag } from './shopifyAdmin.service.js';
+import { getEntitlementsForMonth } from './entitlement.service.js';
 import { getBookingMonth } from '../utils/dates.js';
 
 export class MemberReconciliationError extends Error {
@@ -39,6 +40,21 @@ function uniqueCandidate(items, predicate) {
   return candidates.length === 1 ? candidates[0] : null;
 }
 
+function findShopifyMatch(crmMember, shopifyCustomers) {
+  const email = normalizeEmail(crmMember.email);
+  let customer = email
+    ? uniqueCandidate(shopifyCustomers, (candidate) => normalizeEmail(candidate.email) === email)
+    : null;
+  if (customer) return { customer, method: 'email' };
+
+  const normalizedName = normalizeText(crmMember.name);
+  customer = normalizedName
+    ? uniqueCandidate(shopifyCustomers, (candidate) =>
+      normalizeText([candidate.firstName, candidate.lastName].filter(Boolean).join(' ')) === normalizedName)
+    : null;
+  return { customer, method: customer ? 'name' : null };
+}
+
 function activeBeyondCrmMembers(crmData) {
   const people = new Map((crmData?.members || []).map((person) => [person.id, person]));
   const grouped = new Map();
@@ -64,6 +80,33 @@ function activeBeyondCrmMembers(crmData) {
   return [...grouped.values()].sort((a, b) => a.name.localeCompare(b.name, 'de'));
 }
 
+function upcomingBeyondCrmMembers(crmData, activeMemberIds) {
+  const people = new Map((crmData?.members || []).map((person) => [person.id, person]));
+  const grouped = new Map();
+
+  for (const membership of crmData?.memberships || []) {
+    if (
+      membership?.status !== 'aktiv'
+      || normalizeText(membership?.scheduledPlan) !== 'beyond'
+      || !membership?.scheduledStartDate
+      || activeMemberIds.has(String(membership.memberId || ''))
+    ) continue;
+    const person = people.get(membership.memberId) || null;
+    const key = String(membership.memberId || membership.id);
+    const current = grouped.get(key) || {
+      crm_member_id: membership.memberId || null,
+      membership_ids: [],
+      name: displayName(person, membership),
+      email: normalizeEmail(person?.email || membership.memberEmail) || null,
+      scheduled_start_date: membership.scheduledStartDate
+    };
+    current.membership_ids.push(membership.id);
+    grouped.set(key, current);
+  }
+
+  return [...grouped.values()].sort((a, b) => a.name.localeCompare(b.name, 'de'));
+}
+
 export function buildBeyondReconciliation({ crmData, shopifyCustomers, onlineMembers }) {
   const crmMembers = activeBeyondCrmMembers(crmData);
   const onlineByShopifyId = new Map(
@@ -72,20 +115,7 @@ export function buildBeyondReconciliation({ crmData, shopifyCustomers, onlineMem
   const matchedShopifyIds = new Set();
 
   const rows = crmMembers.map((crmMember) => {
-    const email = normalizeEmail(crmMember.email);
-    let shopifyCustomer = email
-      ? uniqueCandidate(shopifyCustomers, (customer) => normalizeEmail(customer.email) === email)
-      : null;
-    let matchMethod = shopifyCustomer ? 'email' : null;
-
-    if (!shopifyCustomer) {
-      const normalizedName = normalizeText(crmMember.name);
-      shopifyCustomer = normalizedName
-        ? uniqueCandidate(shopifyCustomers, (customer) =>
-          normalizeText([customer.firstName, customer.lastName].filter(Boolean).join(' ')) === normalizedName)
-        : null;
-      if (shopifyCustomer) matchMethod = 'name';
-    }
+    const { customer: shopifyCustomer, method: matchMethod } = findShopifyMatch(crmMember, shopifyCustomers);
 
     const onlineMember = shopifyCustomer
       ? onlineByShopifyId.get(String(shopifyCustomer.id)) || null
@@ -108,6 +138,23 @@ export function buildBeyondReconciliation({ crmData, shopifyCustomers, onlineMem
       shopify_email: shopifyCustomer?.email || null,
       shopify_first_name: shopifyCustomer?.firstName || null,
       shopify_last_name: shopifyCustomer?.lastName || null,
+      online_member_id: onlineMember?.id || null,
+      online_entitlement_multiplier: Math.max(1, Number(onlineMember?.entitlement_multiplier) || 1)
+    };
+  });
+
+  const activeMemberIds = new Set(crmMembers.map((member) => String(member.crm_member_id || '')));
+  const upcoming = upcomingBeyondCrmMembers(crmData, activeMemberIds).map((crmMember) => {
+    const { customer: shopifyCustomer, method: matchMethod } = findShopifyMatch(crmMember, shopifyCustomers);
+    const onlineMember = shopifyCustomer
+      ? onlineByShopifyId.get(String(shopifyCustomer.id)) || null
+      : null;
+    if (shopifyCustomer) matchedShopifyIds.add(String(shopifyCustomer.id));
+    return {
+      ...crmMember,
+      match_method: matchMethod,
+      shopify_customer_id: shopifyCustomer?.id || null,
+      shopify_email: shopifyCustomer?.email || null,
       online_member_id: onlineMember?.id || null
     };
   });
@@ -130,9 +177,11 @@ export function buildBeyondReconciliation({ crmData, shopifyCustomers, onlineMem
       linked: rows.filter((row) => row.state === 'linked').length,
       ready: rows.filter((row) => row.state === 'ready').length,
       needs_review: rows.filter((row) => ['review', 'missing_shopify'].includes(row.state)).length,
+      upcoming: upcoming.length,
       shopify_only: shopifyOnly.length
     },
     rows,
+    upcoming,
     shopify_only: shopifyOnly
   };
 }
@@ -152,7 +201,9 @@ export function buildBeyondUsagePlan(reconciliation, availableCrmMemberIds = [])
 
   return eligibleRows.map((row) => ({
     ...row,
-    imported_used_count: availableIds.has(String(row.crm_member_id)) ? 0 : 1,
+    imported_used_count: availableIds.has(String(row.crm_member_id))
+      ? 0
+      : Math.max(1, Number(row.online_entitlement_multiplier) || 1),
     august_remaining: availableIds.has(String(row.crm_member_id)) ? 1 : 0
   }));
 }
@@ -240,5 +291,20 @@ export async function getBeyondReconciliation(db = pool) {
     listAdminMembers({ limit: 100 }, db)
   ]);
 
-  return buildBeyondReconciliation({ crmData, shopifyCustomers, onlineMembers });
+  const reconciliation = buildBeyondReconciliation({ crmData, shopifyCustomers, onlineMembers });
+  const onlineById = new Map((onlineMembers || []).map((member) => [String(member.id), member]));
+
+  await Promise.all(reconciliation.rows.map(async (row) => {
+    const member = onlineById.get(String(row.online_member_id || ''));
+    if (!member) {
+      row.current_remaining = null;
+      return;
+    }
+
+    const entitlements = await getEntitlementsForMonth(member, reconciliation.month, db);
+    row.current_remaining = Number(entitlements.remaining?.beyond) || 0;
+    row.current_usage = Number(entitlements.usage?.beyond) || 0;
+  }));
+
+  return reconciliation;
 }
