@@ -32,6 +32,7 @@ export function createMembershipExportRows(memberships, memberById, getDisplayNa
       startDate: membership.startDate || "",
       endDate: membership.endDate || "",
       debitDay: membership.debitDay || "",
+      mandateReference: membership.mandateReference || "",
       email: customer.email || membership.memberEmail || "",
       phone: customer.phone || membership.memberPhone || "",
       notes: membership.notes || "",
@@ -40,7 +41,7 @@ export function createMembershipExportRows(memberships, memberById, getDisplayNa
 }
 
 export function membershipRowsToCsv(rows) {
-  const header = ["Nr.", "Name", "Paket", "Status", "Monatsbeitrag", "Unterschrift", "Eintritt", "Vertragsende", "Abbuchungstag", "E-Mail", "Telefon", "Notiz"];
+  const header = ["Nr.", "Name", "Paket", "Status", "Monatsbeitrag", "Unterschrift", "Eintritt", "Vertragsende", "Abbuchungstag", "Mandatsreferenz", "E-Mail", "Telefon", "Notiz"];
   const values = rows.map(row => [
     row.number,
     row.name,
@@ -51,6 +52,7 @@ export function membershipRowsToCsv(rows) {
     row.startDate,
     row.endDate,
     row.debitDay,
+    row.mandateReference,
     row.email,
     row.phone,
     row.notes,

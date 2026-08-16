@@ -4,6 +4,7 @@ import RevenueWorkspace from "./components/revenue/RevenueWorkspace.jsx";
 import WorkTimeWorkspace from "./components/work-time/WorkTimeWorkspace.jsx";
 import PremiumAdministration from "./components/memberships/PremiumAdministration.jsx";
 import { createMembershipExportRows, downloadMembershipCsv, downloadMembershipPdf } from "./modules/memberships/membershipExports.js";
+import { getNextMandateReference } from "./modules/memberships/mandateReferences.js";
 import { useStorage, migrateData } from "./services/crmStorage.js";
 import { DEFAULT_INVOICE_PROFILE_ID, INVOICE_PAYMENT_TERMS, PDB_INVOICE_CATEGORIES, buildInvoiceNumber, calculateInvoiceDueDate, calculateInvoiceTotals, defaultInvoiceProfiles, getInvoiceCategoryLabel, getInvoiceDueLabel, getInvoicePositionDateLabel, getInvoiceProfile, isMedicalInvoiceProfile } from "./modules/invoices/invoiceProfiles.js";
 import { monthSummary } from "./modules/revenue/revenueUtils.js";
@@ -2325,6 +2326,8 @@ function Memberships({ data, save }) {
   const [emailPreview, setEmailPreview] = useState(null);
   const [customerEdit, setCustomerEdit] = useState(null);
   const [customerEditMembershipId, setCustomerEditMembershipId] = useState(null);
+  const [membershipDetailEdit, setMembershipDetailEdit] = useState(null);
+  const [scheduledEditId, setScheduledEditId] = useState("");
   const [confirm, setConfirm] = useState(null);
   const [membershipSort, setMembershipSort] = useState("recent-desc");
   const [membershipSearch, setMembershipSearch] = useState("");
@@ -2354,6 +2357,9 @@ function Memberships({ data, save }) {
   });
 
   const memberships = data.memberships || [];
+  const nextMandateReference = getNextMandateReference(memberships);
+  const scheduledEditMembership = memberships.find(membership => membership.id === scheduledEditId) || null;
+  const customerEditMembership = memberships.find(membership => membership.id === customerEditMembershipId) || null;
   const deferredMembershipSearch = useDeferredValue(membershipSearch);
   const memberById = useMemo(() => new Map(data.members.map(member => [member.id, member])), [data.members]);
   const getMemberDisplayName = (membership) => {
@@ -2944,7 +2950,7 @@ function Memberships({ data, save }) {
       paymentMethod: "SEPA",
       sepaIban: "",
       debitDay: form.debitDay || "1",
-      mandateReference: form.mandateReference || "",
+      mandateReference: form.mandateReference.trim() || nextMandateReference,
       notes: form.notes || "",
       setupBankingStatus: needsSetupBanking ? (form.setupBankingStatus || "offen") : "",
       setupBankingDoneAt: needsSetupBanking ? (form.setupBankingDoneAt || "") : "",
@@ -3324,6 +3330,12 @@ function Memberships({ data, save }) {
     }
     setCustomerEdit({ ...customer });
     setCustomerEditMembershipId(membership.id);
+    setMembershipDetailEdit({
+      mandateReference: membership.mandateReference || "",
+      sepaIban: membership.sepaIban || customer.iban || "",
+      debitDay: membership.debitDay || "1",
+      paymentMethod: membership.paymentMethod || "SEPA",
+    });
   };
 
   const saveCustomerFromMembership = () => {
@@ -3334,18 +3346,28 @@ function Memberships({ data, save }) {
     }
     save(d => ({
       ...d,
-      members: d.members.map(member => member.id === customerEdit.id ? { ...member, ...customerEdit, name: trimmedName } : member),
+      members: d.members.map(member => member.id === customerEdit.id ? {
+        ...member,
+        ...customerEdit,
+        name: trimmedName,
+        iban: membershipDetailEdit?.sepaIban?.trim() || customerEdit.iban || "",
+      } : member),
       memberships: (d.memberships || []).map(membership => membership.id === customerEditMembershipId ? {
         ...membership,
         memberId: customerEdit.id,
         memberName: trimmedName,
         memberEmail: customerEdit.email || "",
         memberPhone: customerEdit.phone || "",
+        mandateReference: membershipDetailEdit?.mandateReference?.trim() || membership.mandateReference || "",
+        sepaIban: membershipDetailEdit?.sepaIban?.trim() || "",
+        debitDay: membershipDetailEdit?.debitDay || membership.debitDay || "1",
+        paymentMethod: membershipDetailEdit?.paymentMethod || membership.paymentMethod || "SEPA",
       } : membership),
     }));
     setMaintenanceStatus({ type: "success", message: `${trimmedName}: Personendaten wurden aktualisiert.` });
     setCustomerEdit(null);
     setCustomerEditMembershipId(null);
+    setMembershipDetailEdit(null);
   };
 
   const sendCancellationEmail = async (membership) => {
@@ -3906,8 +3928,82 @@ function Memberships({ data, save }) {
         </Modal>
       )}
 
+      {scheduledEditMembership && (
+        <Modal title={`Vertragsänderung – ${getMemberDisplayName(scheduledEditMembership)}`} onClose={() => setScheduledEditId("")}>
+          <div style={{ padding: 14, borderRadius: 12, background: "#fcfaf7", border: "1px solid #e7dfd2", marginBottom: 16 }}>
+            <div style={{ fontSize: 11, color: "#8a6f47", fontWeight: 800, textTransform: "uppercase", letterSpacing: ".05em" }}>Aktueller Vertrag</div>
+            <div style={{ marginTop: 4, fontWeight: 800, color: "#1e293b" }}>{scheduledEditMembership.plan} · {fmt(scheduledEditMembership.monthlyAmount)}</div>
+          </div>
+          <Field label="Neues Paket">
+            <select style={sel} value={scheduledEditMembership.scheduledPlan || ""} onChange={e => updateMembership(scheduledEditMembership.id, {
+              scheduledPlan: e.target.value,
+              scheduledStartDate: e.target.value ? (scheduledEditMembership.scheduledStartDate || "") : "",
+              scheduledMonthlyAmount: e.target.value === "Individuell" ? (scheduledEditMembership.scheduledMonthlyAmount || scheduledEditMembership.monthlyAmount || "") : "",
+              scheduledContractSignedAt: e.target.value ? (scheduledEditMembership.scheduledContractSignedAt || "") : "",
+              scheduledContractEndDate: e.target.value ? (scheduledEditMembership.scheduledContractEndDate || "") : "",
+              scheduledBankingStatus: e.target.value ? (scheduledEditMembership.scheduledBankingStatus || "offen") : "",
+              scheduledBankingDoneAt: e.target.value ? (scheduledEditMembership.scheduledBankingDoneAt || "") : "",
+              scheduledBankingNote: e.target.value ? (scheduledEditMembership.scheduledBankingNote || "") : "",
+            })}>
+              <option value="">Keine Änderung</option>
+              {Object.keys(MEMBERSHIP_PLANS).map(plan => <option key={plan} value={plan}>{plan}</option>)}
+            </select>
+          </Field>
+          {scheduledEditMembership.scheduledPlan && (
+            <>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 14px" }}>
+                <Field label="Wirksam ab">
+                  <input style={inp} type="date" value={scheduledEditMembership.scheduledStartDate || ""} onChange={e => updateMembership(scheduledEditMembership.id, { scheduledStartDate: e.target.value, scheduledContractEndDate: addOneYear(e.target.value) })} />
+                </Field>
+                {scheduledEditMembership.scheduledPlan === "Individuell" ? (
+                  <Field label="Neuer Monatsbetrag">
+                    <input style={inp} type="number" step="0.01" value={scheduledEditMembership.scheduledMonthlyAmount || ""} onChange={e => updateMembership(scheduledEditMembership.id, { scheduledMonthlyAmount: e.target.value })} />
+                  </Field>
+                ) : (
+                  <Field label="Neuer Monatsbetrag">
+                    <input style={inp} value={fmt(getScheduledAmount(scheduledEditMembership))} readOnly />
+                  </Field>
+                )}
+                <Field label="Neuer Vertrag unterschrieben am">
+                  <input style={inp} type="date" value={scheduledEditMembership.scheduledContractSignedAt || ""} onChange={e => updateMembership(scheduledEditMembership.id, { scheduledContractSignedAt: e.target.value })} />
+                </Field>
+                <Field label="Neues Vertragsende">
+                  <input style={inp} type="date" value={scheduledEditMembership.scheduledContractEndDate || ""} onChange={e => updateMembership(scheduledEditMembership.id, { scheduledContractEndDate: e.target.value })} />
+                </Field>
+              </div>
+              <div style={{ padding: 14, borderRadius: 12, background: "#f8fafc", border: "1px solid #e2e8f0", marginBottom: 16 }}>
+                <div style={{ fontSize: 12, fontWeight: 800, color: "#475569", marginBottom: 10 }}>Onlinebanking</div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 14px" }}>
+                  <Field label="Status">
+                    <select style={sel} value={scheduledEditMembership.scheduledBankingStatus === "geprüft" ? "erledigt" : (scheduledEditMembership.scheduledBankingStatus || "offen")} onChange={e => updateScheduledBanking(scheduledEditMembership, e.target.value)}>
+                      <option value="offen">offen</option>
+                      <option value="erledigt">erledigt</option>
+                    </select>
+                  </Field>
+                  <Field label="Erledigt am">
+                    <input style={inp} type="date" value={scheduledEditMembership.scheduledBankingDoneAt || ""} onChange={e => updateMembership(scheduledEditMembership.id, { scheduledBankingDoneAt: e.target.value })} />
+                  </Field>
+                </div>
+                <input style={inp} value={scheduledEditMembership.scheduledBankingNote || ""} placeholder="Banking-Notiz" onChange={e => updateMembership(scheduledEditMembership.id, { scheduledBankingNote: e.target.value })} />
+              </div>
+            </>
+          )}
+          <div style={{ display: "flex", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
+            <Btn variant="ghost" onClick={() => {
+              updateMembership(scheduledEditMembership.id, { scheduledPlan: "", scheduledStartDate: "", scheduledMonthlyAmount: "", scheduledContractSignedAt: "", scheduledContractEndDate: "", scheduledBankingStatus: "", scheduledBankingDoneAt: "", scheduledBankingNote: "" });
+              setScheduledEditId("");
+            }}>Planung löschen</Btn>
+            <div style={{ display: "flex", gap: 10 }}>
+              <Btn variant="outline" onClick={() => setScheduledEditId("")}>Schließen</Btn>
+              <Btn disabled={!(scheduledEditMembership.scheduledPlan && scheduledEditMembership.scheduledStartDate && scheduledEditMembership.scheduledStartDate <= today())} onClick={() => { applyScheduledPlan(scheduledEditMembership); setScheduledEditId(""); }}>Jetzt übernehmen</Btn>
+            </div>
+          </div>
+        </Modal>
+      )}
+
       {customerEdit && (
-        <Modal title={`Memberdaten – ${customerEdit.name || "Member"}`} onClose={() => { setCustomerEdit(null); setCustomerEditMembershipId(null); }} wide>
+        <Modal title={`Memberdetails – ${customerEdit.name || "Member"}`} onClose={() => { setCustomerEdit(null); setCustomerEditMembershipId(null); setMembershipDetailEdit(null); }} wide>
+          <div style={{ fontSize: 12, color: "#64748b", fontWeight: 800, textTransform: "uppercase", letterSpacing: ".05em", marginBottom: 10 }}>Personendaten</div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 16px" }}>
             <Field label="Name" required>
               <input style={inp} value={customerEdit.name || ""} onChange={e => setCustomerEdit(c => ({ ...c, name: e.target.value }))} />
@@ -3949,15 +4045,51 @@ function Memberships({ data, save }) {
               <input style={inp} value={customerEdit.country || ""} onChange={e => setCustomerEdit(c => ({ ...c, country: e.target.value }))} />
             </Field>
           </div>
-          <Field label="IBAN">
-            <input style={inp} value={customerEdit.iban || ""} onChange={e => setCustomerEdit(c => ({ ...c, iban: e.target.value }))} placeholder="DE…" />
-          </Field>
+          {customerEditMembership && membershipDetailEdit && (
+            <div style={{ margin: "10px 0 16px", padding: 16, borderRadius: 12, border: "1px solid #e7dfd2", background: "#fcfaf7" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, marginBottom: 12 }}>
+                <div>
+                  <div style={{ fontSize: 12, color: "#8a6f47", fontWeight: 800, textTransform: "uppercase", letterSpacing: ".05em" }}>Vertrag &amp; SEPA</div>
+                  <div style={{ fontSize: 15, color: "#1e293b", fontWeight: 800, marginTop: 3 }}>
+                    {customerEditMembership.packageLabel || "Vertrag"} · {customerEditMembership.plan}
+                  </div>
+                </div>
+                <Badge status={customerEditMembership.status || "aktiv"} />
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 14px" }}>
+                <Field label="Mandatsreferenz">
+                  <input
+                    style={{ ...inp, fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", fontWeight: 700 }}
+                    value={membershipDetailEdit.mandateReference || ""}
+                    onChange={e => setMembershipDetailEdit(current => ({ ...current, mandateReference: e.target.value }))}
+                    placeholder={nextMandateReference}
+                  />
+                </Field>
+                <Field label="Zahlungsart">
+                  <select style={sel} value={membershipDetailEdit.paymentMethod || "SEPA"} onChange={e => setMembershipDetailEdit(current => ({ ...current, paymentMethod: e.target.value }))}>
+                    <option value="SEPA">SEPA-Lastschrift</option>
+                    <option value="Überweisung">Überweisung</option>
+                    <option value="Bar">Bar</option>
+                  </select>
+                </Field>
+                <Field label="IBAN">
+                  <input style={inp} value={membershipDetailEdit.sepaIban || ""} onChange={e => setMembershipDetailEdit(current => ({ ...current, sepaIban: e.target.value }))} placeholder="DE…" />
+                </Field>
+                <Field label="Abbuchungstag">
+                  <select style={sel} value={membershipDetailEdit.debitDay || "1"} onChange={e => setMembershipDetailEdit(current => ({ ...current, debitDay: e.target.value }))}>
+                    {["1", "5", "10", "15", "20", "25"].map(day => <option key={day} value={day}>{day}. des Monats</option>)}
+                  </select>
+                </Field>
+              </div>
+              <div style={{ fontSize: 11, color: "#64748b" }}>Die Mandatsreferenz gehört zu diesem Vertrag. Bei mehreren Verträgen werden deshalb unterschiedliche Referenzen verwendet.</div>
+            </div>
+          )}
           <Field label="Member-Notiz">
             <textarea style={{ ...inp, minHeight: 70, resize: "vertical" }} value={customerEdit.notes || ""} onChange={e => setCustomerEdit(c => ({ ...c, notes: e.target.value }))} />
           </Field>
           <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 8 }}>
-            <Btn variant="ghost" onClick={() => { setCustomerEdit(null); setCustomerEditMembershipId(null); }}>Abbrechen</Btn>
-            <Btn onClick={saveCustomerFromMembership}>Memberdaten speichern</Btn>
+            <Btn variant="ghost" onClick={() => { setCustomerEdit(null); setCustomerEditMembershipId(null); setMembershipDetailEdit(null); }}>Abbrechen</Btn>
+            <Btn onClick={saveCustomerFromMembership}>Details speichern</Btn>
           </div>
         </Modal>
       )}
@@ -4189,7 +4321,10 @@ function Memberships({ data, save }) {
             </div>
           </div>
           <Field label="SEPA-Mandatsreferenz">
-            <input style={inp} value={form.mandateReference} placeholder="z.B. PDB-2026-0001" onChange={e => setForm(f => ({ ...f, mandateReference: e.target.value }))} />
+            <input style={inp} value={form.mandateReference} placeholder={nextMandateReference} onChange={e => setForm(f => ({ ...f, mandateReference: e.target.value }))} />
+            <div style={{ fontSize: 11, color: "#64748b", marginTop: 5 }}>
+              Leer lassen: Das CRM vergibt automatisch {nextMandateReference}.
+            </div>
           </Field>
           <Field label="Notiz">
             <textarea style={{ ...inp, minHeight: 62, resize: "vertical" }} value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} />
@@ -4254,10 +4389,10 @@ function Memberships({ data, save }) {
         <div className="crm-table-wrap">
         <table style={{ width: "100%", minWidth: 1450, borderCollapse: "collapse" }}>
           <thead><tr style={{ background: "#f8fafc" }}>
-            {["Nr.", "Name", "Aktuell", "Unterschrift", "Eintritt", "Vertragsende", "Monat", "Upgrade / Planung", "Status", "Notiz", ""].map(h => <th key={h} style={{ padding: "12px 14px", textAlign: "left", fontSize: 12, fontWeight: 700, color: "#64748b", textTransform: "uppercase" }}>{h}</th>)}
+            {["Nr.", "Name", "Aktuell", "Unterschrift", "Eintritt", "Vertragsende", "Monat", "Mandatsreferenz", "Upgrade / Planung", "Status", "Notiz", ""].map(h => <th key={h} style={{ padding: "12px 14px", textAlign: "left", fontSize: 12, fontWeight: 700, color: "#64748b", textTransform: "uppercase" }}>{h}</th>)}
           </tr></thead>
           <tbody>
-            {sortedMemberships.length === 0 ? <tr><td colSpan={11} style={{ padding: 36, textAlign: "center", color: "#94a3b8" }}>Noch keine Member angelegt</td></tr> :
+            {sortedMemberships.length === 0 ? <tr><td colSpan={12} style={{ padding: 36, textAlign: "center", color: "#94a3b8" }}>Noch keine Member angelegt</td></tr> :
               pagedMemberships.map((m, index) => {
                 const displayName = getMemberDisplayName(m);
                 const scheduledAmount = getScheduledAmount(m);
@@ -4281,60 +4416,30 @@ function Memberships({ data, save }) {
                       ? <input aria-label={`Monatsbetrag ${displayName}`} style={{ ...inp, minWidth: 92 }} type="number" step="0.01" value={m.monthlyAmount || ""} onChange={e => updateMembership(m.id, { monthlyAmount: e.target.value })} />
                       : fmt(m.monthlyAmount)}
                   </td>
-                  <td style={{ padding: "12px 14px", minWidth: 230 }}>
-                    <div style={{ display: "grid", gap: 6 }}>
-                      <select aria-label={`Paketänderung ${displayName}`} style={{ ...sel, minWidth: 128, fontSize: 12, padding: "7px 9px" }} value={m.scheduledPlan || ""} onChange={e => updateMembership(m.id, {
-                        scheduledPlan: e.target.value,
-                        scheduledStartDate: e.target.value ? (m.scheduledStartDate || "") : "",
-                        scheduledMonthlyAmount: e.target.value === "Individuell" ? (m.scheduledMonthlyAmount || m.monthlyAmount || "") : "",
-                        scheduledContractSignedAt: e.target.value ? (m.scheduledContractSignedAt || "") : "",
-                        scheduledContractEndDate: e.target.value ? (m.scheduledContractEndDate || "") : "",
-                        scheduledBankingStatus: e.target.value ? (m.scheduledBankingStatus || "offen") : "",
-                        scheduledBankingDoneAt: e.target.value ? (m.scheduledBankingDoneAt || "") : "",
-                        scheduledBankingNote: e.target.value ? (m.scheduledBankingNote || "") : "",
-                      })}>
-                        <option value="">Keine Änderung planen</option>
-                        {Object.keys(MEMBERSHIP_PLANS).map(plan => <option key={plan} value={plan}>{plan}</option>)}
-                      </select>
-                      {m.scheduledPlan && (
-                        <>
-                          <input aria-label={`Start der Paketänderung ${displayName}`} style={{ ...inp, minWidth: 128, fontSize: 12, padding: "7px 9px" }} type="date" value={m.scheduledStartDate || ""} onChange={e => updateMembership(m.id, { scheduledStartDate: e.target.value, scheduledContractEndDate: addOneYear(e.target.value) })} />
-                          {m.scheduledPlan === "Individuell" && (
-                            <input aria-label={`Geplanter Monatsbetrag ${displayName}`} style={{ ...inp, minWidth: 92, fontSize: 12, padding: "7px 9px" }} type="number" step="0.01" value={m.scheduledMonthlyAmount || ""} placeholder="Betrag" onChange={e => updateMembership(m.id, { scheduledMonthlyAmount: e.target.value })} />
-                          )}
-                          <div style={{ fontSize: 11, color: "#64748b" }}>
-                            ab {fmtDate(m.scheduledStartDate)} · {scheduledAmount ? fmt(scheduledAmount) : "Betrag offen"}
-                            {scheduledDelta ? ` (${scheduledDelta > 0 ? "+" : ""}${fmt(scheduledDelta)})` : ""}
-                          </div>
-                          <div style={{ display: "grid", gap: 6, padding: 8, borderRadius: 8, background: "#f8fafc", border: "1px solid #e2e8f0" }}>
-                            <div style={{ fontSize: 11, color: "#475569", fontWeight: 800 }}>Neuer Vertrag</div>
-                          <input aria-label={`Neue Vertragsunterschrift ${displayName}`} style={{ ...inp, minWidth: 128, fontSize: 12, padding: "7px 9px" }} type="date" value={m.scheduledContractSignedAt || ""} onChange={e => updateMembership(m.id, { scheduledContractSignedAt: e.target.value })} />
-                          <div style={{ fontSize: 11, color: "#64748b" }}>unterschrieben am</div>
-                            <input aria-label={`Neues Vertragsende ${displayName}`} style={{ ...inp, minWidth: 128, fontSize: 12, padding: "7px 9px" }} type="date" value={m.scheduledContractEndDate || ""} onChange={e => updateMembership(m.id, { scheduledContractEndDate: e.target.value })} />
-                            <div style={{ fontSize: 11, color: "#64748b" }}>neues Vertragsende</div>
-                          </div>
-                          {m.scheduledStartDate > today() && (
-                            <div style={{ fontSize: 11, color: "#1e40af", fontWeight: 700 }}>Vorgemerkt, wird noch nicht aktiv gebucht.</div>
-                          )}
-                          <div style={{ display: "grid", gap: 6, padding: 8, borderRadius: 8, background: "#f8fafc", border: "1px solid #e2e8f0" }}>
-                            <div style={{ fontSize: 11, color: "#475569", fontWeight: 800 }}>Onlinebanking</div>
-                            <select aria-label={`Onlinebanking-Status ${displayName}`} style={{ ...sel, minWidth: 128, fontSize: 12, padding: "7px 9px" }} value={m.scheduledBankingStatus === "geprüft" ? "erledigt" : (m.scheduledBankingStatus || "offen")} onChange={e => updateScheduledBanking(m, e.target.value)}>
-                              <option value="offen">offen</option>
-                              <option value="erledigt">erledigt</option>
-                            </select>
-                            {(["erledigt", "geprüft"].includes(m.scheduledBankingStatus)) && (
-                              <input aria-label={`Onlinebanking erledigt am ${displayName}`} style={{ ...inp, minWidth: 128, fontSize: 12, padding: "7px 9px" }} type="date" value={m.scheduledBankingDoneAt || today()} onChange={e => updateMembership(m.id, { scheduledBankingDoneAt: e.target.value })} />
-                            )}
-                            <input aria-label={`Onlinebanking-Notiz ${displayName}`} style={{ ...inp, minWidth: 160, fontSize: 12, padding: "7px 9px" }} value={m.scheduledBankingNote || ""} placeholder="Banking-Notiz, z. B. am 09.06. geändert" onChange={e => updateMembership(m.id, { scheduledBankingNote: e.target.value })} />
-                          </div>
-                          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                            {(m.scheduledBankingStatus || "offen") === "offen" && <Btn small variant="outline" onClick={() => updateScheduledBanking(m, "erledigt")}>Banking erledigt</Btn>}
-                            <Btn small variant="outline" disabled={!canApplyScheduledPlan} onClick={() => applyScheduledPlan(m)}>{m.scheduledStartDate ? (canApplyScheduledPlan ? "Übernehmen" : "Ab Datum übernehmen") : "Datum wählen"}</Btn>
-                            <Btn small variant="ghost" onClick={() => updateMembership(m.id, { scheduledPlan: "", scheduledStartDate: "", scheduledMonthlyAmount: "", scheduledContractSignedAt: "", scheduledContractEndDate: "", scheduledBankingStatus: "", scheduledBankingDoneAt: "", scheduledBankingNote: "" })}>Leeren</Btn>
-                          </div>
-                        </>
-                      )}
-                    </div>
+                  <td style={{ padding: "12px 14px", minWidth: 166 }}>
+                    <code style={{ fontSize: 12, color: m.mandateReference ? "#334155" : "#b45309", whiteSpace: "nowrap" }}>
+                      {m.mandateReference || "noch nicht vergeben"}
+                    </code>
+                  </td>
+                  <td style={{ padding: "12px 14px", minWidth: 220 }}>
+                    {m.scheduledPlan ? (
+                      <div style={{ display: "grid", gap: 7, padding: "10px 11px", borderRadius: 10, background: "#fcfaf7", border: "1px solid #e7dfd2" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "center" }}>
+                          <strong style={{ fontSize: 13, color: "#1e293b" }}>{m.scheduledPlan} ab {fmtDate(m.scheduledStartDate)}</strong>
+                          <span style={{ fontSize: 10, fontWeight: 800, color: "#8a6f47", textTransform: "uppercase" }}>Vorgemerkt</span>
+                        </div>
+                        <div style={{ fontSize: 11, color: "#64748b" }}>
+                          {scheduledAmount ? fmt(scheduledAmount) : "Betrag offen"}{scheduledDelta ? ` · ${scheduledDelta > 0 ? "+" : ""}${fmt(scheduledDelta)}` : ""}
+                          {m.scheduledBankingStatus ? ` · Banking ${m.scheduledBankingStatus === "geprüft" ? "erledigt" : m.scheduledBankingStatus}` : ""}
+                        </div>
+                        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                          <Btn small variant="outline" onClick={() => setScheduledEditId(m.id)}>Bearbeiten</Btn>
+                          {canApplyScheduledPlan && <Btn small onClick={() => applyScheduledPlan(m)}>Jetzt übernehmen</Btn>}
+                        </div>
+                      </div>
+                    ) : (
+                      <Btn small variant="ghost" onClick={() => setScheduledEditId(m.id)}>Änderung planen</Btn>
+                    )}
                   </td>
                   <td style={{ padding: "12px 14px" }}>
                     <select aria-label={`Memberstatus ${displayName}`} style={{ ...sel, minWidth: 112 }} value={m.status || "aktiv"} onChange={e => updateMembership(m.id, { status: e.target.value })}>
@@ -4346,7 +4451,7 @@ function Memberships({ data, save }) {
                   </td>
                   <td style={{ padding: "12px 14px", textAlign: "right" }}>
                     <div style={{ display: "flex", gap: 6, justifyContent: "flex-end", flexWrap: "wrap" }}>
-                      <Btn small variant="ghost" onClick={() => openCustomerEditFromMembership(m)}>Personendaten</Btn>
+                      <Btn small variant="ghost" onClick={() => openCustomerEditFromMembership(m)}>Details</Btn>
                       {m.status === "gekündigt" && <Btn small variant="outline" onClick={() => openCancellationPreview(m)}>{m.cancellationEmailSentAt ? "Erneut prüfen" : "E-Mail prüfen"}</Btn>}
                       <Btn small variant="danger" onClick={() => requestRemoveMembership(m)}>Löschen</Btn>
                     </div>

@@ -17,6 +17,7 @@ test("creates filtered membership export rows with linked customer data", () => 
     startDate: "2026-09-01",
     endDate: "",
     debitDay: "",
+    mandateReference: "",
     email: "private@example.de",
     phone: "+49 123",
     notes: "",
