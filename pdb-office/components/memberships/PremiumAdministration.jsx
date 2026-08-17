@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import {
   applyBeyondMonthlyUsage,
+  cancelPremiumManualUsage,
   getBeyondReconciliation,
   getPremiumMember,
   listPremiumContracts,
@@ -68,6 +69,7 @@ export default function PremiumAdministration({ crmMemberships = [] }) {
   const [notice, setNotice] = useState("");
   const [usage, setUsage] = useState({ booking_month: "", treatment_key: "", actor: "", reason: "" });
   const [confirmUsage, setConfirmUsage] = useState(false);
+  const [cancellation, setCancellation] = useState(null);
   const [reconciliation, setReconciliation] = useState(null);
   const [reconciliationLoading, setReconciliationLoading] = useState(false);
   const [reconciliationError, setReconciliationError] = useState(null);
@@ -191,6 +193,23 @@ export default function PremiumAdministration({ crmMemberships = [] }) {
     }
   };
 
+  const cancelManualUsage = async () => {
+    if (!cancellation) return;
+    setNotice("");
+    setError(null);
+    try {
+      await cancelPremiumManualUsage(cancellation.booking.id, {
+        actor: cancellation.actor,
+        reason: cancellation.reason,
+      });
+      setCancellation(null);
+      setNotice("Die manuelle Verbuchung wurde rückgängig gemacht. Das Kontingent ist wieder frei.");
+      await openMember(selectedId);
+    } catch (nextError) {
+      setError(nextError);
+    }
+  };
+
   return (
     <section className="premium-admin" aria-label="Online-Verwaltung">
       <div className="premium-admin__header">
@@ -264,7 +283,22 @@ export default function PremiumAdministration({ crmMemberships = [] }) {
 
                 <div className="premium-admin__bookings">
                   <h5>Verbuchte Termine</h5>
-                  {(detail.bookings || []).map(booking => <div key={booking.id}><span>{formatDate(booking.booking_month)} · {booking.treatment_title}</span><strong>{booking.status === "cancelled" ? "storniert" : booking.source === "admin_manual" ? "manuell" : "online"}</strong></div>)}
+                  {(detail.bookings || []).map(booking => (
+                    <div key={booking.id}>
+                      <span>{formatDate(booking.booking_month)} · {booking.treatment_title}</span>
+                      <div className="premium-admin__booking-actions">
+                        <strong>{booking.status === "cancelled" ? "wieder freigegeben" : booking.source === "admin_manual" ? "manuell" : "online"}</strong>
+                        {booking.source === "admin_manual" && booking.status !== "cancelled" && (
+                          <button
+                            className="premium-admin__undo"
+                            onClick={() => setCancellation({ booking, actor: usage.actor, reason: "" })}
+                          >
+                            Rückgängig – wieder freigeben
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
                   {!detail.bookings?.length && <div className="premium-admin__empty">Noch keine Termine verbucht.</div>}
                 </div>
               </>
@@ -367,6 +401,29 @@ export default function PremiumAdministration({ crmMemberships = [] }) {
             <h4>Termin wirklich verbrauchen?</h4>
             <p>Die Änderung reduziert das verfügbare Kontingent und wird mit Bearbeiter und Grund protokolliert.</p>
             <div><button onClick={() => setConfirmUsage(false)}>Abbrechen</button><button className="premium-admin__primary" onClick={saveManualUsage}>Jetzt verbuchen</button></div>
+          </div>
+        </div>
+      )}
+
+      {cancellation && (
+        <div className="premium-admin__confirm" role="dialog" aria-modal="true" aria-labelledby="cancel-manual-usage-title">
+          <div>
+            <h4 id="cancel-manual-usage-title">Kontingent wieder freigeben?</h4>
+            <p>{formatDate(cancellation.booking.booking_month)} · {cancellation.booking.treatment_title}. Nur diese manuelle Verbuchung wird rückgängig gemacht.</p>
+            <div className="premium-admin__cancel-fields">
+              <label>
+                Bearbeitet von
+                <input value={cancellation.actor} onChange={event => setCancellation(current => ({ ...current, actor: event.target.value }))} placeholder="Name" />
+              </label>
+              <label>
+                Grund
+                <input value={cancellation.reason} onChange={event => setCancellation(current => ({ ...current, reason: event.target.value }))} placeholder="z. B. versehentlich verbucht" />
+              </label>
+            </div>
+            <div>
+              <button onClick={() => setCancellation(null)}>Abbrechen</button>
+              <button className="premium-admin__primary" disabled={cancellation.actor.trim().length < 2 || cancellation.reason.trim().length < 3} onClick={cancelManualUsage}>Rückgängig – wieder freigeben</button>
+            </div>
           </div>
         </div>
       )}

@@ -69,3 +69,10 @@ export function recordPremiumManualUsage(memberId, input) {
     body: JSON.stringify(input),
   });
 }
+
+export function cancelPremiumManualUsage(bookingId, input) {
+  return requestPremiumAdmin(`/bookings/${bookingId}/cancel-manual`, {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
