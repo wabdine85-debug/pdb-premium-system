@@ -13,6 +13,9 @@ const defaultData = {
   memberships: [],
   reminders: [],
   bankTransactions: [],
+  directDebitRuns: [],
+  directDebitItems: [],
+  returnDebitCases: [],
   revenueEntries: revenueSeed.entries,
   revenueReceivables: revenueSeed.receivables,
   revenuePremiumFallbacks: revenueSeed.premiumFallbacks,
@@ -76,6 +79,9 @@ export function migrateData(rawData) {
     staffLedger: Array.isArray(rawData?.staffLedger) ? rawData.staffLedger : [],
     staffMembers: Array.isArray(rawData?.staffMembers) ? rawData.staffMembers : [],
     workTimeEntries: Array.isArray(rawData?.workTimeEntries) ? rawData.workTimeEntries : [],
+    directDebitRuns: Array.isArray(rawData?.directDebitRuns) ? rawData.directDebitRuns : [],
+    directDebitItems: Array.isArray(rawData?.directDebitItems) ? rawData.directDebitItems : [],
+    returnDebitCases: Array.isArray(rawData?.returnDebitCases) ? rawData.returnDebitCases : [],
     invoiceProfiles,
     memberships: (merged.memberships || []).filter(membership => !REMOVED_MEMBERSHIP_IDS.has(membership.id)),
     invoices: (merged.invoices || []).map(invoice => ({
@@ -99,7 +105,9 @@ function hasMeaningfulData(data) {
     || (data.invoices || []).length > 0
     || (data.revenueEntries || []).length > 0
     || (data.staffMembers || []).length > 0
-    || (data.workTimeEntries || []).length > 0;
+    || (data.workTimeEntries || []).length > 0
+    || (data.directDebitRuns || []).length > 0
+    || (data.returnDebitCases || []).length > 0;
 }
 
 function stampData(previous, next) {

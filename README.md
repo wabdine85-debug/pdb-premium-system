@@ -45,6 +45,11 @@ The production build command must include the frontend build:
 npm install && npm run build:pdb-office
 ```
 
+The `/office/` workspace also contains an auditable membership direct-debit
+workflow. Monthly collection runs, confirmed Naspa CSV return imports, bank
+fees, follow-up dates, and resolution history are stored additively in the
+existing protected CRM document. See `pdb-office/docs/direct-debits.md`.
+
 ## Production configuration
 
 The following environment variables are required in production:

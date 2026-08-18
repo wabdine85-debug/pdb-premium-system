@@ -3,11 +3,13 @@ import InvoicePrintView from "./components/invoices/InvoicePrintView.jsx";
 import RevenueWorkspace from "./components/revenue/RevenueWorkspace.jsx";
 import WorkTimeWorkspace from "./components/work-time/WorkTimeWorkspace.jsx";
 import PremiumAdministration from "./components/memberships/PremiumAdministration.jsx";
+import DirectDebitWorkspace from "./components/direct-debits/DirectDebitWorkspace.jsx";
 import { createMembershipExportRows, downloadMembershipCsv, downloadMembershipPdf } from "./modules/memberships/membershipExports.js";
 import { getNextMandateReference } from "./modules/memberships/mandateReferences.js";
 import { useStorage, migrateData } from "./services/crmStorage.js";
 import { DEFAULT_INVOICE_PROFILE_ID, INVOICE_PAYMENT_TERMS, PDB_INVOICE_CATEGORIES, buildInvoiceNumber, calculateInvoiceDueDate, calculateInvoiceTotals, defaultInvoiceProfiles, getInvoiceCategoryLabel, getInvoiceDueLabel, getInvoicePositionDateLabel, getInvoiceProfile, isMedicalInvoiceProfile } from "./modules/invoices/invoiceProfiles.js";
 import { monthSummary } from "./modules/revenue/revenueUtils.js";
+import { getReturnCaseSummary } from "./modules/direct-debits/directDebitUtils.js";
 import { addDays, fmt, fmtDate, today } from "./utils/formatters.js";
 import "./crm-system.css";
 
@@ -224,11 +226,13 @@ function Dashboard({ data, onNavigate }) {
   const openReceivableTotal = openReceivables.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
   const revenue = monthSummary(data.revenueEntries || [], currentMonth, premiumAmount);
   const ueberfaellig = invoices.filter(i => i.status === "überfällig").length;
+  const returnSummary = getReturnCaseSummary(data.returnDebitCases || []);
 
   const cards = [
     { label: "Aktive Member", value: aktiv, icon: "💎", color: "#1e40af", bg: "#eff6ff", action: () => onNavigate("memberships") },
     { label: "Gesamtzufluss im Monat", value: fmt(revenue.total), icon: "💰", color: "#059669", bg: "#f0fdf4", action: () => onNavigate("revenue") },
     { label: "Offene Zahlungen", value: fmt(openReceivableTotal), icon: "📄", color: "#d97706", bg: "#fffbeb", action: () => onNavigate("revenue") },
+    { label: "Rücklastschriften", value: returnSummary.openCount ? `${returnSummary.openCount} offen · ${fmt(returnSummary.openAmount)}` : "Keine offen", icon: "↩", color: returnSummary.openCount ? "#a34439" : "#31725a", bg: returnSummary.openCount ? "#fbefed" : "#edf6f1", action: () => onNavigate("direct-debits") },
     { label: "Überfällig", value: ueberfaellig + " Rechnungen", icon: "⚠️", color: "#dc2626", bg: "#fef2f2", action: () => onNavigate("reminders") },
   ];
 
@@ -4823,6 +4827,7 @@ const NAV = [
   { id: "dashboard", label: "Dashboard", icon: "📊" },
   { id: "memberships", label: "Member", icon: "💎" },
   { id: "member-finance", label: "Member Finanzen", icon: "📈" },
+  { id: "direct-debits", label: "Lastschriften", icon: "↩" },
   { id: "work-time", label: "Arbeitszeiten", icon: "🕒" },
   { id: "revenue", label: "Umsätze", icon: "◉" },
   { id: "invoices", label: "Rechnungen", icon: "📄" },
@@ -4888,6 +4893,7 @@ export default function CRM() {
   };
 
   const overdueCount = data.invoices.filter(i => i.status === "überfällig" || i.status?.includes("Mahnung")).length;
+  const openReturnDebitCount = (data.returnDebitCases || []).filter(item => !["bezahlt", "storniert"].includes(item.status)).length;
   const activeMemberCount = new Set((data.memberships || []).filter(membership => membership.status === "aktiv").map(membership => membership.memberId)).size;
 
   return (
@@ -4921,6 +4927,9 @@ export default function CRM() {
               {sidebarOpen && <span style={{ whiteSpace: "nowrap" }}>{n.label}</span>}
               {n.id === "reminders" && overdueCount > 0 && (
                 <span style={{ background: "#dc2626", color: "#fff", borderRadius: 20, fontSize: 11, fontWeight: 700, padding: "1px 7px", marginLeft: "auto", flexShrink: 0 }}>{overdueCount}</span>
+              )}
+              {n.id === "direct-debits" && openReturnDebitCount > 0 && (
+                <span style={{ background: "#a34439", color: "#fff", borderRadius: 20, fontSize: 11, fontWeight: 700, padding: "1px 7px", marginLeft: "auto", flexShrink: 0 }}>{openReturnDebitCount}</span>
               )}
             </button>
           ))}
@@ -4958,6 +4967,7 @@ export default function CRM() {
         {page === "members" && <Members data={data} save={save} />}
         {page === "memberships" && <Memberships data={data} save={save} />}
         {page === "member-finance" && <MemberFinance data={data} />}
+        {page === "direct-debits" && <DirectDebitWorkspace data={data} save={save} />}
         {page === "work-time" && <WorkTimeWorkspace data={data} save={save} />}
         {page === "revenue" && <RevenueWorkspace data={data} save={save} />}
         {page === "invoices" && <Invoices data={data} save={save} />}
