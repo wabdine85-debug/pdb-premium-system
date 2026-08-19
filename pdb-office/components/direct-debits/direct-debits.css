@@ -77,6 +77,7 @@
 .ddb-section-heading h3 { margin: 3px 0 4px; font-size: 17px; letter-spacing: -.012em; }
 .ddb-section-heading--filters { align-items: flex-end; }
 .ddb-import { margin-bottom: 18px; border-color: #d4c4ae; }
+.ddb-import-message { margin: 0 0 16px; padding: 12px 15px; border: 1px solid #d4c4ae; border-radius: 11px; color: #554832; background: #fbf7ef; font-size: 13px; font-weight: 700; }
 .ddb-filters input,
 .ddb-filters select { min-width: 205px; }
 

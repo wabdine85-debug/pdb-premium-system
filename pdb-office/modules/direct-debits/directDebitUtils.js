@@ -108,6 +108,86 @@ export function createDirectDebitRun({ data, month, dueDate, idFactory, now = ne
   };
 }
 
+function decodeXmlEntities(value = "") {
+  return String(value)
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'");
+}
+
+function xmlValues(xml, tagName) {
+  const escaped = tagName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const pattern = new RegExp(`<(?:[A-Za-z0-9_-]+:)?${escaped}(?:\\s[^>]*)?>([\\s\\S]*?)<\\/(?:[A-Za-z0-9_-]+:)?${escaped}>`, "gi");
+  return [...String(xml).matchAll(pattern)].map(match => decodeXmlEntities(match[1].replace(/<[^>]+>/g, "").trim()));
+}
+
+function xmlBlocks(xml, tagName) {
+  const escaped = tagName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const pattern = new RegExp(`<(?:[A-Za-z0-9_-]+:)?${escaped}(?:\\s[^>]*)?>[\\s\\S]*?<\\/(?:[A-Za-z0-9_-]+:)?${escaped}>`, "gi");
+  return String(xml).match(pattern) || [];
+}
+
+export function createDirectDebitRunFromSepaXml({ data, text, sourceFile = "", idFactory, now = new Date().toISOString() }) {
+  const paymentBlock = xmlBlocks(text, "PmtInf")[0] || text;
+  const dueDate = xmlValues(paymentBlock, "ReqdColltnDt")[0] || "";
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dueDate)) throw new Error("In der SEPA-XML wurde kein gültiger Einzugstag gefunden.");
+  const transactionBlocks = xmlBlocks(paymentBlock, "DrctDbtTxInf");
+  if (!transactionBlocks.length) throw new Error("Die Datei enthält keine SEPA-Lastschriftpositionen.");
+
+  const makeId = typeof idFactory === "function" ? idFactory : () => crypto.randomUUID();
+  const memberships = data.memberships || [];
+  const members = data.members || [];
+  const findMembership = ({ mandateReference, iban, memberName }) => memberships.find(entry => (
+    mandateReference && normalizeText(entry.mandateReference) === normalizeText(mandateReference)
+  )) || memberships.find(entry => (
+    iban && normalizeIban(entry.sepaIban) === iban
+  )) || memberships.find(entry => (
+    memberName && normalizeText(entry.memberName) === normalizeText(memberName)
+  ));
+  const runId = makeId();
+  const items = transactionBlocks.map(block => {
+    const amount = Math.abs(parseGermanAmount(xmlValues(block, "InstdAmt")[0]));
+    const mandateReference = xmlValues(block, "MndtId")[0] || "";
+    const iban = normalizeIban(xmlValues(xmlBlocks(block, "DbtrAcct")[0] || block, "IBAN")[0] || "");
+    const memberName = xmlValues(xmlBlocks(block, "Dbtr")[0] || block, "Nm")[0] || "Unbekannter Zahler";
+    const membership = findMembership({ mandateReference, iban, memberName });
+    const member = members.find(entry => entry.id === membership?.memberId);
+    return {
+      id: makeId(),
+      runId,
+      membershipId: membership?.id || "",
+      memberId: membership?.memberId || member?.id || "",
+      memberName: membership?.memberName || member?.name || memberName,
+      amount,
+      mandateReference,
+      iban,
+      dueDate,
+      status: "gebucht",
+      createdAt: now,
+    };
+  });
+  const month = dueDate.slice(0, 7);
+  const label = new Date(`${month}-01T12:00:00`).toLocaleDateString("de-DE", { month: "long", year: "numeric" });
+  return {
+    run: {
+      id: runId,
+      month,
+      title: `Memberships ${label}`,
+      dueDate,
+      status: "gebucht",
+      itemCount: items.length,
+      totalAmount: Math.round(items.reduce((sum, item) => sum + item.amount, 0) * 100) / 100,
+      sourceFile,
+      sourceType: "sepa-xml",
+      createdAt: now,
+      updatedAt: now,
+    },
+    items,
+  };
+}
+
 function detectDelimiter(firstLine = "") {
   const counts = [";", ",", "\t"].map(delimiter => ({
     delimiter,

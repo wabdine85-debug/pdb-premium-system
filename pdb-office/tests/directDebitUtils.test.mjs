@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   createDirectDebitRun,
+  createDirectDebitRunFromSepaXml,
   createReturnCase,
   decodeBankCsv,
   getReturnCaseSummary,
@@ -42,6 +43,20 @@ test("run creation freezes member payment data", () => {
   assert.equal(result.items[0].memberName, "Anna Beispiel");
   assert.equal(result.items[0].iban, "DE11222233334444555566");
   assert.equal(maskIban(result.items[0].iban), "•••• 5566");
+});
+
+test("SEPA XML creates the exact historical debit run", () => {
+  const xml = `<?xml version="1.0"?><Document><PmtInf><ReqdColltnDt>2026-07-01</ReqdColltnDt>
+    <DrctDbtTxInf><PmtId><EndToEndId>E2E-1</EndToEndId></PmtId><InstdAmt Ccy="EUR">129.00</InstdAmt><DrctDbtTx><MndtRltdInf><MndtId>PDB-1</MndtId></MndtRltdInf></DrctDbtTx><Dbtr><Nm>Anna Beispiel</Nm></Dbtr><DbtrAcct><Id><IBAN>DE112222</IBAN></Id></DbtrAcct></DrctDbtTxInf>
+    <DrctDbtTxInf><InstdAmt Ccy="EUR">199.00</InstdAmt><DrctDbtTx><MndtRltdInf><MndtId>PDB-2</MndtId></MndtRltdInf></DrctDbtTx><Dbtr><Nm>Bea Beispiel</Nm></Dbtr><DbtrAcct><Id><IBAN>DE113333</IBAN></Id></DbtrAcct></DrctDbtTxInf>
+  </PmtInf></Document>`;
+  const result = createDirectDebitRunFromSepaXml({ data: { memberships: [] }, text: xml, sourceFile: "juli.xml", idFactory: ids() });
+  assert.equal(result.run.month, "2026-07");
+  assert.equal(result.run.dueDate, "2026-07-01");
+  assert.equal(result.run.itemCount, 2);
+  assert.equal(result.run.totalAmount, 328);
+  assert.equal(result.items[0].memberName, "Anna Beispiel");
+  assert.equal(result.items[0].mandateReference, "PDB-1");
 });
 
 test("Naspa style CSV returns only return debit rows", () => {

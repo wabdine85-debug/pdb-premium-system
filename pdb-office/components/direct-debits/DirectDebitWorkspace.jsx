@@ -3,6 +3,7 @@ import {
   RETURN_CASE_STATUSES,
   RETURN_REASON_LABELS,
   createDirectDebitRun,
+  createDirectDebitRunFromSepaXml,
   createReturnCase,
   decodeBankCsv,
   getReturnCaseSummary,
@@ -77,7 +78,9 @@ export default function DirectDebitWorkspace({ data, save }) {
   const [search, setSearch] = useState("");
   const [importRows, setImportRows] = useState(null);
   const [importMessage, setImportMessage] = useState("");
+  const [xmlMessage, setXmlMessage] = useState("");
   const fileRef = useRef(null);
+  const xmlRef = useRef(null);
 
   const runs = useMemo(() => [...(data.directDebitRuns || [])].sort((a, b) => (b.month || "").localeCompare(a.month || "")), [data.directDebitRuns]);
   const items = data.directDebitItems || [];
@@ -252,6 +255,31 @@ export default function DirectDebitWorkspace({ data, save }) {
     }
   };
 
+  const importSepaXml = async file => {
+    if (!file) return;
+    setXmlMessage("");
+    try {
+      const created = createDirectDebitRunFromSepaXml({ data, text: await file.text(), sourceFile: file.name, idFactory: uid });
+      const existingRun = runs.find(run => run.month === created.run.month);
+      if (existingRun && cases.some(returnCase => returnCase.runId === existingRun.id)) {
+        throw new Error(`Der Lauf für ${monthLabel(created.run.month)} enthält bereits Rücklastschriftfälle und kann nicht ersetzt werden.`);
+      }
+      save(current => ({
+        ...current,
+        directDebitRuns: [...(current.directDebitRuns || []).filter(run => run.id !== existingRun?.id), created.run],
+        directDebitItems: [...(current.directDebitItems || []).filter(item => item.runId !== existingRun?.id), ...created.items],
+      }));
+      setSelectedRunId(created.run.id);
+      setImportRows(null);
+      setTab("runs");
+      setXmlMessage(`${created.run.itemCount} Lastschriften über ${money(created.run.totalAmount)} aus ${file.name} übernommen.`);
+    } catch (error) {
+      setXmlMessage(error.message || "Die SEPA-XML konnte nicht gelesen werden.");
+    } finally {
+      if (xmlRef.current) xmlRef.current.value = "";
+    }
+  };
+
   const importReturn = index => {
     const row = importRows[index];
     const item = items.find(entry => entry.id === row.itemId);
@@ -271,10 +299,14 @@ export default function DirectDebitWorkspace({ data, save }) {
         </div>
         <div className="ddb-header__actions">
           <input ref={fileRef} className="ddb-hidden-input" type="file" accept=".csv,.txt" onChange={event => readImport(event.target.files?.[0])} />
+          <input ref={xmlRef} className="ddb-hidden-input" type="file" accept=".xml,text/xml,application/xml" onChange={event => importSepaXml(event.target.files?.[0])} />
           <button className="ddb-button ddb-button--secondary" type="button" onClick={() => fileRef.current?.click()}>Naspa-CSV prüfen</button>
+          <button className="ddb-button ddb-button--secondary" type="button" onClick={() => xmlRef.current?.click()}>SEPA-XML importieren</button>
           <button className="ddb-button" type="button" onClick={() => { setShowRunForm(true); setRunError(""); }}>Lastschriftlauf erstellen</button>
         </div>
       </header>
+
+      {xmlMessage && <div className="ddb-import-message" role="status">{xmlMessage}</div>}
 
       <section className="ddb-metrics" aria-label="Rücklastschrift-Kennzahlen">
         <Metric label="Offene Fälle" value={summary.openCount} hint="benötigen eine Klärung" tone={summary.openCount ? "alert" : "positive"} />
