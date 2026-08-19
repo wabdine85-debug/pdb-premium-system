@@ -59,6 +59,23 @@ test("SEPA XML creates the exact historical debit run", () => {
   assert.equal(result.items[0].mandateReference, "PDB-1");
 });
 
+test("SEPA XML does not map a shared mandate reference to the first member", () => {
+  const xml = `<?xml version="1.0"?><Document><PmtInf><ReqdColltnDt>2026-07-01</ReqdColltnDt>
+    <DrctDbtTxInf><InstdAmt Ccy="EUR">129.00</InstdAmt><DrctDbtTx><MndtRltdInf><MndtId>SHARED</MndtId></MndtRltdInf></DrctDbtTx><Dbtr><Nm>Erste Person</Nm></Dbtr><DbtrAcct><Id><IBAN>DE111</IBAN></Id></DbtrAcct></DrctDbtTxInf>
+    <DrctDbtTxInf><InstdAmt Ccy="EUR">149.00</InstdAmt><DrctDbtTx><MndtRltdInf><MndtId>SHARED</MndtId></MndtRltdInf></DrctDbtTx><Dbtr><Nm>Zweite Person</Nm></Dbtr><DbtrAcct><Id><IBAN>DE222</IBAN></Id></DbtrAcct></DrctDbtTxInf>
+  </PmtInf></Document>`;
+  const result = createDirectDebitRunFromSepaXml({
+    data: { memberships: [
+      { id: "m1", memberId: "p1", memberName: "Erste Person", mandateReference: "SHARED", sepaIban: "DE111" },
+      { id: "m2", memberId: "p2", memberName: "Zweite Person", mandateReference: "SHARED", sepaIban: "DE222" },
+    ] },
+    text: xml,
+    idFactory: ids(),
+  });
+  assert.deepEqual(result.items.map(item => item.memberName), ["Erste Person", "Zweite Person"]);
+  assert.deepEqual(result.items.map(item => item.membershipId), ["m1", "m2"]);
+});
+
 test("Naspa style CSV returns only return debit rows", () => {
   const csv = [
     "Buchungstag;Zahlungspflichtiger;IBAN;Verwendungszweck;Betrag",

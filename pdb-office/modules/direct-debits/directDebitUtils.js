@@ -139,13 +139,16 @@ export function createDirectDebitRunFromSepaXml({ data, text, sourceFile = "", i
   const makeId = typeof idFactory === "function" ? idFactory : () => crypto.randomUUID();
   const memberships = data.memberships || [];
   const members = data.members || [];
-  const findMembership = ({ mandateReference, iban, memberName }) => memberships.find(entry => (
-    mandateReference && normalizeText(entry.mandateReference) === normalizeText(mandateReference)
-  )) || memberships.find(entry => (
-    iban && normalizeIban(entry.sepaIban) === iban
-  )) || memberships.find(entry => (
-    memberName && normalizeText(entry.memberName) === normalizeText(memberName)
-  ));
+  const uniqueMembership = (field, value, normalize) => {
+    if (!value) return null;
+    const matches = memberships.filter(entry => normalize(entry[field]) === normalize(value));
+    return matches.length === 1 ? matches[0] : null;
+  };
+  const findMembership = ({ mandateReference, iban, memberName }) => (
+    uniqueMembership("sepaIban", iban, normalizeIban)
+    || uniqueMembership("memberName", memberName, normalizeText)
+    || uniqueMembership("mandateReference", mandateReference, normalizeText)
+  );
   const runId = makeId();
   const items = transactionBlocks.map(block => {
     const amount = Math.abs(parseGermanAmount(xmlValues(block, "InstdAmt")[0]));
@@ -159,7 +162,7 @@ export function createDirectDebitRunFromSepaXml({ data, text, sourceFile = "", i
       runId,
       membershipId: membership?.id || "",
       memberId: membership?.memberId || member?.id || "",
-      memberName: membership?.memberName || member?.name || memberName,
+      memberName,
       amount,
       mandateReference,
       iban,
