@@ -135,6 +135,7 @@ test('premium admin schema is prepared idempotently at startup', async () => {
   assert.match(sql, /ADD COLUMN IF NOT EXISTS entitlement_multiplier/);
   assert.match(sql, /ADD COLUMN IF NOT EXISTS appointment_date/);
   assert.match(sql, /CREATE TABLE IF NOT EXISTS booking_admin_events/);
+  assert.match(sql, /booking_appointment_date_added/);
   assert.match(sql, /booking_rescheduled/);
   assert.match(sql, /bookings_appointment_date_idx/);
 });

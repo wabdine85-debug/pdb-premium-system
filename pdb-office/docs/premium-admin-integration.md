@@ -22,6 +22,9 @@ zusammengeführt.
 - Manuelle Verbuchungen benötigen ein konkretes vereinbartes Termindatum.
   Aktive Member-Buchungen können mit Audit-Grund verschoben oder storniert
   werden; der Leistungsmonat wird aus dem Termindatum abgeleitet.
+- Bei älteren Online-Buchungen ohne Termindatum zeigt die Verwaltung zusätzlich
+  den Buchungszeitpunkt und bietet ein protokolliertes Nachtragen des tatsächlich
+  vereinbarten Termins an.
 - Bei Online-Buchungen ändert diese Admin-Aktion den Premium-Kontingenteintrag.
   Ein verknüpfter Salonized-Termin muss bis zu einer eigenen Salonized-API-
   Integration zusätzlich dort geändert oder storniert werden.

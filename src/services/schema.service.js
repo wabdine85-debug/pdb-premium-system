@@ -111,7 +111,7 @@ export async function ensurePremiumAdminSchema(db = pool) {
         SELECT 1 FROM pg_constraint
         WHERE conname = 'booking_admin_events_event_type_check'
           AND conrelid = 'booking_admin_events'::regclass
-          AND pg_get_constraintdef(oid) LIKE '%booking_rescheduled%'
+          AND pg_get_constraintdef(oid) LIKE '%booking_appointment_date_added%'
       ) THEN
         ALTER TABLE booking_admin_events
           DROP CONSTRAINT IF EXISTS booking_admin_events_event_type_check;
@@ -121,6 +121,7 @@ export async function ensurePremiumAdminSchema(db = pool) {
             'manual_usage_created',
             'manual_usage_cancelled',
             'booking_cancelled',
+            'booking_appointment_date_added',
             'booking_rescheduled'
           ));
       END IF;

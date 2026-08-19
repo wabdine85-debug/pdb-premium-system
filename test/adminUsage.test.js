@@ -8,6 +8,7 @@ import {
   normalizeAppointmentDate,
   normalizeAdminBookingMonth,
   recordManualUsage,
+  rescheduleBooking,
   validateManualUsageInput
 } from '../src/services/adminUsage.service.js';
 
@@ -208,4 +209,52 @@ test('manual cancellation cannot alter an online booking', async () => {
     }, db),
     (error) => error instanceof AdminUsageError && error.code === 'BOOKING_NOT_MANUAL'
   );
+});
+
+test('adding a missing historical appointment date has its own audit event', async () => {
+  let savedEventType = null;
+  const booking = {
+    id: 42,
+    member_id: 7,
+    treatment_id: 12,
+    booking_month: '2026-08-01',
+    appointment_date: null,
+    status: 'confirmed',
+    source: 'online',
+    treatment_key: 'pure-example',
+    treatment_title: 'PURE Beispiel',
+    category_key: 'pure',
+    package_key: 'pure',
+    entitlement_multiplier: 1,
+    shopify_customer_id: 'shopify-7',
+    email: 'member@example.test',
+    first_name: 'Test',
+    last_name: 'Member'
+  };
+  const db = {
+    async query(sql, values) {
+      if (sql.includes('FROM bookings b') && sql.includes('FOR UPDATE')) return { rows: [booking] };
+      if (sql.includes('UPDATE bookings')) {
+        return { rows: [{ ...booking, booking_month: values[1], appointment_date: values[2] }] };
+      }
+      if (sql.includes('INSERT INTO booking_admin_events')) {
+        savedEventType = values[2];
+        return { rows: [] };
+      }
+      if (sql.includes('SELECT t.category_key, t.treatment_key')) {
+        return { rows: [{ category_key: 'pure', treatment_key: 'pure-example' }] };
+      }
+      if (sql.includes('FROM member_monthly_usage_imports')) return { rows: [] };
+      throw new Error(`Unexpected query in test: ${sql}`);
+    }
+  };
+
+  const result = await rescheduleBooking(booking.id, {
+    appointment_date: '2026-08-22',
+    actor: 'Studioleitung',
+    reason: 'Aus Salonized nachgetragen'
+  }, db);
+
+  assert.equal(result.booking.appointment_date, '2026-08-22');
+  assert.equal(savedEventType, 'booking_appointment_date_added');
 });

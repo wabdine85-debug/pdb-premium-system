@@ -12,6 +12,7 @@ ALTER TABLE booking_admin_events
     'manual_usage_created',
     'manual_usage_cancelled',
     'booking_cancelled',
+    'booking_appointment_date_added',
     'booking_rescheduled'
   ));
 

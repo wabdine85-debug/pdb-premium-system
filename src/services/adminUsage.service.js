@@ -310,14 +310,18 @@ export async function rescheduleBooking(bookingId, input, db) {
     [id, bookingMonth, appointmentDate]
   );
   const updatedBooking = updatedResult.rows[0];
+  const eventType = booking.appointment_date
+    ? 'booking_rescheduled'
+    : 'booking_appointment_date_added';
 
   await db.query(
     `INSERT INTO booking_admin_events (
        booking_id, member_id, event_type, actor, reason, metadata
-     ) VALUES ($1, $2, 'booking_rescheduled', $3, $4, $5::jsonb)`,
+     ) VALUES ($1, $2, $3, $4, $5, $6::jsonb)`,
     [
       booking.id,
       booking.member_id,
+      eventType,
       actor,
       reason,
       JSON.stringify({

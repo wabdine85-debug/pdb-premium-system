@@ -29,6 +29,19 @@ function formatDate(value) {
   return new Date(`${String(value).slice(0, 10)}T00:00:00`).toLocaleDateString("de-DE");
 }
 
+function formatDateTime(value) {
+  if (!value) return "nicht erfasst";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "nicht erfasst";
+  return date.toLocaleString("de-DE", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 function currentDate() {
   const now = new Date();
   now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
@@ -218,7 +231,9 @@ export default function PremiumAdministration({ crmMemberships = [] }) {
           actor: bookingAction.actor,
           reason: bookingAction.reason,
         });
-        setNotice(`Termin auf den ${formatDate(bookingAction.appointment_date)} verschoben.`);
+        setNotice(bookingAction.isDateBackfill
+          ? `Termindatum ${formatDate(bookingAction.appointment_date)} nachgetragen.`
+          : `Termin auf den ${formatDate(bookingAction.appointment_date)} verschoben.`);
       } else {
         await cancelPremiumBooking(bookingAction.booking.id, {
           actor: bookingAction.actor,
@@ -308,11 +323,11 @@ export default function PremiumAdministration({ crmMemberships = [] }) {
                   <h5>Verbuchte Termine</h5>
                   {(detail.bookings || []).map(booking => (
                     <div key={booking.id}>
-                      <span><strong>{booking.appointment_date ? formatDate(booking.appointment_date) : "Termin-Datum nicht erfasst"}</strong> · {booking.treatment_title}<small>Leistungsmonat {formatDate(booking.booking_month)}</small></span>
+                      <span><strong>{booking.appointment_date ? `Termin am ${formatDate(booking.appointment_date)}` : "Termindatum fehlt"}</strong> · {booking.treatment_title}<small>Gebucht am {formatDateTime(booking.booked_at)} · Leistungsmonat {formatDate(booking.booking_month)}</small></span>
                       <div className="premium-admin__booking-actions">
                         <strong>{booking.status === "cancelled" ? "wieder freigegeben" : booking.source === "admin_manual" ? "manuell" : "online"}</strong>
                         {booking.status !== "cancelled" && <>
-                          <button className="premium-admin__undo" onClick={() => setBookingAction({ type: "reschedule", booking, appointment_date: booking.appointment_date?.slice(0, 10) || currentDate(), actor: usage.actor, reason: "" })}>Verschieben</button>
+                          <button className="premium-admin__undo" onClick={() => setBookingAction({ type: "reschedule", booking, isDateBackfill: !booking.appointment_date, appointment_date: booking.appointment_date?.slice(0, 10) || currentDate(), actor: usage.actor, reason: "" })}>{booking.appointment_date ? "Verschieben" : "Termin nachtragen"}</button>
                           <button className="premium-admin__undo premium-admin__undo--danger" onClick={() => setBookingAction({ type: "cancel", booking, actor: usage.actor, reason: "" })}>Stornieren</button>
                         </>}
                       </div>
@@ -427,14 +442,14 @@ export default function PremiumAdministration({ crmMemberships = [] }) {
       {bookingAction && (
         <div className="premium-admin__confirm" role="dialog" aria-modal="true" aria-labelledby="booking-action-title">
           <div>
-            <h4 id="booking-action-title">{bookingAction.type === "reschedule" ? "Termin verschieben?" : "Termin stornieren?"}</h4>
+            <h4 id="booking-action-title">{bookingAction.type === "reschedule" ? bookingAction.isDateBackfill ? "Termindatum nachtragen?" : "Termin verschieben?" : "Termin stornieren?"}</h4>
             <p>
-              {bookingAction.booking.treatment_title}. Die Änderung wird mit Bearbeiter und Grund protokolliert.
-              {bookingAction.booking.source === "online" && " Der verknüpfte Salonized-Termin muss zusätzlich in Salonized geändert werden."}
+              {bookingAction.booking.treatment_title}. {bookingAction.isDateBackfill ? "Für diese ältere Buchung fehlt das vereinbarte Termindatum. Das Nachtragen wird protokolliert." : "Die Änderung wird mit Bearbeiter und Grund protokolliert."}
+              {bookingAction.booking.source === "online" && !bookingAction.isDateBackfill && " Der verknüpfte Salonized-Termin muss zusätzlich in Salonized geändert werden."}
             </p>
             <div className="premium-admin__cancel-fields">
               {bookingAction.type === "reschedule" && <label>
-                Neuer Termin
+                {bookingAction.isDateBackfill ? "Vereinbarter Termin" : "Neuer Termin"}
                 <input type="date" value={bookingAction.appointment_date} onChange={event => setBookingAction(current => ({ ...current, appointment_date: event.target.value }))} />
               </label>}
               <label>
@@ -443,12 +458,12 @@ export default function PremiumAdministration({ crmMemberships = [] }) {
               </label>
               <label>
                 Grund
-                <input value={bookingAction.reason} onChange={event => setBookingAction(current => ({ ...current, reason: event.target.value }))} placeholder={bookingAction.type === "reschedule" ? "z. B. Kundenwunsch" : "z. B. Kundin hat abgesagt"} />
+                <input value={bookingAction.reason} onChange={event => setBookingAction(current => ({ ...current, reason: event.target.value }))} placeholder={bookingAction.isDateBackfill ? "z. B. aus Salonized nachgetragen" : bookingAction.type === "reschedule" ? "z. B. Kundenwunsch" : "z. B. Kundin hat abgesagt"} />
               </label>
             </div>
             <div>
               <button onClick={() => setBookingAction(null)}>Abbrechen</button>
-              <button className="premium-admin__primary" disabled={(bookingAction.type === "reschedule" && !bookingAction.appointment_date) || bookingAction.actor.trim().length < 2 || bookingAction.reason.trim().length < 3} onClick={saveBookingAction}>{bookingAction.type === "reschedule" ? "Termin verschieben" : "Termin stornieren"}</button>
+              <button className="premium-admin__primary" disabled={(bookingAction.type === "reschedule" && !bookingAction.appointment_date) || bookingAction.actor.trim().length < 2 || bookingAction.reason.trim().length < 3} onClick={saveBookingAction}>{bookingAction.type === "reschedule" ? bookingAction.isDateBackfill ? "Termindatum speichern" : "Termin verschieben" : "Termin stornieren"}</button>
             </div>
           </div>
         </div>
