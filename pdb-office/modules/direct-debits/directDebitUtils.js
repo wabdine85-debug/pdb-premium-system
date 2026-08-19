@@ -357,6 +357,10 @@ export function suggestDirectDebitItem(transaction, items = []) {
     .map(item => {
       let score = 0;
       const reasons = [];
+      if (transaction.date?.slice(0, 7) && item.dueDate?.slice(0, 7) === transaction.date.slice(0, 7)) {
+        score += 50;
+        reasons.push("Abrechnungsmonat");
+      }
       if (mandate && normalizeText(item.mandateReference) === mandate) {
         score += 100;
         reasons.push("Mandatsreferenz");

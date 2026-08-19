@@ -150,6 +150,16 @@ test("matching prioritizes mandate reference", () => {
   assert.equal(suggestion.ambiguous, false);
 });
 
+test("matching selects the debit item from the return transaction month", () => {
+  const suggestion = suggestDirectDebitItem({ name: "Anna Beispiel", amount: 129, date: "2026-08-04" }, [
+    { id: "july", memberName: "Anna Beispiel", amount: 129, dueDate: "2026-07-01", status: "gebucht" },
+    { id: "august", memberName: "Anna Beispiel", amount: 129, dueDate: "2026-08-03", status: "gebucht" },
+  ]);
+  assert.equal(suggestion.item.id, "august");
+  assert.equal(suggestion.ambiguous, false);
+  assert.deepEqual(suggestion.reasons, ["Abrechnungsmonat", "Betrag", "Name"]);
+});
+
 test("amount-only matches are marked as low confidence and ambiguous", () => {
   const suggestion = suggestDirectDebitItem({ name: "Unbekannt", amount: 149 }, [
     { id: "a", memberName: "Anna", amount: 149, status: "eingereicht" },
