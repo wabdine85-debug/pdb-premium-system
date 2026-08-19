@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   createDirectDebitRun,
   createReturnCase,
+  decodeBankCsv,
   getReturnCaseSummary,
   isMembershipDueInMonth,
   maskIban,
@@ -57,6 +58,25 @@ test("Naspa style CSV returns only return debit rows", () => {
   assert.equal(result[0].reason, "Keine ausreichende Deckung");
   assert.equal(result[0].mandateReference, "PDB-2026-001");
   assert.equal(result[0].sourceFingerprint, returnTransactionFingerprint(result[0]));
+});
+
+test("Naspa CAMT V8 uses original amount, derives fees and ignores invoice receipts", () => {
+  const csv = [
+    "Auftragskonto;Buchungstag;Buchungstext;Verwendungszweck;Lastschrift Ursprungsbetrag;Auslagenersatz Ruecklastschrift;Beguenstigter/Zahlungspflichtiger;Betrag;Info",
+    'DE001;02.07.26;RECHNUNG;Rechnung Ruecklastschrift Nullumsatz z. RE-Erstellung;;;Bank;0,00;Umsatz gebucht',
+    'DE001;02.07.26;LS RUECKBELASTUNG;RUECKLASTSCHRIFT Sonstige Gruende Premiumbeitrag;149,00;;Anna Beispiel;-152,57;Umsatz gebucht',
+  ].join("\n");
+  const result = parseNaspaReturnCsv(csv, { idFactory: ids() });
+  assert.equal(result.length, 1);
+  assert.equal(result[0].date, "2026-07-02");
+  assert.equal(result[0].amount, 149);
+  assert.equal(result[0].fee, 3.57);
+  assert.equal(result[0].reasonCode, "MS02");
+});
+
+test("bank CSV decoding supports Naspa Windows-1252 exports", () => {
+  const bytes = Uint8Array.from([0x52, 0xfc, 0x63, 0x6b]);
+  assert.equal(decodeBankCsv(bytes), "Rück");
 });
 
 test("bank transaction fingerprints stay stable across import ids", () => {

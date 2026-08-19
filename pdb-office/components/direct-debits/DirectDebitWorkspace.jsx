@@ -4,6 +4,7 @@ import {
   RETURN_REASON_LABELS,
   createDirectDebitRun,
   createReturnCase,
+  decodeBankCsv,
   getReturnCaseSummary,
   maskIban,
   parseNaspaReturnCsv,
@@ -230,7 +231,7 @@ export default function DirectDebitWorkspace({ data, save }) {
     setImportMessage("");
     try {
       const knownFingerprints = new Set((data.bankTransactions || []).map(transaction => transaction.sourceFingerprint).filter(Boolean));
-      const transactions = parseNaspaReturnCsv(await file.text(), { idFactory: uid })
+      const transactions = parseNaspaReturnCsv(decodeBankCsv(await file.arrayBuffer()), { idFactory: uid })
         .filter(transaction => !knownFingerprints.has(transaction.sourceFingerprint));
       const rows = transactions.map(transaction => {
         const suggestion = suggestDirectDebitItem(transaction, eligibleImportItems);
@@ -256,7 +257,7 @@ export default function DirectDebitWorkspace({ data, save }) {
     const item = items.find(entry => entry.id === row.itemId);
     const run = runs.find(entry => entry.id === item?.runId);
     if (!item || !run) return;
-    storeReturnCase({ item, run, transaction: row.transaction, fee: 0, note: "" });
+    storeReturnCase({ item, run, transaction: row.transaction, fee: row.transaction.fee, note: "" });
     setImportRows(current => current.map((entry, rowIndex) => rowIndex === index ? { ...entry, imported: true } : entry));
   };
 
@@ -299,7 +300,7 @@ export default function DirectDebitWorkspace({ data, save }) {
               <tr key={row.transaction.id}>
                 <td><strong>{row.transaction.name}</strong><small>{dateLabel(row.transaction.date)} · {row.transaction.mandateReference || "ohne Mandatsreferenz"}</small></td>
                 <td>{row.transaction.reason}</td>
-                <td><strong>{money(row.transaction.amount)}</strong></td>
+                <td><strong>{money(row.transaction.amount + row.transaction.fee)}</strong>{row.transaction.fee > 0 && <small>{money(row.transaction.amount)} Einzug · {money(row.transaction.fee)} Kosten</small>}</td>
                 <td>
                   <select aria-label={`Zuordnung für ${row.transaction.name}`} disabled={row.imported} value={row.itemId} onChange={event => setImportRows(current => current.map((entry, rowIndex) => rowIndex === index ? { ...entry, itemId: event.target.value } : entry))}>
                     <option value="">Bitte auswählen…</option>

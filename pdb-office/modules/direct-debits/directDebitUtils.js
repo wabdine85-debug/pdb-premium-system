@@ -164,8 +164,30 @@ function parseGermanAmount(value = "") {
 function parseDate(value = "") {
   const clean = String(value).trim();
   if (/^\d{4}-\d{2}-\d{2}$/.test(clean)) return clean;
-  const match = clean.match(/^(\d{2})[./](\d{2})[./](\d{4})$/);
-  return match ? `${match[3]}-${match[2]}-${match[1]}` : "";
+  const match = clean.match(/^(\d{2})[./](\d{2})[./](\d{2}|\d{4})$/);
+  if (!match) return "";
+  const year = match[3].length === 2 ? `20${match[3]}` : match[3];
+  return `${year}-${match[2]}-${match[1]}`;
+}
+
+function detectReturnReason(purpose = "") {
+  const explicitCode = (purpose.match(/\b(AC01|AC04|AC06|AG01|AM04|MD01|MD06|MS02|SL01)\b/i)?.[1] || "").toUpperCase();
+  if (explicitCode) return explicitCode;
+  const normalized = normalizeText(purpose);
+  if (/konto (aufgelost|erloschen)/.test(normalized)) return "AC04";
+  if (/nicht gedeckt|deckung|unzureichende mittel/.test(normalized)) return "AM04";
+  if (/widerspruch|zahlungspflichtigen/.test(normalized)) return "MD06";
+  if (/sonstige grunde/.test(normalized)) return "MS02";
+  return "";
+}
+
+export function decodeBankCsv(buffer) {
+  const bytes = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);
+  try {
+    return new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+  } catch {
+    return new TextDecoder("windows-1252").decode(bytes);
+  }
 }
 
 export function parseNaspaReturnCsv(text, { idFactory } = {}) {
@@ -175,7 +197,10 @@ export function parseNaspaReturnCsv(text, { idFactory } = {}) {
   if (rows.length < 2) return [];
   const headers = rows[0].map(normalizeText);
   const dateIndex = findColumn(headers, ["buchungstag", "buchungsdatum", "datum", "valutadatum"]);
-  const amountIndex = findColumn(headers, ["umsatz", "betrag"]);
+  const amountIndex = headers.findIndex(header => header === "betrag" || header === "umsatz");
+  const originalAmountIndex = findColumn(headers, ["lastschrift ursprungsbetrag"]);
+  const feeIndex = findColumn(headers, ["auslagenersatz rucklastschrift"]);
+  const bookingTextIndex = findColumn(headers, ["buchungstext", "umsatzart"]);
   const nameIndex = findColumn(headers, ["zahlungspflichtiger", "begunstigter", "name gegenkonto", "empfanger"]);
   const purposeIndex = findColumn(headers, ["verwendungszweck", "buchungstext", "umsatzart"]);
   const ibanIndex = findColumn(headers, ["iban gegenkonto", "gegenkonto iban", "iban"]);
@@ -185,14 +210,21 @@ export function parseNaspaReturnCsv(text, { idFactory } = {}) {
     const purpose = [columns[purposeIndex], ...columns].filter(Boolean).join(" ");
     const normalizedPurpose = normalizeText(purpose);
     const returnMatch = /(rucklastschrift|lastschriftruckgabe|retoure|return debit|r transaction)/.test(normalizedPurpose);
-    if (!returnMatch) return null;
-    const reasonCode = (purpose.match(/\b(AC01|AC04|AC06|AG01|AM04|MD01|MD06|MS02|SL01)\b/i)?.[1] || "").toUpperCase();
+    const bookingAmount = Math.abs(parseGermanAmount(columns[amountIndex]));
+    const originalAmount = Math.abs(parseGermanAmount(columns[originalAmountIndex]));
+    const explicitFee = Math.abs(parseGermanAmount(columns[feeIndex]));
+    const isNaspaReturn = normalizeText(columns[bookingTextIndex]).includes("ls ruckbelastung");
+    if (!returnMatch || (!isNaspaReturn && originalAmount <= 0 && bookingAmount <= 0)) return null;
+    const reasonCode = detectReturnReason(purpose);
     const mandateReference = purpose.match(/(?:MANDAT(?:SREFERENZ|SREF)?|MREF)[:\s]+([A-Z0-9._/-]{4,35})/i)?.[1] || "";
+    const amount = originalAmount || bookingAmount;
+    const fee = explicitFee || Math.round(Math.max(0, bookingAmount - amount) * 100) / 100;
     const transaction = {
       id: makeId(),
       date: parseDate(columns[dateIndex]),
       name: columns[nameIndex] || "Unbekannt",
-      amount: Math.abs(parseGermanAmount(columns[amountIndex])),
+      amount,
+      fee,
       iban: normalizeIban(columns[ibanIndex] || ""),
       purpose: String(columns[purposeIndex] || purpose).slice(0, 500),
       mandateReference,
