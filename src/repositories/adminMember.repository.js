@@ -69,6 +69,7 @@ export async function listAdminMemberBookings(memberId, months, db = pool) {
     `SELECT
        b.id,
        b.booking_month,
+       b.appointment_date,
        b.status,
        b.source,
        b.admin_actor,

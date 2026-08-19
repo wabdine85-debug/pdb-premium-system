@@ -11,10 +11,12 @@ import {
 } from '../repositories/adminMember.repository.js';
 import {
   AdminUsageError,
+  cancelBooking,
   cancelManualUsage,
   getFollowingAdminBookingMonth,
   normalizeAdminBookingMonth,
-  recordManualUsage
+  recordManualUsage,
+  rescheduleBooking
 } from '../services/adminUsage.service.js';
 import { getEntitlementsForMonth } from '../services/entitlement.service.js';
 import { getBookingMonth } from '../utils/dates.js';
@@ -144,6 +146,28 @@ router.post('/bookings/:id/cancel-manual', adminWriteLimiter, async (req, res) =
     return res.json({ ok: true, ...result });
   } catch (error) {
     return sendAdminError(res, error, 'POST /api/admin/bookings/:id/cancel-manual');
+  }
+});
+
+router.post('/bookings/:id/cancel', adminWriteLimiter, async (req, res) => {
+  try {
+    const result = await inTransaction((client) =>
+      cancelBooking(req.params.id, req.body, client)
+    );
+    return res.json({ ok: true, ...result });
+  } catch (error) {
+    return sendAdminError(res, error, 'POST /api/admin/bookings/:id/cancel');
+  }
+});
+
+router.post('/bookings/:id/reschedule', adminWriteLimiter, async (req, res) => {
+  try {
+    const result = await inTransaction((client) =>
+      rescheduleBooking(req.params.id, req.body, client)
+    );
+    return res.json({ ok: true, ...result });
+  } catch (error) {
+    return sendAdminError(res, error, 'POST /api/admin/bookings/:id/reschedule');
   }
 });
 

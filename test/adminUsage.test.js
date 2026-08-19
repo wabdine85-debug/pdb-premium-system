@@ -5,6 +5,7 @@ import {
   AdminUsageError,
   cancelManualUsage,
   getFollowingAdminBookingMonth,
+  normalizeAppointmentDate,
   normalizeAdminBookingMonth,
   recordManualUsage,
   validateManualUsageInput
@@ -47,10 +48,11 @@ function createUsageDb({ member, treatment, existingBookings = [] }) {
           member_id: values[0],
           treatment_id: values[1],
           booking_month: values[2],
+          appointment_date: values[3],
           status: 'confirmed',
           source: 'admin_manual',
-          admin_actor: values[3],
-          admin_reason: values[4],
+          admin_actor: values[4],
+          admin_reason: values[5],
           booked_at: '2026-08-15T12:00:00.000Z',
           cancelled_at: null
         };
@@ -79,11 +81,17 @@ test('admin month validation accepts only real first-of-month dates', () => {
   assert.equal(getFollowingAdminBookingMonth('2026-12-01'), '2027-01-01');
 });
 
+test('appointment validation accepts only real calendar dates', () => {
+  assert.equal(normalizeAppointmentDate('2026-08-19'), '2026-08-19');
+  assert.equal(normalizeAppointmentDate('2026-02-30'), null);
+  assert.equal(normalizeAppointmentDate('2026-08'), null);
+});
+
 test('manual usage requires an actor and an auditable reason', () => {
   assert.throws(
     () => validateManualUsageInput({
       treatment_key: 'beyond-example',
-      booking_month: '2026-08-01',
+      appointment_date: '2026-08-19',
       actor: '',
       reason: 'Vor Ort wahrgenommen'
     }),
@@ -103,12 +111,13 @@ test('manual usage consumes the entitlement and creates an audit event', async (
 
   const result = await recordManualUsage(7, {
     treatment_key: treatment.treatment_key,
-    booking_month: '2026-08-01',
+    appointment_date: '2026-08-19',
     actor: 'Studioleitung',
     reason: 'Termin wurde bereits vor Ort wahrgenommen'
   }, db);
 
   assert.equal(result.booking.source, 'admin_manual');
+  assert.equal(result.booking.appointment_date, '2026-08-19');
   assert.equal(result.entitlements.remaining.beyond, 0);
   assert.equal(db.events.length, 1);
   assert.equal(db.events[0].metadata.bookingMonth, '2026-08-01');
@@ -137,7 +146,7 @@ test('manual usage cannot overbook an exhausted category', async () => {
   await assert.rejects(
     () => recordManualUsage(7, {
       treatment_key: treatment.treatment_key,
-      booking_month: '2026-08-01',
+      appointment_date: '2026-08-19',
       actor: 'Studioleitung',
       reason: 'Doppelte Erfassung verhindern'
     }, db),
@@ -162,7 +171,7 @@ test('manual usage rejects treatments outside the member package', async () => {
   await assert.rejects(
     () => recordManualUsage(9, {
       treatment_key: 'define-example',
-      booking_month: '2026-08-01',
+      appointment_date: '2026-08-19',
       actor: 'Studioleitung',
       reason: 'Falsche Kategorie testen'
     }, db),

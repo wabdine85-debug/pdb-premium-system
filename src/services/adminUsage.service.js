@@ -29,6 +29,19 @@ export function normalizeAdminBookingMonth(value) {
   return normalized;
 }
 
+export function normalizeAppointmentDate(value) {
+  const normalized = String(value || '').trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(normalized)) return null;
+  const parsed = dayjs(normalized);
+  if (!parsed.isValid() || parsed.format('YYYY-MM-DD') !== normalized) return null;
+  return normalized;
+}
+
+function appointmentBookingMonth(appointmentDate) {
+  const normalized = normalizeAppointmentDate(appointmentDate);
+  return normalized ? dayjs(normalized).startOf('month').format('YYYY-MM-DD') : null;
+}
+
 export function getFollowingAdminBookingMonth(bookingMonth) {
   const normalized = normalizeAdminBookingMonth(bookingMonth);
   return normalized ? dayjs(normalized).add(1, 'month').format('YYYY-MM-DD') : null;
@@ -36,16 +49,17 @@ export function getFollowingAdminBookingMonth(bookingMonth) {
 
 export function validateManualUsageInput(input = {}) {
   const treatmentKey = cleanText(input.treatment_key, 120);
-  const bookingMonth = normalizeAdminBookingMonth(input.booking_month);
+  const appointmentDate = normalizeAppointmentDate(input.appointment_date);
+  const bookingMonth = appointmentBookingMonth(appointmentDate);
   const actor = cleanText(input.actor, 120);
   const reason = cleanText(input.reason, 500);
 
   if (!treatmentKey) throw new AdminUsageError('TREATMENT_KEY_REQUIRED');
-  if (!bookingMonth) throw new AdminUsageError('BOOKING_MONTH_INVALID');
+  if (!appointmentDate) throw new AdminUsageError('APPOINTMENT_DATE_INVALID');
   if (actor.length < 2) throw new AdminUsageError('ADMIN_ACTOR_REQUIRED');
   if (reason.length < 3) throw new AdminUsageError('ADMIN_REASON_REQUIRED');
 
-  return { treatmentKey, bookingMonth, actor, reason };
+  return { treatmentKey, appointmentDate, bookingMonth, actor, reason };
 }
 
 export async function recordManualUsage(memberId, input, db) {
@@ -54,7 +68,7 @@ export async function recordManualUsage(memberId, input, db) {
     throw new AdminUsageError('MEMBER_ID_INVALID');
   }
 
-  const { treatmentKey, bookingMonth, actor, reason } = validateManualUsageInput(input);
+  const { treatmentKey, appointmentDate, bookingMonth, actor, reason } = validateManualUsageInput(input);
   const memberResult = await db.query(
     `SELECT id, shopify_customer_id, email, first_name, last_name, package_key, status
      FROM members
@@ -95,15 +109,16 @@ export async function recordManualUsage(memberId, input, db) {
        member_id,
        treatment_id,
        booking_month,
+       appointment_date,
        status,
        source,
        admin_actor,
        admin_reason,
        booked_at
-     ) VALUES ($1, $2, $3, 'confirmed', 'admin_manual', $4, $5, NOW())
-     RETURNING id, member_id, treatment_id, booking_month, status, source,
+     ) VALUES ($1, $2, $3, $4, 'confirmed', 'admin_manual', $5, $6, NOW())
+     RETURNING id, member_id, treatment_id, booking_month, appointment_date, status, source,
        admin_actor, admin_reason, booked_at, cancelled_at`,
-    [member.id, treatment.id, bookingMonth, actor, reason]
+    [member.id, treatment.id, bookingMonth, appointmentDate, actor, reason]
   );
   const booking = bookingResult.rows[0];
 
@@ -118,6 +133,7 @@ export async function recordManualUsage(memberId, input, db) {
       reason,
       JSON.stringify({
         bookingMonth,
+        appointmentDate,
         treatmentKey: treatment.treatment_key,
         categoryKey: treatment.category_key
       })
@@ -135,6 +151,10 @@ export async function recordManualUsage(memberId, input, db) {
 }
 
 export async function cancelManualUsage(bookingId, input, db) {
+  return cancelBooking(bookingId, input, db, { manualOnly: true });
+}
+
+export async function cancelBooking(bookingId, input, db, { manualOnly = false } = {}) {
   const id = Number(bookingId);
   if (!Number.isSafeInteger(id) || id <= 0) {
     throw new AdminUsageError('BOOKING_ID_INVALID');
@@ -165,7 +185,7 @@ export async function cancelManualUsage(bookingId, input, db) {
   );
   const booking = bookingResult.rows[0];
   if (!booking) throw new AdminUsageError('BOOKING_NOT_FOUND', 404);
-  if (booking.source !== 'admin_manual') {
+  if (manualOnly && booking.source !== 'admin_manual') {
     throw new AdminUsageError('BOOKING_NOT_MANUAL', 409);
   }
   if (!['reserved', 'confirmed'].includes(booking.status)) {
@@ -176,7 +196,7 @@ export async function cancelManualUsage(bookingId, input, db) {
     `UPDATE bookings
      SET status = 'cancelled', cancelled_at = NOW()
      WHERE id = $1
-     RETURNING id, member_id, treatment_id, booking_month, status, source,
+     RETURNING id, member_id, treatment_id, booking_month, appointment_date, status, source,
        admin_actor, admin_reason, booked_at, cancelled_at`,
     [id]
   );
@@ -185,13 +205,17 @@ export async function cancelManualUsage(bookingId, input, db) {
   await db.query(
     `INSERT INTO booking_admin_events (
        booking_id, member_id, event_type, actor, reason, metadata
-     ) VALUES ($1, $2, 'manual_usage_cancelled', $3, $4, $5::jsonb)`,
+     ) VALUES ($1, $2, $3, $4, $5, $6::jsonb)`,
     [
       booking.id,
       booking.member_id,
+      manualOnly ? 'manual_usage_cancelled' : 'booking_cancelled',
       actor,
       reason,
-      JSON.stringify({ previousStatus: booking.status })
+      JSON.stringify({
+        previousStatus: booking.status,
+        appointmentDate: booking.appointment_date || null
+      })
     ]
   );
 
@@ -216,5 +240,95 @@ export async function cancelManualUsage(bookingId, input, db) {
     db
   );
 
+  return { booking: updatedBooking, entitlements };
+}
+
+export async function rescheduleBooking(bookingId, input, db) {
+  const id = Number(bookingId);
+  if (!Number.isSafeInteger(id) || id <= 0) throw new AdminUsageError('BOOKING_ID_INVALID');
+
+  const appointmentDate = normalizeAppointmentDate(input?.appointment_date);
+  const bookingMonth = appointmentBookingMonth(appointmentDate);
+  const actor = cleanText(input?.actor, 120);
+  const reason = cleanText(input?.reason, 500);
+  if (!appointmentDate) throw new AdminUsageError('APPOINTMENT_DATE_INVALID');
+  if (actor.length < 2) throw new AdminUsageError('ADMIN_ACTOR_REQUIRED');
+  if (reason.length < 3) throw new AdminUsageError('ADMIN_REASON_REQUIRED');
+
+  const bookingResult = await db.query(
+    `SELECT
+       b.*,
+       t.treatment_key,
+       t.title AS treatment_title,
+       t.category_key,
+       m.package_key,
+       m.shopify_customer_id,
+       m.email,
+       m.first_name,
+       m.last_name
+     FROM bookings b
+     JOIN treatments t ON t.id = b.treatment_id
+     JOIN members m ON m.id = b.member_id
+     WHERE b.id = $1
+     FOR UPDATE`,
+    [id]
+  );
+  const booking = bookingResult.rows[0];
+  if (!booking) throw new AdminUsageError('BOOKING_NOT_FOUND', 404);
+  if (!['reserved', 'confirmed'].includes(booking.status)) {
+    throw new AdminUsageError('BOOKING_NOT_RESCHEDULABLE', 409);
+  }
+
+  const member = {
+    id: booking.member_id,
+    package_key: booking.package_key,
+    shopify_customer_id: booking.shopify_customer_id,
+    email: booking.email,
+    first_name: booking.first_name,
+    last_name: booking.last_name
+  };
+  const treatment = {
+    id: booking.treatment_id,
+    treatment_key: booking.treatment_key,
+    title: booking.treatment_title,
+    category_key: booking.category_key
+  };
+  const previousMonth = formatBookingMonth(booking.booking_month);
+  if (bookingMonth !== previousMonth) {
+    const availability = await getTreatmentEntitlementsForMonth(member, treatment, bookingMonth, db);
+    if ((availability.remaining?.[treatment.category_key] ?? 0) <= 0) {
+      throw new AdminUsageError('LIMIT_REACHED', 409);
+    }
+  }
+
+  const updatedResult = await db.query(
+    `UPDATE bookings
+     SET booking_month = $2, appointment_date = $3
+     WHERE id = $1
+     RETURNING id, member_id, treatment_id, booking_month, appointment_date, status, source,
+       admin_actor, admin_reason, booked_at, cancelled_at`,
+    [id, bookingMonth, appointmentDate]
+  );
+  const updatedBooking = updatedResult.rows[0];
+
+  await db.query(
+    `INSERT INTO booking_admin_events (
+       booking_id, member_id, event_type, actor, reason, metadata
+     ) VALUES ($1, $2, 'booking_rescheduled', $3, $4, $5::jsonb)`,
+    [
+      booking.id,
+      booking.member_id,
+      actor,
+      reason,
+      JSON.stringify({
+        previousAppointmentDate: booking.appointment_date || null,
+        previousBookingMonth: previousMonth,
+        appointmentDate,
+        bookingMonth
+      })
+    ]
+  );
+
+  const entitlements = await getTreatmentEntitlementsForMonth(member, treatment, bookingMonth, db);
   return { booking: updatedBooking, entitlements };
 }

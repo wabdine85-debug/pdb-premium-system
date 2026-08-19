@@ -562,16 +562,18 @@ router.post("/consume", verifyShopifyAppProxy, requireShopifyCustomer, requireMa
         member_id,
         treatment_id,
         booking_month,
+        appointment_date,
         status,
         booking_token,
         booked_at
       )
-      VALUES ($1, $2, $3, 'confirmed', $4, NOW())
+      VALUES ($1, $2, $3, $4, 'confirmed', $5, NOW())
       `,
       [
         bookingToken.member_id,
         bookingToken.treatment_id,
         bookingMonth,
+        appointment_date,
         bookingToken.token
       ]
     );
