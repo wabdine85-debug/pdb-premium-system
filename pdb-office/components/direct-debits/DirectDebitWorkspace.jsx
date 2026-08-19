@@ -289,6 +289,70 @@ export default function DirectDebitWorkspace({ data, save }) {
     setImportRows(current => current.map((entry, rowIndex) => rowIndex === index ? { ...entry, imported: true } : entry));
   };
 
+  const importAllClearReturns = () => {
+    const selectedRows = (importRows || []).filter(row => !row.imported && row.itemId && row.suggestion && !row.suggestion.ambiguous);
+    if (!selectedRows.length) return;
+    const createdEntries = selectedRows.map(row => {
+      const item = items.find(entry => entry.id === row.itemId);
+      const run = runs.find(entry => entry.id === item?.runId);
+      if (!item || !run) return null;
+      return {
+        item,
+        run,
+        transaction: row.transaction,
+        returnCase: createReturnCase({ item, run, transaction: row.transaction, fee: row.transaction.fee, idFactory: uid }),
+      };
+    }).filter(Boolean);
+    if (!createdEntries.length) return;
+    const caseByItem = new Map(createdEntries.map(entry => [entry.item.id, entry.returnCase]));
+    const affectedRunIds = new Set(createdEntries.map(entry => entry.run.id));
+    save(current => ({
+      ...current,
+      returnDebitCases: [...(current.returnDebitCases || []), ...createdEntries.map(entry => entry.returnCase)],
+      directDebitItems: (current.directDebitItems || []).map(item => caseByItem.has(item.id) ? {
+        ...item,
+        status: "zurueckgegeben",
+        returnCaseId: caseByItem.get(item.id).id,
+        updatedAt: caseByItem.get(item.id).updatedAt,
+      } : item),
+      directDebitRuns: (current.directDebitRuns || []).map(run => affectedRunIds.has(run.id) ? {
+        ...run,
+        status: "rueckgaben",
+        updatedAt: new Date().toISOString(),
+      } : run),
+      bankTransactions: [...(current.bankTransactions || []), ...createdEntries.map(entry => ({
+        id: entry.transaction.id,
+        date: entry.transaction.date,
+        name: entry.transaction.name,
+        amount: -Math.abs(entry.transaction.amount),
+        purpose: entry.transaction.purpose,
+        type: "return-debit",
+        matched: true,
+        returnCaseId: entry.returnCase.id,
+        sourceFingerprint: entry.transaction.sourceFingerprint || returnTransactionFingerprint(entry.transaction),
+      }))],
+      members: (current.members || []).map(member => {
+        const memberReturns = createdEntries.filter(entry => entry.item.memberId === member.id);
+        if (!memberReturns.length) return member;
+        return {
+          ...member,
+          timeline: [...(member.timeline || []), ...memberReturns.map(entry => ({
+            id: uid(),
+            type: "payment",
+            text: `Rücklastschrift ${money(entry.returnCase.amount)} · ${entry.returnCase.reason}`,
+            date: entry.returnCase.returnedAt,
+            ts: Date.parse(entry.returnCase.createdAt) || Date.now(),
+          }))],
+        };
+      }),
+    }));
+    const importedIds = new Set(createdEntries.map(entry => entry.transaction.id));
+    setImportRows(current => current.map(row => importedIds.has(row.transaction.id) ? { ...row, imported: true } : row));
+    setTab("returns");
+  };
+
+  const clearImportCount = (importRows || []).filter(row => !row.imported && row.itemId && row.suggestion && !row.suggestion.ambiguous).length;
+
   return (
     <div className="ddb-workspace">
       <header className="ddb-header">
@@ -324,7 +388,10 @@ export default function DirectDebitWorkspace({ data, save }) {
         <section className="ddb-import" aria-live="polite">
           <div className="ddb-section-heading">
             <div><span className="ddb-eyebrow">Importvorschau</span><h3>Naspa-Rückgaben abgleichen</h3><p>{importMessage} Bitte jede Zuordnung vor der Übernahme prüfen.</p></div>
-            <button className="ddb-text-button" type="button" onClick={() => setImportRows(null)}>Vorschau schließen</button>
+            <div className="ddb-import-actions">
+              {clearImportCount > 0 && <button className="ddb-button ddb-button--small" type="button" onClick={importAllClearReturns}>{clearImportCount} eindeutige übernehmen</button>}
+              <button className="ddb-text-button" type="button" onClick={() => setImportRows(null)}>Vorschau schließen</button>
+            </div>
           </div>
           {importRows.length > 0 && <div className="ddb-table-wrap"><table className="ddb-table">
             <thead><tr><th>Bankbuchung</th><th>Grund</th><th>Betrag</th><th>Zuordnung</th><th></th></tr></thead>
@@ -334,10 +401,10 @@ export default function DirectDebitWorkspace({ data, save }) {
                 <td>{row.transaction.reason}</td>
                 <td><strong>{money(row.transaction.amount + row.transaction.fee)}</strong>{row.transaction.fee > 0 && <small>{money(row.transaction.amount)} Einzug · {money(row.transaction.fee)} Kosten</small>}</td>
                 <td>
-                  <select aria-label={`Zuordnung für ${row.transaction.name}`} disabled={row.imported} value={row.itemId} onChange={event => setImportRows(current => current.map((entry, rowIndex) => rowIndex === index ? { ...entry, itemId: event.target.value } : entry))}>
+                  {row.suggestion && !row.suggestion.ambiguous ? <div className="ddb-auto-match"><strong>{row.suggestion.item.memberName}</strong><small>{money(row.suggestion.item.amount)} · {monthLabel(runs.find(run => run.id === row.suggestion.item.runId)?.month)}</small></div> : <select aria-label={`Zuordnung für ${row.transaction.name}`} disabled={row.imported} value={row.itemId} onChange={event => setImportRows(current => current.map((entry, rowIndex) => rowIndex === index ? { ...entry, itemId: event.target.value } : entry))}>
                     <option value="">Bitte auswählen…</option>
                     {eligibleImportItems.map(item => <option key={item.id} value={item.id}>{item.memberName} · {money(item.amount)} · {monthLabel(runs.find(run => run.id === item.runId)?.month)}</option>)}
-                  </select>
+                  </select>}
                   {row.suggestion && <small className={`ddb-confidence ddb-confidence--${row.suggestion.confidence}`}>Vorschlag {row.suggestion.confidence}: {row.suggestion.reasons.join(", ")}{row.suggestion.ambiguous ? " · mehrdeutig" : ""}</small>}
                 </td>
                 <td>{row.imported ? <StatusPill status="bezahlt" /> : <button className="ddb-button ddb-button--small" disabled={!row.itemId} type="button" onClick={() => importReturn(index)}>Übernehmen</button>}</td>

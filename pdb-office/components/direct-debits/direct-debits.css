@@ -78,6 +78,9 @@
 .ddb-section-heading--filters { align-items: flex-end; }
 .ddb-import { margin-bottom: 18px; border-color: #d4c4ae; }
 .ddb-import-message { margin: 0 0 16px; padding: 12px 15px; border: 1px solid #d4c4ae; border-radius: 11px; color: #554832; background: #fbf7ef; font-size: 13px; font-weight: 700; }
+.ddb-import-actions { display: flex; align-items: center; gap: 12px; }
+.ddb-auto-match { min-width: 230px; padding: 8px 10px; border: 1px solid #cfe0d7; border-radius: 9px; color: #245d46; background: #f2f8f5; }
+.ddb-auto-match::before { content: "✓ Automatisch zugeordnet"; display: block; margin-bottom: 3px; color: #39765d; font-size: 9px; font-weight: 850; letter-spacing: .06em; text-transform: uppercase; }
 .ddb-filters input,
 .ddb-filters select { min-width: 205px; }
 
