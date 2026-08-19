@@ -283,13 +283,26 @@ export function parseNaspaReturnCsv(text, { idFactory } = {}) {
   const amountIndex = headers.findIndex(header => header === "betrag" || header === "umsatz");
   const originalAmountIndex = findColumn(headers, ["lastschrift ursprungsbetrag"]);
   const feeIndex = findColumn(headers, ["auslagenersatz rucklastschrift"]);
-  const bookingTextIndex = findColumn(headers, ["buchungstext", "umsatzart"]);
+  const bookingTextIndex = headers.findIndex(header => header === "buchungstext" || header === "umsatzart");
   const nameIndex = findColumn(headers, ["zahlungspflichtiger", "begunstigter", "name gegenkonto", "empfanger"]);
-  const purposeIndex = findColumn(headers, ["verwendungszweck", "buchungstext", "umsatzart"]);
+  const purposeIndex = headers.findIndex(header => header === "verwendungszweck") >= 0
+    ? headers.findIndex(header => header === "verwendungszweck")
+    : bookingTextIndex;
   const ibanIndex = findColumn(headers, ["iban gegenkonto", "gegenkonto iban", "iban"]);
   const makeId = typeof idFactory === "function" ? idFactory : () => crypto.randomUUID();
 
-  return rows.slice(1).map(columns => {
+  const bankRows = rows.slice(1).map(columns => ({
+    columns,
+    date: parseDate(columns[dateIndex]),
+    name: columns[nameIndex] || "Unbekannt",
+    iban: normalizeIban(columns[ibanIndex] || ""),
+    bookingAmount: parseGermanAmount(columns[amountIndex]),
+    bookingText: String(columns[bookingTextIndex] || ""),
+    purpose: String(columns[purposeIndex] || ""),
+  }));
+
+  return bankRows.map(bankRow => {
+    const { columns } = bankRow;
     const purpose = [columns[purposeIndex], ...columns].filter(Boolean).join(" ");
     const normalizedPurpose = normalizeText(purpose);
     const returnMatch = /(rucklastschrift|lastschriftruckgabe|retoure|return debit|r transaction)/.test(normalizedPurpose);
@@ -314,7 +327,24 @@ export function parseNaspaReturnCsv(text, { idFactory } = {}) {
       reasonCode,
       reason: RETURN_REASON_LABELS[reasonCode] || "Rückgabegrund nicht erkannt",
     };
-    return { ...transaction, sourceFingerprint: returnTransactionFingerprint(transaction) };
+    const recoveredPayment = bankRows
+      .filter(candidate => candidate.date > transaction.date && candidate.bookingAmount > 0)
+      .filter(candidate => (
+        (normalizeText(candidate.name) && normalizeText(candidate.name) === normalizeText(transaction.name))
+        || (candidate.iban && transaction.iban && candidate.iban === transaction.iban)
+      ))
+      .filter(candidate => candidate.bookingAmount >= transaction.amount && candidate.bookingAmount <= transaction.amount + 50)
+      .sort((left, right) => left.date.localeCompare(right.date))[0];
+    return {
+      ...transaction,
+      recoveredPayment: recoveredPayment ? {
+        date: recoveredPayment.date,
+        amount: recoveredPayment.bookingAmount,
+        bookingText: recoveredPayment.bookingText,
+        purpose: recoveredPayment.purpose.slice(0, 500),
+      } : null,
+      sourceFingerprint: returnTransactionFingerprint(transaction),
+    };
   }).filter(Boolean);
 }
 
@@ -364,6 +394,8 @@ export function createReturnCase({ item, run, transaction, fee = 0, note = "", i
   const returnedAt = transaction?.date || now.slice(0, 10);
   const reasonCode = transaction?.reasonCode || "";
   const reason = transaction?.reason || RETURN_REASON_LABELS[reasonCode] || "Manuell erfasst";
+  const recoveredPayment = transaction?.recoveredPayment || null;
+  const isRecovered = Boolean(recoveredPayment?.date);
   return {
     id: caseId,
     runId: run.id,
@@ -376,18 +408,26 @@ export function createReturnCase({ item, run, transaction, fee = 0, note = "", i
     returnedAt,
     reasonCode,
     reason,
-    status: "offen",
-    nextActionAt: returnedAt,
+    status: isRecovered ? "bezahlt" : "offen",
+    nextActionAt: isRecovered ? "" : returnedAt,
+    paidAt: recoveredPayment?.date || "",
+    paidAmount: Number(recoveredPayment?.amount) || 0,
     note: String(note || "").trim(),
     sourceTransactionId: transaction?.id || "",
     createdAt: now,
     updatedAt: now,
+    closedAt: isRecovered ? now : "",
     history: [{
       id: makeId(),
       at: now,
       type: "created",
       text: transaction ? "Rücklastschrift aus Kontoexport übernommen" : "Rücklastschrift manuell erfasst",
-    }],
+    }, ...(isRecovered ? [{
+      id: makeId(),
+      at: now,
+      type: "payment",
+      text: `Folgezahlung vom ${recoveredPayment.date} automatisch erkannt`,
+    }] : [])],
   };
 }
 
@@ -419,6 +459,6 @@ export function getReturnCaseSummary(cases = []) {
   return {
     openCount: open.length,
     openAmount: open.reduce((sum, item) => sum + Number(item.amount || 0) + Number(item.fee || 0), 0),
-    recoveredAmount: cases.filter(item => item.status === "bezahlt").reduce((sum, item) => sum + Number(item.amount || 0) + Number(item.fee || 0), 0),
+    recoveredAmount: cases.filter(item => item.status === "bezahlt").reduce((sum, item) => sum + (Number(item.paidAmount) || Number(item.amount || 0) + Number(item.fee || 0)), 0),
   };
 }

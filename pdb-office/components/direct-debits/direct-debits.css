@@ -81,6 +81,7 @@
 .ddb-import-actions { display: flex; align-items: center; gap: 12px; }
 .ddb-auto-match { min-width: 230px; padding: 8px 10px; border: 1px solid #cfe0d7; border-radius: 9px; color: #245d46; background: #f2f8f5; }
 .ddb-auto-match::before { content: "✓ Automatisch zugeordnet"; display: block; margin-bottom: 3px; color: #39765d; font-size: 9px; font-weight: 850; letter-spacing: .06em; text-transform: uppercase; }
+.ddb-table td small.ddb-recovered { margin-top: 6px; color: #39765d; font-weight: 800; }
 .ddb-filters input,
 .ddb-filters select { min-width: 205px; }
 

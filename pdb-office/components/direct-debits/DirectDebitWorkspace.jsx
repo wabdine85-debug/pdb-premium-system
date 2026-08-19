@@ -140,7 +140,7 @@ export default function DirectDebitWorkspace({ data, save }) {
       ...current,
       returnDebitCases: [...(current.returnDebitCases || []), created],
       directDebitItems: (current.directDebitItems || []).map(entry => entry.id === item.id
-        ? { ...entry, status: "zurueckgegeben", returnCaseId: created.id, updatedAt: created.updatedAt }
+        ? { ...entry, status: created.status === "bezahlt" ? "ausgeglichen" : "zurueckgegeben", returnCaseId: created.id, updatedAt: created.updatedAt }
         : entry),
       directDebitRuns: (current.directDebitRuns || []).map(entry => entry.id === run.id
         ? { ...entry, status: "rueckgaben", updatedAt: created.updatedAt }
@@ -311,7 +311,7 @@ export default function DirectDebitWorkspace({ data, save }) {
       returnDebitCases: [...(current.returnDebitCases || []), ...createdEntries.map(entry => entry.returnCase)],
       directDebitItems: (current.directDebitItems || []).map(item => caseByItem.has(item.id) ? {
         ...item,
-        status: "zurueckgegeben",
+        status: caseByItem.get(item.id).status === "bezahlt" ? "ausgeglichen" : "zurueckgegeben",
         returnCaseId: caseByItem.get(item.id).id,
         updatedAt: caseByItem.get(item.id).updatedAt,
       } : item),
@@ -398,7 +398,7 @@ export default function DirectDebitWorkspace({ data, save }) {
             <tbody>{importRows.map((row, index) => (
               <tr key={row.transaction.id}>
                 <td><strong>{row.transaction.name}</strong><small>{dateLabel(row.transaction.date)} · {row.transaction.mandateReference || "ohne Mandatsreferenz"}</small></td>
-                <td>{row.transaction.reason}</td>
+                <td>{row.transaction.reason}{row.transaction.recoveredPayment && <small className="ddb-recovered">✓ Folgezahlung {dateLabel(row.transaction.recoveredPayment.date)} · {money(row.transaction.recoveredPayment.amount)}</small>}</td>
                 <td><strong>{money(row.transaction.amount + row.transaction.fee)}</strong>{row.transaction.fee > 0 && <small>{money(row.transaction.amount)} Einzug · {money(row.transaction.fee)} Kosten</small>}</td>
                 <td>
                   {row.suggestion && !row.suggestion.ambiguous ? <div className="ddb-auto-match"><strong>{row.suggestion.item.memberName}</strong><small>{money(row.suggestion.item.amount)} · {monthLabel(runs.find(run => run.id === row.suggestion.item.runId)?.month)}</small></div> : <select aria-label={`Zuordnung für ${row.transaction.name}`} disabled={row.imported} value={row.itemId} onChange={event => setImportRows(current => current.map((entry, rowIndex) => rowIndex === index ? { ...entry, itemId: event.target.value } : entry))}>
@@ -506,7 +506,7 @@ export default function DirectDebitWorkspace({ data, save }) {
 
       {selectedCase && caseDraft && <div className="ddb-modal-backdrop" role="presentation"><form className="ddb-modal ddb-modal--case" onSubmit={saveCase} role="dialog" aria-modal="true" aria-labelledby="ddb-case-title">
         <div className="ddb-modal__heading"><div><span className="ddb-eyebrow">Rücklastschriftfall</span><h3 id="ddb-case-title">{selectedCase.memberName}</h3></div><button aria-label="Fenster schließen" type="button" onClick={() => { setSelectedCaseId(""); setCaseDraft(null); }}>×</button></div>
-        <div className="ddb-case-amount"><span>Offener Gesamtbetrag</span><strong>{money(Number(caseDraft.amount) + Number(caseDraft.fee || 0))}</strong><small>{money(caseDraft.amount)} Einzug · {money(caseDraft.fee)} Kosten</small></div>
+        <div className="ddb-case-amount"><span>{caseDraft.status === "bezahlt" ? "Eingegangene Folgezahlung" : "Offener Gesamtbetrag"}</span><strong>{money(caseDraft.status === "bezahlt" && caseDraft.paidAmount ? caseDraft.paidAmount : Number(caseDraft.amount) + Number(caseDraft.fee || 0))}</strong><small>{caseDraft.status === "bezahlt" && caseDraft.paidAt ? `bezahlt am ${dateLabel(caseDraft.paidAt)}` : `${money(caseDraft.amount)} Einzug · ${money(caseDraft.fee)} Kosten`}</small></div>
         <div className="ddb-form-grid">
           <label>Status<select value={caseDraft.status} onChange={event => setCaseDraft(current => ({ ...current, status: event.target.value }))}>{RETURN_CASE_STATUSES.map(status => <option key={status.value} value={status.value}>{status.label}</option>)}</select></label>
           <label>Nächste Aktion<input type="date" disabled={isClosed(caseDraft.status)} value={caseDraft.nextActionAt || ""} onChange={event => setCaseDraft(current => ({ ...current, nextActionAt: event.target.value }))} /></label>

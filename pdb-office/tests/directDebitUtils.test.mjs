@@ -106,6 +106,25 @@ test("Naspa CAMT V8 uses original amount, derives fees and ignores invoice recei
   assert.equal(result[0].reasonCode, "MS02");
 });
 
+test("Naspa CSV detects a later customer payment after the return debit", () => {
+  const csv = [
+    "Buchungstag;Buchungstext;Verwendungszweck;Lastschrift Ursprungsbetrag;Beguenstigter/Zahlungspflichtiger;Kontonummer/IBAN;Betrag",
+    "02.07.26;LS RUECKBELASTUNG;RUECKLASTSCHRIFT Sonstige Gruende;149,00;Anna Beispiel;DE111;-152,57",
+    "14.07.26;ECHTZEIT-GUTSCHRIFT;Monat Juli;;Anna Beispiel;DE222;155,00",
+  ].join("\n");
+  const transaction = parseNaspaReturnCsv(csv, { idFactory: ids() })[0];
+  assert.deepEqual(transaction.recoveredPayment, {
+    date: "2026-07-14",
+    amount: 155,
+    bookingText: "ECHTZEIT-GUTSCHRIFT",
+    purpose: "Monat Juli",
+  });
+  const created = createReturnCase({ item: { id: "i", amount: 149 }, run: { id: "r" }, transaction, idFactory: ids() });
+  assert.equal(created.status, "bezahlt");
+  assert.equal(created.paidAt, "2026-07-14");
+  assert.equal(created.paidAmount, 155);
+});
+
 test("bank CSV decoding supports Naspa Windows-1252 exports", () => {
   const bytes = Uint8Array.from([0x52, 0xfc, 0x63, 0x6b]);
   assert.equal(decodeBankCsv(bytes), "Rück");
