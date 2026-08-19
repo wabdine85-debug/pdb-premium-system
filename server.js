@@ -1,12 +1,14 @@
 import { assertRuntimeEnv, env } from './src/config/env.js';
 import {
   ensureContractActionSchema,
-  ensureMemberMonthlyUsageImportSchema
+  ensureMemberMonthlyUsageImportSchema,
+  ensurePremiumAdminSchema
 } from './src/services/schema.service.js';
 
 assertRuntimeEnv();
 await ensureContractActionSchema();
 await ensureMemberMonthlyUsageImportSchema();
+await ensurePremiumAdminSchema();
 
 const { default: app } = await import('./app.js');
 

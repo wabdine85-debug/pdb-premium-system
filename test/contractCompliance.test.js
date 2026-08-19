@@ -8,7 +8,8 @@ import {
 } from '../src/services/contractDocuments.service.js';
 import {
   ensureContractActionSchema,
-  ensureMemberMonthlyUsageImportSchema
+  ensureMemberMonthlyUsageImportSchema,
+  ensurePremiumAdminSchema
 } from '../src/services/schema.service.js';
 import { hasHouseNumber, hasRequiredContractConsents } from '../src/utils/contractConsent.js';
 import {
@@ -125,6 +126,17 @@ test('member usage import schema is additive and auditable', async () => {
   assert.match(queries[0], /CREATE TABLE IF NOT EXISTS member_monthly_usage_imports/);
   assert.match(queries[0], /UNIQUE \(member_id, booking_month, category_key\)/);
   assert.match(queries[1], /CREATE INDEX IF NOT EXISTS/);
+});
+
+test('premium admin schema is prepared idempotently at startup', async () => {
+  const queries = [];
+  await ensurePremiumAdminSchema({ query: async (sql) => queries.push(sql) });
+  const sql = queries.join('\n');
+  assert.match(sql, /ADD COLUMN IF NOT EXISTS entitlement_multiplier/);
+  assert.match(sql, /ADD COLUMN IF NOT EXISTS appointment_date/);
+  assert.match(sql, /CREATE TABLE IF NOT EXISTS booking_admin_events/);
+  assert.match(sql, /booking_rescheduled/);
+  assert.match(sql, /bookings_appointment_date_idx/);
 });
 
 test('membership application requires an explicit 18+ confirmation', () => {
