@@ -110,7 +110,7 @@
 .revenue-total-note { max-width: 400px; color: rgba(255,255,255,.55); font-size: 12px; line-height: 1.5; text-align: right; }
 
 .revenue-grid { display: grid; gap: 18px; margin-top: 18px; }
-.revenue-grid.metrics { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.revenue-grid.metrics { grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
 .revenue-grid.two { grid-template-columns: minmax(0, 1.35fr) minmax(340px, .65fr); }
 .revenue-grid.equal { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 
@@ -125,6 +125,9 @@
 
 .revenue-metric { min-height: 116px; display: flex; flex-direction: column; justify-content: space-between; }
 .revenue-metric-value { font-size: clamp(23px, 2.2vw, 34px); font-weight: 800; letter-spacing: -.035em; }
+.revenue-total-value.is-loading,
+.revenue-metric-value.is-loading { font-size: 15px; letter-spacing: 0; color: #8f887f; font-weight: 750; }
+.revenue-total-value.is-loading { color: rgba(255,255,255,.68); }
 .revenue-metric-label { color: var(--muted); font-size: 12px; font-weight: 700; }
 .revenue-metric-hint { color: #9a938a; font-size: 11px; }
 

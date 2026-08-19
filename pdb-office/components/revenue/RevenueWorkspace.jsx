@@ -300,7 +300,7 @@ export default function RevenueWorkspace({ data, save }) {
   };
 
   const maxMonthlyTotal = Math.max(...monthlySummaries.map(item => item.total), 1);
-  const compositionTotal = Math.max(summary.total, 1);
+  const compositionTotal = Math.max(financeReady ? summary.total : summary.total - summary.premium, 1);
   const sortedReports = [...reports].sort((left, right) => right.month.localeCompare(left.month) || right.version - left.version);
 
   return (
@@ -322,7 +322,9 @@ export default function RevenueWorkspace({ data, save }) {
         <div className="revenue-hero-bottom">
           <div>
             <div className="revenue-total-label">Gesamtzufluss inklusive Premium</div>
-            <div className="revenue-total-value">{fmt(summary.total)}</div>
+            <div className={`revenue-total-value ${!financeReady ? "is-loading" : ""}`}>
+              {financeReady ? fmt(summary.total) : "Umsatz wird abgeglichen …"}
+            </div>
           </div>
           <div className="revenue-total-note">
             Alle Zahlungsarten inklusive Bar fließen in diese Summe ein. Premium wird automatisch aus Member Finanzen aktualisiert.
@@ -334,14 +336,17 @@ export default function RevenueWorkspace({ data, save }) {
 
       <div className="revenue-grid metrics">
         {[
-          ["Geschäftsumsatz", summary.business, `${fmt(summary.businessWithoutPremium)} Tagesgeschäft`],
-          ["Premium", summary.premium, financeMonths[selectedMonth] != null ? "live aus Member Finanzen" : "Excel-Fallback"],
-          ["Private Zuflüsse", summary.personal, "PayPal Privat · vollständig enthalten"],
-          ["Offene Zahlungen", openReceivableTotal, `${openReceivables.length} offen`],
-        ].map(([label, value, hint]) => (
+          { label: "Geschäftsumsatz", value: summary.business, hint: `${fmt(summary.businessWithoutPremium)} Tagesgeschäft`, waitsForFinance: true },
+          { label: "Premium", value: summary.premium, hint: !financeReady ? "Member Finanzen werden geladen" : financeMonths[selectedMonth] != null ? "live aus Member Finanzen" : "Excel-Fallback", waitsForFinance: true },
+          { label: "Bar", value: summary.channelTotals.cash, hint: "Alle Barzahlungen dieses Monats" },
+          { label: "Private Zuflüsse", value: summary.channelTotals.paypalPrivate, hint: "PayPal Privat" },
+          { label: "Offene Zahlungen", value: openReceivableTotal, hint: `${openReceivables.length} offen` },
+        ].map(({ label, value, hint, waitsForFinance }) => (
           <div className="revenue-card revenue-metric" key={label}>
             <div className="revenue-metric-label">{label}</div>
-            <div className="revenue-metric-value">{fmt(value)}</div>
+            <div className={`revenue-metric-value ${waitsForFinance && !financeReady ? "is-loading" : ""}`}>
+              {waitsForFinance && !financeReady ? "Wird abgeglichen …" : fmt(value)}
+            </div>
             <div className="revenue-metric-hint">{hint}</div>
           </div>
         ))}
@@ -351,8 +356,8 @@ export default function RevenueWorkspace({ data, save }) {
         <div className="revenue-section-head">
           <div><div className="revenue-section-kicker">{savedDay ? "Gespeicherten Tag bearbeiten" : "Heute eintragen"}</div><h3>{savedDay ? dateLabel(savedDay.date) : "Tagesabschluss"}</h3><p className="revenue-section-copy">{savedDay ? "Änderungen können verworfen oder nach dem Speichern einmal zurückgesetzt werden." : "Ein Datum, sechs Summen – alles Weitere rechnet sich selbst."}</p></div>
           <div className="revenue-inline-actions">
-            <button className="revenue-button secondary" onClick={() => downloadCsv(currentSnapshot())}>CSV laden</button>
-            <button className="revenue-button champagne" onClick={() => printPdf(currentSnapshot())}>PDF drucken</button>
+            <button className="revenue-button secondary" disabled={!financeReady} onClick={() => downloadCsv(currentSnapshot())}>CSV laden</button>
+            <button className="revenue-button champagne" disabled={!financeReady} onClick={() => printPdf(currentSnapshot())}>PDF drucken</button>
             {savedDay?.undoSnapshot && <button className="revenue-button secondary" onClick={undoLastDayChange}>↶ Letzte Änderung</button>}
             {hasDraftChanges && savedDay && <button className="revenue-button secondary" onClick={discardDayChanges}>Änderungen verwerfen</button>}
             <button className="revenue-button" disabled={!hasDraftChanges} onClick={saveDay}>{savedDay ? "Änderungen speichern" : "Tag speichern"}</button>
@@ -377,11 +382,11 @@ export default function RevenueWorkspace({ data, save }) {
             <div className="revenue-card-head"><div><div className="revenue-section-kicker">Verteilung</div><h3 style={{ margin: "4px 0 0" }}>Monatsmix</h3></div><strong>{summary.activeDays} aktive Tage</strong></div>
             <div className="revenue-composition">
               {REVENUE_CHANNELS.map(channel => <span key={channel.key} style={{ width: `${(summary.channelTotals[channel.key] / compositionTotal) * 100}%`, background: channel.color }} />)}
-              <span style={{ width: `${(summary.premium / compositionTotal) * 100}%`, background: "#c8a974" }} />
+              {financeReady && <span style={{ width: `${(summary.premium / compositionTotal) * 100}%`, background: "#c8a974" }} />}
             </div>
             <div className="revenue-legend">
               {[...REVENUE_CHANNELS, { key: "premium", shortLabel: "Premium", color: "#c8a974" }].map(channel => (
-                <div className="revenue-legend-item" key={channel.key}><span className="revenue-legend-dot" style={{ background: channel.color }} /><span>{channel.shortLabel}</span><strong>{fmt(channel.key === "premium" ? summary.premium : summary.channelTotals[channel.key])}</strong></div>
+                <div className="revenue-legend-item" key={channel.key}><span className="revenue-legend-dot" style={{ background: channel.color }} /><span>{channel.shortLabel}</span><strong>{channel.key === "premium" && !financeReady ? "…" : fmt(channel.key === "premium" ? summary.premium : summary.channelTotals[channel.key])}</strong></div>
               ))}
             </div>
           </div>
@@ -414,13 +419,13 @@ export default function RevenueWorkspace({ data, save }) {
       <section className="revenue-section">
         <div className="revenue-section-head"><div><div className="revenue-section-kicker">Überblick</div><h3>Monate im Vergleich</h3></div></div>
         <div className="revenue-card" style={{ marginTop: 16 }}>
-          <div className="revenue-month-bars">
+          {!financeReady ? <div className="revenue-empty">Monatsvergleich wird mit Member Finanzen abgeglichen …</div> : <div className="revenue-month-bars">
             {monthlySummaries.map(item => (
               <button key={item.month} onClick={() => selectMonth(item.month)} style={{ border: 0, background: "transparent", padding: 0, cursor: "pointer", font: "inherit", color: "inherit" }}>
                 <div className="revenue-month-bar"><strong>{monthLabel(item.month, { month: "short", year: "2-digit" })}</strong><div className="revenue-month-bar-track"><div className="revenue-month-bar-fill" style={{ width: `${Math.max(1, (item.total / maxMonthlyTotal) * 100)}%` }} /></div><strong style={{ textAlign: "right" }}>{fmt(item.total)}</strong></div>
               </button>
             ))}
-          </div>
+          </div>}
         </div>
       </section>
 
@@ -454,7 +459,7 @@ export default function RevenueWorkspace({ data, save }) {
       </div>
 
       <section className="revenue-section revenue-card">
-        <div className="revenue-card-head"><div><div className="revenue-section-kicker">Monatsabschluss</div><h3 style={{ margin: "4px 0 0" }}>Berichtsarchiv</h3><p className="revenue-section-copy">Abgeschlossene Monate werden beim nächsten Öffnen automatisch archiviert. Änderungen erzeugen eine neue Version.</p></div><button className="revenue-button" onClick={() => createReportVersion(selectedMonth)}>Neue Version archivieren</button></div>
+        <div className="revenue-card-head"><div><div className="revenue-section-kicker">Monatsabschluss</div><h3 style={{ margin: "4px 0 0" }}>Berichtsarchiv</h3><p className="revenue-section-copy">Abgeschlossene Monate werden beim nächsten Öffnen automatisch archiviert. Änderungen erzeugen eine neue Version.</p></div><button className="revenue-button" disabled={!financeReady} onClick={() => createReportVersion(selectedMonth)}>Neue Version archivieren</button></div>
         <div style={{ marginTop: 16 }}>
           {sortedReports.length === 0 && <div className="revenue-empty">Das Archiv wird nach dem ersten Monatsabschluss automatisch gefüllt.</div>}
           {sortedReports.map(report => (

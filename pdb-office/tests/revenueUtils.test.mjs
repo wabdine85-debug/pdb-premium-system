@@ -42,9 +42,9 @@ test("private PayPal remains separated while cash is revenue", () => {
 
 test("January import reconciles with the live member-finance premium", { skip: !hasPrivateSeed }, () => {
   const summary = monthSummary(seed.entries, "2026-01", 7669);
-  assert.equal(summary.businessWithoutPremium, 14934.7);
-  assert.equal(summary.personal, 12767);
-  assert.equal(summary.business, 22603.7);
+  assert.equal(summary.businessWithoutPremium, 26499.7);
+  assert.equal(summary.personal, 1202);
+  assert.equal(summary.business, 34168.7);
   assert.equal(summary.total, 35370.7);
   assert.equal(summary.activeDays, 23);
 });
