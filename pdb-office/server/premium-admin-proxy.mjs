@@ -3,6 +3,8 @@ const ROUTES = [
   { method: "GET", pattern: /^\/members\/(\d+)$/, target: match => `/api/admin/members/${match[1]}` },
   { method: "POST", pattern: /^\/members\/(\d+)\/manual-usage$/, target: match => `/api/admin/members/${match[1]}/manual-usage` },
   { method: "POST", pattern: /^\/bookings\/(\d+)\/cancel-manual$/, target: match => `/api/admin/bookings/${match[1]}/cancel-manual` },
+  { method: "POST", pattern: /^\/bookings\/(\d+)\/cancel$/, target: match => `/api/admin/bookings/${match[1]}/cancel` },
+  { method: "POST", pattern: /^\/bookings\/(\d+)\/reschedule$/, target: match => `/api/admin/bookings/${match[1]}/reschedule` },
   { method: "GET", pattern: /^\/contracts$/, target: () => "/api/contracts/admin" },
 ];
 

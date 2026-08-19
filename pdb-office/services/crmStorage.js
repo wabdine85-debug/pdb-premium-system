@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { DEFAULT_INVOICE_PROFILE_ID, defaultInvoiceProfiles } from "../modules/invoices/invoiceProfiles.js";
 import revenueSeed from "../data/revenue-seed-default.json";
+import { normalizeRevenueEntry } from "../modules/revenue/revenueUtils.js";
 import { getStorageRevision } from "./storageRevision.js";
 
 const STORAGE_KEY = "crm_data_v1";
@@ -72,7 +73,7 @@ export function migrateData(rawData) {
   const invoiceProfiles = Array.from(profileMap.values());
   return {
     ...merged,
-    revenueEntries: hasRevenueEntries ? rawData.revenueEntries : revenueSeed.entries,
+    revenueEntries: (hasRevenueEntries ? rawData.revenueEntries : revenueSeed.entries).map(normalizeRevenueEntry),
     revenueReceivables: hasRevenueReceivables ? rawData.revenueReceivables : revenueSeed.receivables,
     revenuePremiumFallbacks: { ...revenueSeed.premiumFallbacks, ...(rawData?.revenuePremiumFallbacks || {}) },
     revenueReports: Array.isArray(rawData?.revenueReports) ? rawData.revenueReports : [],

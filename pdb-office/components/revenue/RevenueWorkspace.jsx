@@ -12,6 +12,7 @@ import {
   monthSummary,
   reportFromMonth,
   reportToCsv,
+  revenueChannelAmount,
   roundMoney,
 } from "../../modules/revenue/revenueUtils.js";
 import { createRevenueEntryRevision, revenueEntryHasChanges, undoRevenueEntry } from "../../modules/revenue/revenueHistory.js";
@@ -22,7 +23,6 @@ const emptyEntry = date => ({
   id: `revenue-${date}`,
   date,
   cash: 0,
-  cashBusiness: 0,
   card: 0,
   shopify: 0,
   paypalPrivate: 0,
@@ -72,7 +72,7 @@ function PrintSheet({ report }) {
         <thead><tr><th>Datum</th>{REVENUE_CHANNELS.map(channel => <th key={channel.key}>{channel.shortLabel}</th>)}<th>Gesamt</th></tr></thead>
         <tbody>
           {(report.entries || []).map(entry => (
-            <tr key={entry.date}><td>{entry.date}</td>{REVENUE_CHANNELS.map(channel => <td key={channel.key}>{fmt(entry[channel.key] || 0)}</td>)}<td>{fmt(entryTotals(entry).total)}</td></tr>
+            <tr key={entry.date}><td>{entry.date}</td>{REVENUE_CHANNELS.map(channel => <td key={channel.key}>{fmt(revenueChannelAmount(entry, channel.key))}</td>)}<td>{fmt(entryTotals(entry).total)}</td></tr>
           ))}
         </tbody>
       </table>
@@ -146,17 +146,20 @@ export default function RevenueWorkspace({ data, save }) {
     save(previous => ({ ...previous, revenueReports: [...(previous.revenueReports || []), ...automaticReports] }));
   }, [financeReady, availableMonths.join("|"), currentMonth]);
 
-  useEffect(() => {
-    const preferredDate = selectedMonth === currentMonth ? today() : `${selectedMonth}-01`;
-    const existing = entries.find(entry => entry.date === preferredDate);
-    setSelectedDate(preferredDate);
-    setDraft(existing ? { ...existing } : emptyEntry(preferredDate));
-  }, [selectedMonth]);
-
   const selectDate = date => {
+    if (!date) return;
     const existing = entries.find(entry => entry.date === date);
+    setSelectedMonth(date.slice(0, 7));
     setSelectedDate(date);
     setDraft(existing ? { ...existing } : emptyEntry(date));
+  };
+
+  const selectMonth = month => {
+    const preferredDate = month === currentMonth ? today() : `${month}-01`;
+    setSelectedMonth(month);
+    setSelectedDate(preferredDate);
+    const existing = entries.find(entry => entry.date === preferredDate);
+    setDraft(existing ? { ...existing } : emptyEntry(preferredDate));
   };
 
   const updateDraft = (key, value) => setDraft(current => ({
@@ -310,7 +313,7 @@ export default function RevenueWorkspace({ data, save }) {
           </div>
           <div className="revenue-month-switcher" aria-label="Monat auswählen">
             {availableMonths.map(month => (
-              <button key={month} className={`revenue-month-button ${month === selectedMonth ? "is-active" : ""}`} onClick={() => setSelectedMonth(month)}>
+              <button key={month} className={`revenue-month-button ${month === selectedMonth ? "is-active" : ""}`} onClick={() => selectMonth(month)}>
                 {monthLabel(month, { month: "short", year: "2-digit" })}
               </button>
             ))}
@@ -322,7 +325,7 @@ export default function RevenueWorkspace({ data, save }) {
             <div className="revenue-total-value">{fmt(summary.total)}</div>
           </div>
           <div className="revenue-total-note">
-            Geschäftsumsatz und persönliche Zuflüsse bleiben getrennt sichtbar. Premium wird automatisch aus Member Finanzen aktualisiert.
+            Alle Zahlungsarten inklusive Bar fließen in diese Summe ein. Premium wird automatisch aus Member Finanzen aktualisiert.
           </div>
         </div>
       </section>
@@ -333,7 +336,7 @@ export default function RevenueWorkspace({ data, save }) {
         {[
           ["Geschäftsumsatz", summary.business, `${fmt(summary.businessWithoutPremium)} Tagesgeschäft`],
           ["Premium", summary.premium, financeMonths[selectedMonth] != null ? "live aus Member Finanzen" : "Excel-Fallback"],
-          ["Persönliche Zuflüsse", summary.personal, "Bar privat (Bestand) + PayPal Privat"],
+          ["Private Zuflüsse", summary.personal, "PayPal Privat · vollständig enthalten"],
           ["Offene Zahlungen", openReceivableTotal, `${openReceivables.length} offen`],
         ].map(([label, value, hint]) => (
           <div className="revenue-card revenue-metric" key={label}>
@@ -359,10 +362,10 @@ export default function RevenueWorkspace({ data, save }) {
         <div className="revenue-grid two">
           <div className="revenue-card">
             <div className="revenue-form-grid">
-              <Field label="Datum"><input className="revenue-input" type="date" value={draft.date} onChange={event => { setSelectedDate(event.target.value); setDraft(current => ({ ...current, date: event.target.value, id: `revenue-${event.target.value}` })); }} /></Field>
+              <Field label="Datum"><input className="revenue-input" type="date" value={draft.date} onChange={event => selectDate(event.target.value)} /></Field>
               {REVENUE_CHANNELS.map(channel => (
                 <Field key={channel.key} label={channel.label}>
-                  <input className="revenue-input" type="number" min="0" step="0.01" inputMode="decimal" value={draft[channel.key] || ""} placeholder="0,00" onChange={event => updateDraft(channel.key, event.target.value)} />
+                  <input className="revenue-input" type="number" min="0" step="0.01" inputMode="decimal" value={revenueChannelAmount(draft, channel.key) || ""} placeholder="0,00" onChange={event => updateDraft(channel.key, event.target.value)} />
                 </Field>
               ))}
               <Field label="Notiz" span={3}><input className="revenue-input" value={draft.note || ""} placeholder="Optional – was war heute wichtig?" onChange={event => updateDraft("note", event.target.value)} /></Field>
@@ -396,7 +399,7 @@ export default function RevenueWorkspace({ data, save }) {
                 return (
                   <tr key={entry.date} className={entry.date === selectedDate ? "is-selected" : ""}>
                     <td><button className="revenue-date-button" onClick={() => selectDate(entry.date)}>{dateLabel(entry.date)}</button></td>
-                    {REVENUE_CHANNELS.map(channel => <td key={channel.key}><Money value={entry[channel.key]} /></td>)}
+                    {REVENUE_CHANNELS.map(channel => <td key={channel.key}><Money value={revenueChannelAmount(entry, channel.key)} /></td>)}
                     <td><strong><Money value={totals.total} /></strong></td>
                     <td className="revenue-note" title={entry.note || ""}>{entry.note || "—"}</td>
                     <td>{totals.total > 0 || entry.note ? <button className="revenue-button secondary small" onClick={() => selectDate(entry.date)}>Bearbeiten</button> : <span className="revenue-zero">—</span>}</td>
@@ -413,7 +416,7 @@ export default function RevenueWorkspace({ data, save }) {
         <div className="revenue-card" style={{ marginTop: 16 }}>
           <div className="revenue-month-bars">
             {monthlySummaries.map(item => (
-              <button key={item.month} onClick={() => setSelectedMonth(item.month)} style={{ border: 0, background: "transparent", padding: 0, cursor: "pointer", font: "inherit", color: "inherit" }}>
+              <button key={item.month} onClick={() => selectMonth(item.month)} style={{ border: 0, background: "transparent", padding: 0, cursor: "pointer", font: "inherit", color: "inherit" }}>
                 <div className="revenue-month-bar"><strong>{monthLabel(item.month, { month: "short", year: "2-digit" })}</strong><div className="revenue-month-bar-track"><div className="revenue-month-bar-fill" style={{ width: `${Math.max(1, (item.total / maxMonthlyTotal) * 100)}%` }} /></div><strong style={{ textAlign: "right" }}>{fmt(item.total)}</strong></div>
               </button>
             ))}

@@ -1,12 +1,13 @@
 import React, { useEffect, useMemo, useState } from "react";
 import {
   applyBeyondMonthlyUsage,
-  cancelPremiumManualUsage,
+  cancelPremiumBooking,
   getBeyondReconciliation,
   getPremiumMember,
   listPremiumContracts,
   listPremiumMembers,
   recordPremiumManualUsage,
+  reschedulePremiumBooking,
 } from "../../services/premiumAdmin.js";
 import "./premium-administration.css";
 
@@ -28,11 +29,24 @@ function formatDate(value) {
   return new Date(`${String(value).slice(0, 10)}T00:00:00`).toLocaleDateString("de-DE");
 }
 
+function currentDate() {
+  const now = new Date();
+  now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+  return now.toISOString().slice(0, 10);
+}
+
+function monthFromDate(value) {
+  return /^\d{4}-\d{2}-\d{2}$/.test(value || "") ? `${value.slice(0, 7)}-01` : "";
+}
+
 function errorMessage(error) {
   if (error?.code === "PREMIUM_ADMIN_NOT_CONFIGURED") return "Render-Verbindung ist noch nicht eingerichtet.";
   if (error?.code === "PREMIUM_ADMIN_UNAVAILABLE") return "Render ist momentan nicht erreichbar.";
   if (error?.status === 401) return "Der Render-Adminzugang ist nicht gültig.";
   if (error?.status === 404) return "Die neue Member-Verwaltung ist auf Render noch nicht veröffentlicht.";
+  if (error?.code === "LIMIT_REACHED") return "Für diesen Leistungsmonat ist kein Kontingent mehr frei.";
+  if (error?.code === "APPOINTMENT_DATE_INVALID") return "Bitte ein gültiges Termindatum auswählen.";
+  if (["BOOKING_NOT_CANCELLABLE", "BOOKING_NOT_RESCHEDULABLE"].includes(error?.code)) return "Dieser Termin wurde bereits geändert. Bitte die Ansicht aktualisieren.";
   return "Die Online-Verwaltung konnte nicht geladen werden.";
 }
 
@@ -67,9 +81,9 @@ export default function PremiumAdministration({ crmMemberships = [] }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [notice, setNotice] = useState("");
-  const [usage, setUsage] = useState({ booking_month: "", treatment_key: "", actor: "", reason: "" });
+  const [usage, setUsage] = useState({ appointment_date: currentDate(), booking_month: monthFromDate(currentDate()), treatment_key: "", actor: "", reason: "" });
   const [confirmUsage, setConfirmUsage] = useState(false);
-  const [cancellation, setCancellation] = useState(null);
+  const [bookingAction, setBookingAction] = useState(null);
   const [reconciliation, setReconciliation] = useState(null);
   const [reconciliationLoading, setReconciliationLoading] = useState(false);
   const [reconciliationError, setReconciliationError] = useState(null);
@@ -163,16 +177,16 @@ export default function PremiumAdministration({ crmMemberships = [] }) {
     }
   };
 
-  const openMember = async memberId => {
+  const openMember = async (memberId, month = "") => {
     setSelectedId(memberId);
     setDetail(null);
     setError(null);
     try {
-      const payload = await getPremiumMember(memberId);
+      const payload = await getPremiumMember(memberId, month);
       setDetail(payload);
       setUsage(current => ({
         ...current,
-        booking_month: payload.months?.[0]?.month || "",
+        booking_month: monthFromDate(current.appointment_date),
         treatment_key: payload.treatments?.[0]?.treatment_key || "",
       }));
     } catch (nextError) {
@@ -187,24 +201,33 @@ export default function PremiumAdministration({ crmMemberships = [] }) {
     try {
       await recordPremiumManualUsage(selectedId, usage);
       setNotice("Termin wurde als verbraucht protokolliert.");
-      await openMember(selectedId);
+      await openMember(selectedId, usage.booking_month);
     } catch (nextError) {
       setError(nextError);
     }
   };
 
-  const cancelManualUsage = async () => {
-    if (!cancellation) return;
+  const saveBookingAction = async () => {
+    if (!bookingAction) return;
     setNotice("");
     setError(null);
     try {
-      await cancelPremiumManualUsage(cancellation.booking.id, {
-        actor: cancellation.actor,
-        reason: cancellation.reason,
-      });
-      setCancellation(null);
-      setNotice("Die manuelle Verbuchung wurde rückgängig gemacht. Das Kontingent ist wieder frei.");
-      await openMember(selectedId);
+      if (bookingAction.type === "reschedule") {
+        await reschedulePremiumBooking(bookingAction.booking.id, {
+          appointment_date: bookingAction.appointment_date,
+          actor: bookingAction.actor,
+          reason: bookingAction.reason,
+        });
+        setNotice(`Termin auf den ${formatDate(bookingAction.appointment_date)} verschoben.`);
+      } else {
+        await cancelPremiumBooking(bookingAction.booking.id, {
+          actor: bookingAction.actor,
+          reason: bookingAction.reason,
+        });
+        setNotice("Termin storniert. Das Kontingent ist wieder frei.");
+      }
+      setBookingAction(null);
+      await openMember(selectedId, bookingAction.type === "reschedule" ? monthFromDate(bookingAction.appointment_date) : bookingAction.booking.booking_month?.slice(0, 10));
     } catch (nextError) {
       setError(nextError);
     }
@@ -273,29 +296,25 @@ export default function PremiumAdministration({ crmMemberships = [] }) {
                 <div className="premium-admin__usage">
                   <h5>Termin als verbraucht markieren</h5>
                   <div className="premium-admin__form-grid">
-                    <label>Leistungsmonat<select value={usage.booking_month} onChange={event => setUsage(current => ({ ...current, booking_month: event.target.value }))}>{(detail.months || []).map(month => <option key={month.month} value={month.month}>{formatDate(month.month)}</option>)}</select></label>
+                    <label>Vereinbarter Termin<input type="date" value={usage.appointment_date} onChange={event => setUsage(current => ({ ...current, appointment_date: event.target.value, booking_month: monthFromDate(event.target.value) }))} /></label>
                     <label>Behandlung<select value={usage.treatment_key} onChange={event => setUsage(current => ({ ...current, treatment_key: event.target.value }))}>{(detail.treatments || []).map(treatment => <option key={treatment.treatment_key} value={treatment.treatment_key}>{treatment.title}</option>)}</select></label>
                     <label>Bearbeitet von<input value={usage.actor} onChange={event => setUsage(current => ({ ...current, actor: event.target.value }))} placeholder="Name" /></label>
                     <label>Grund<input value={usage.reason} onChange={event => setUsage(current => ({ ...current, reason: event.target.value }))} placeholder="z. B. bereits vor Ort wahrgenommen" /></label>
                   </div>
-                  <button className="premium-admin__primary" disabled={!usage.booking_month || !usage.treatment_key || usage.actor.trim().length < 2 || usage.reason.trim().length < 3} onClick={() => setConfirmUsage(true)}>Als verbraucht markieren</button>
+                  <button className="premium-admin__primary" disabled={!usage.appointment_date || !usage.booking_month || !usage.treatment_key || usage.actor.trim().length < 2 || usage.reason.trim().length < 3} onClick={() => setConfirmUsage(true)}>Termin verbuchen</button>
                 </div>
 
                 <div className="premium-admin__bookings">
                   <h5>Verbuchte Termine</h5>
                   {(detail.bookings || []).map(booking => (
                     <div key={booking.id}>
-                      <span>{formatDate(booking.booking_month)} · {booking.treatment_title}</span>
+                      <span><strong>{booking.appointment_date ? formatDate(booking.appointment_date) : "Termin-Datum nicht erfasst"}</strong> · {booking.treatment_title}<small>Leistungsmonat {formatDate(booking.booking_month)}</small></span>
                       <div className="premium-admin__booking-actions">
                         <strong>{booking.status === "cancelled" ? "wieder freigegeben" : booking.source === "admin_manual" ? "manuell" : "online"}</strong>
-                        {booking.source === "admin_manual" && booking.status !== "cancelled" && (
-                          <button
-                            className="premium-admin__undo"
-                            onClick={() => setCancellation({ booking, actor: usage.actor, reason: "" })}
-                          >
-                            Rückgängig – wieder freigeben
-                          </button>
-                        )}
+                        {booking.status !== "cancelled" && <>
+                          <button className="premium-admin__undo" onClick={() => setBookingAction({ type: "reschedule", booking, appointment_date: booking.appointment_date?.slice(0, 10) || currentDate(), actor: usage.actor, reason: "" })}>Verschieben</button>
+                          <button className="premium-admin__undo premium-admin__undo--danger" onClick={() => setBookingAction({ type: "cancel", booking, actor: usage.actor, reason: "" })}>Stornieren</button>
+                        </>}
                       </div>
                     </div>
                   ))}
@@ -405,24 +424,31 @@ export default function PremiumAdministration({ crmMemberships = [] }) {
         </div>
       )}
 
-      {cancellation && (
-        <div className="premium-admin__confirm" role="dialog" aria-modal="true" aria-labelledby="cancel-manual-usage-title">
+      {bookingAction && (
+        <div className="premium-admin__confirm" role="dialog" aria-modal="true" aria-labelledby="booking-action-title">
           <div>
-            <h4 id="cancel-manual-usage-title">Kontingent wieder freigeben?</h4>
-            <p>{formatDate(cancellation.booking.booking_month)} · {cancellation.booking.treatment_title}. Nur diese manuelle Verbuchung wird rückgängig gemacht.</p>
+            <h4 id="booking-action-title">{bookingAction.type === "reschedule" ? "Termin verschieben?" : "Termin stornieren?"}</h4>
+            <p>
+              {bookingAction.booking.treatment_title}. Die Änderung wird mit Bearbeiter und Grund protokolliert.
+              {bookingAction.booking.source === "online" && " Der verknüpfte Salonized-Termin muss zusätzlich in Salonized geändert werden."}
+            </p>
             <div className="premium-admin__cancel-fields">
+              {bookingAction.type === "reschedule" && <label>
+                Neuer Termin
+                <input type="date" value={bookingAction.appointment_date} onChange={event => setBookingAction(current => ({ ...current, appointment_date: event.target.value }))} />
+              </label>}
               <label>
                 Bearbeitet von
-                <input value={cancellation.actor} onChange={event => setCancellation(current => ({ ...current, actor: event.target.value }))} placeholder="Name" />
+                <input value={bookingAction.actor} onChange={event => setBookingAction(current => ({ ...current, actor: event.target.value }))} placeholder="Name" />
               </label>
               <label>
                 Grund
-                <input value={cancellation.reason} onChange={event => setCancellation(current => ({ ...current, reason: event.target.value }))} placeholder="z. B. versehentlich verbucht" />
+                <input value={bookingAction.reason} onChange={event => setBookingAction(current => ({ ...current, reason: event.target.value }))} placeholder={bookingAction.type === "reschedule" ? "z. B. Kundenwunsch" : "z. B. Kundin hat abgesagt"} />
               </label>
             </div>
             <div>
-              <button onClick={() => setCancellation(null)}>Abbrechen</button>
-              <button className="premium-admin__primary" disabled={cancellation.actor.trim().length < 2 || cancellation.reason.trim().length < 3} onClick={cancelManualUsage}>Rückgängig – wieder freigeben</button>
+              <button onClick={() => setBookingAction(null)}>Abbrechen</button>
+              <button className="premium-admin__primary" disabled={(bookingAction.type === "reschedule" && !bookingAction.appointment_date) || bookingAction.actor.trim().length < 2 || bookingAction.reason.trim().length < 3} onClick={saveBookingAction}>{bookingAction.type === "reschedule" ? "Termin verschieben" : "Termin stornieren"}</button>
             </div>
           </div>
         </div>

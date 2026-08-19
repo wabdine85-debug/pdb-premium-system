@@ -19,6 +19,12 @@ zusammengeführt.
   Absenden bestätigt.
 - Kontingentänderungen werden im Premium-System protokolliert. Lokale
   Membership-Datensätze in PDB Office bleiben unverändert.
+- Manuelle Verbuchungen benötigen ein konkretes vereinbartes Termindatum.
+  Aktive Member-Buchungen können mit Audit-Grund verschoben oder storniert
+  werden; der Leistungsmonat wird aus dem Termindatum abgeleitet.
+- Bei Online-Buchungen ändert diese Admin-Aktion den Premium-Kontingenteintrag.
+  Ein verknüpfter Salonized-Termin muss bis zu einer eigenen Salonized-API-
+  Integration zusätzlich dort geändert oder storniert werden.
 
 ## Produktions-Rollout
 

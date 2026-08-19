@@ -9,6 +9,8 @@ test("premium admin proxy only exposes allow-listed routes", () => {
   assert.equal(resolvePremiumAdminRoute("GET", "/members/17"), "/api/admin/members/17");
   assert.equal(resolvePremiumAdminRoute("POST", "/members/17/manual-usage"), "/api/admin/members/17/manual-usage");
   assert.equal(resolvePremiumAdminRoute("POST", "/bookings/23/cancel-manual"), "/api/admin/bookings/23/cancel-manual");
+  assert.equal(resolvePremiumAdminRoute("POST", "/bookings/23/cancel"), "/api/admin/bookings/23/cancel");
+  assert.equal(resolvePremiumAdminRoute("POST", "/bookings/23/reschedule"), "/api/admin/bookings/23/reschedule");
   assert.equal(resolvePremiumAdminRoute("GET", "/contracts"), "/api/contracts/admin");
   assert.equal(resolvePremiumAdminRoute("GET", "/contracts/17/sepa"), null);
   assert.equal(resolvePremiumAdminRoute("DELETE", "/members/17"), null);

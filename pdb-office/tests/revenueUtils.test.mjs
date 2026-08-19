@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { existsSync } from "node:fs";
 import fs from "node:fs/promises";
 import test from "node:test";
-import { entryTotals, monthSummary, reportFromMonth, reportToCsv } from "../modules/revenue/revenueUtils.js";
+import { entryTotals, monthSummary, normalizeRevenueEntry, reportFromMonth, reportToCsv } from "../modules/revenue/revenueUtils.js";
 
 const privateSeedUrl = new URL("../data/revenue-seed-2026.json", import.meta.url);
 const hasPrivateSeed = existsSync(privateSeedUrl);
@@ -12,17 +12,31 @@ const seed = hasPrivateSeed
 
 test("daily totals separate business and personal inflows", () => {
   assert.deepEqual(entryTotals({ cash: 100, cashBusiness: 80, card: 200, paypalPrivate: 50, shopify: 20 }), {
-    business: 300,
-    personal: 150,
+    business: 400,
+    personal: 50,
     total: 450,
   });
 });
 
-test("customer cash payments remain business revenue without reclassifying historical cash", () => {
-  assert.deepEqual(entryTotals({ cash: 75, cashBusiness: 125 }), {
-    business: 125,
-    personal: 75,
-    total: 200,
+test("all historical cash columns merge into one business cash channel", () => {
+  const legacyEntry = { cash: 75, cashBusiness: 125, cashPrivate: 10, barPrivat: 5 };
+  assert.deepEqual(entryTotals(legacyEntry), {
+    business: 215,
+    personal: 0,
+    total: 215,
+  });
+  const normalized = normalizeRevenueEntry(legacyEntry);
+  assert.equal(normalized.cash, 215);
+  assert.equal("cashBusiness" in normalized, false);
+  assert.equal("cashPrivate" in normalized, false);
+  assert.equal("barPrivat" in normalized, false);
+});
+
+test("private PayPal remains separated while cash is revenue", () => {
+  assert.deepEqual(entryTotals({ cash: 75, paypalPrivate: 25 }), {
+    business: 75,
+    personal: 25,
+    total: 100,
   });
 });
 

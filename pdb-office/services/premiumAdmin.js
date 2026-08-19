@@ -76,3 +76,17 @@ export function cancelPremiumManualUsage(bookingId, input) {
     body: JSON.stringify(input),
   });
 }
+
+export function cancelPremiumBooking(bookingId, input) {
+  return requestPremiumAdmin(`/bookings/${bookingId}/cancel`, {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
+export function reschedulePremiumBooking(bookingId, input) {
+  return requestPremiumAdmin(`/bookings/${bookingId}/reschedule`, {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}

@@ -1,8 +1,5 @@
 export const REVENUE_CHANNELS = [
-  // Keep the historical `cash` bucket untouched. Older imports used it for
-  // private cash movements, so reclassifying it would change closed reports.
-  { key: "cash", label: "BAR PRIVAT (BESTAND)", shortLabel: "Bar privat", group: "personal", color: "#8a8176" },
-  { key: "cashBusiness", label: "BAR", shortLabel: "Bar", group: "business", color: "#171717" },
+  { key: "cash", label: "BAR", shortLabel: "Bar", group: "business", color: "#171717" },
   { key: "card", label: "KARTE", shortLabel: "Karte", group: "business", color: "#75624a" },
   { key: "shopify", label: "SHOPIFY", shortLabel: "Shopify", group: "business", color: "#6c7f65" },
   { key: "paypalPrivate", label: "PAYPAL PRIVAT", shortLabel: "PayPal Privat", group: "personal", color: "#9a8d7b" },
@@ -10,19 +7,35 @@ export const REVENUE_CHANNELS = [
   { key: "treatwell", label: "TREATWELL", shortLabel: "Treatwell", group: "business", color: "#9a675a" },
 ];
 
+// Older imports used a second cash column. Keep those values, but expose and
+// persist only one clear "Bar" channel in the current journal.
+export const LEGACY_CASH_KEYS = ["cashBusiness", "cashPrivate", "privateCash", "barPrivate", "barPrivat"];
+
 export const STAFF_MEMBERS = ["Wafa", "Nabila", "Shazia", "Raffaela"];
 
 export function roundMoney(value) {
   return Math.round((Number(value) || 0) * 100) / 100;
 }
 
+export function revenueChannelAmount(entry = {}, channelKey) {
+  const currentAmount = Number(entry[channelKey]) || 0;
+  if (channelKey !== "cash") return currentAmount;
+  return currentAmount + LEGACY_CASH_KEYS.reduce((sum, key) => sum + (Number(entry[key]) || 0), 0);
+}
+
+export function normalizeRevenueEntry(entry = {}) {
+  const normalized = { ...entry, cash: roundMoney(revenueChannelAmount(entry, "cash")) };
+  LEGACY_CASH_KEYS.forEach(key => delete normalized[key]);
+  return normalized;
+}
+
 export function entryTotals(entry = {}) {
   const business = REVENUE_CHANNELS
     .filter(channel => channel.group === "business")
-    .reduce((sum, channel) => sum + (Number(entry[channel.key]) || 0), 0);
+    .reduce((sum, channel) => sum + revenueChannelAmount(entry, channel.key), 0);
   const personal = REVENUE_CHANNELS
     .filter(channel => channel.group === "personal")
-    .reduce((sum, channel) => sum + (Number(entry[channel.key]) || 0), 0);
+    .reduce((sum, channel) => sum + revenueChannelAmount(entry, channel.key), 0);
   return {
     business: roundMoney(business),
     personal: roundMoney(personal),
@@ -44,7 +57,7 @@ export function monthSummary(entries = [], month = "", premium = 0) {
 
   rows.forEach(entry => {
     REVENUE_CHANNELS.forEach(channel => {
-      channelTotals[channel.key] += Number(entry[channel.key]) || 0;
+      channelTotals[channel.key] += revenueChannelAmount(entry, channel.key);
     });
     const totals = entryTotals(entry);
     businessWithoutPremium += totals.business;
@@ -118,7 +131,7 @@ export function reportToCsv(report) {
     ["Datum", ...REVENUE_CHANNELS.map(channel => channel.label), "Tagessumme", "Notiz"],
     ...(report.entries || []).map(entry => [
       entry.date,
-      ...REVENUE_CHANNELS.map(channel => roundMoney(entry[channel.key])),
+      ...REVENUE_CHANNELS.map(channel => roundMoney(revenueChannelAmount(entry, channel.key))),
       entryTotals(entry).total,
       entry.note || "",
     ]),
