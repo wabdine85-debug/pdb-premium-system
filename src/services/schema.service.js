@@ -139,4 +139,17 @@ export async function ensurePremiumAdminSchema(db = pool) {
     CREATE INDEX IF NOT EXISTS bookings_appointment_date_idx
       ON bookings (appointment_date, status)
   `);
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS test_record_purges (
+      id BIGSERIAL PRIMARY KEY,
+      application_id UUID NOT NULL,
+      mandate_reference TEXT NOT NULL,
+      member_id INTEGER,
+      shopify_customer_id BIGINT NOT NULL,
+      actor TEXT NOT NULL,
+      reason TEXT NOT NULL,
+      removed_counts JSONB NOT NULL DEFAULT '{}'::jsonb,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
 }

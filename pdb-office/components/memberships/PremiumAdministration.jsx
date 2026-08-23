@@ -348,6 +348,9 @@ export default function PremiumAdministration({ crmMemberships = [] }) {
               <strong>{contract.first_name} {contract.last_name}</strong>
               <span>{PACKAGE_LABELS[contract.package_key] || contract.package_key} · Start {formatDate(contract.starts_on)}</span>
               <small>{contract.status} · {contract.masked_iban || "IBAN geschützt"}</small>
+              <small className={contract.early_start_requested_at ? "premium-admin__consent premium-admin__consent--yes" : "premium-admin__consent"}>
+                Vorzeitiger Leistungsbeginn: {contract.early_start_requested_at ? `Ja · bestätigt am ${formatDateTime(contract.early_start_requested_at)} Uhr` : "Nein"}
+              </small>
             </div>
           ))}
           {!contracts.length && <div className="premium-admin__empty">Keine Verträge vorhanden.</div>}

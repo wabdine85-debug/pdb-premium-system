@@ -138,6 +138,7 @@ test('premium admin schema is prepared idempotently at startup', async () => {
   assert.match(sql, /booking_appointment_date_added/);
   assert.match(sql, /booking_rescheduled/);
   assert.match(sql, /bookings_appointment_date_idx/);
+  assert.match(sql, /CREATE TABLE IF NOT EXISTS test_record_purges/);
 });
 
 test('membership application requires an explicit 18+ confirmation', () => {

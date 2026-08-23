@@ -124,3 +124,16 @@ export async function setPremiumCustomerTag(customerId, packageKey) {
   ];
   if (errors.length) throw new Error(`SHOPIFY_TAG_UPDATE_FAILED: ${JSON.stringify(errors)}`);
 }
+
+export async function removePremiumCustomerTags(customerId) {
+  const id = `gid://shopify/Customer/${customerId}`;
+  const tags = ['premium-pure', 'premium-define', 'premium-beyond', 'premium-private'];
+  const data = await graphql(
+    `mutation RemovePremiumTags($id: ID!, $tags: [String!]!) {
+      tagsRemove(id: $id, tags: $tags) { userErrors { field message } }
+    }`,
+    { id, tags }
+  );
+  const errors = data.tagsRemove.userErrors || [];
+  if (errors.length) throw new Error(`SHOPIFY_TAG_UPDATE_FAILED: ${JSON.stringify(errors)}`);
+}

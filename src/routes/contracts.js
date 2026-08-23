@@ -29,7 +29,7 @@ import {
   requestCancellation
 } from '../repositories/contract.repository.js';
 import { createMember, findMemberByShopifyId, updateMemberByShopifyId } from '../repositories/member.repository.js';
-import { setPremiumCustomerTag } from '../services/shopifyAdmin.service.js';
+import { removePremiumCustomerTags, setPremiumCustomerTag } from '../services/shopifyAdmin.service.js';
 import {
   adminApplicationNotificationHtml,
   applicationConfirmationHtml,
@@ -38,6 +38,7 @@ import {
 import { sendTransactionalHtml } from '../services/mail.service.js';
 import { reserveNextMandateReference } from '../services/mandateReference.service.js';
 import { syncAcceptedContractToCrm } from '../services/crmContractSync.service.js';
+import { purgeTestApplication } from '../services/testRecordPurge.service.js';
 import { getPackageOffer, SETUP_FEE_CENTS } from '../utils/packageCatalog.js';
 import {
   decryptIban,
@@ -568,6 +569,63 @@ router.post('/admin/:id/test-booking-access', requireAdminAccess, async (req, re
   } catch (error) {
     console.error('POST /api/contracts/admin/:id/test-booking-access failed:', error.message);
     return res.status(500).json({ ok: false, error: 'TEST_BOOKING_ACCESS_FAILED' });
+  }
+});
+
+router.post('/admin/:id/purge-test-record', requireAdminAccess, async (req, res) => {
+  const actor = cleanText(req.body?.actor, 80);
+  const reason = cleanText(req.body?.reason, 240);
+  const confirmation = String(req.body?.confirmation || '');
+  const confirmationReference = cleanText(req.body?.confirmation_reference, 80);
+  const expectedEmail = cleanText(req.body?.expected_email, 254).toLowerCase();
+  if (
+    confirmation !== 'TESTDATENSATZ ENDGÜLTIG LÖSCHEN'
+    || actor.length < 2
+    || reason.length < 8
+  ) {
+    return res.status(400).json({ ok: false, error: 'TEST_RECORD_PURGE_CONFIRMATION_REQUIRED' });
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const application = await findApplicationForAdmin(req.params.id, client);
+    if (!application) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ ok: false, error: 'APPLICATION_NOT_FOUND' });
+    }
+    if (
+      application.status !== 'active'
+      || confirmationReference !== application.mandate_reference
+      || expectedEmail !== String(application.email || '').toLowerCase()
+    ) {
+      await client.query('ROLLBACK');
+      return res.status(409).json({ ok: false, error: 'TEST_RECORD_PURGE_TARGET_MISMATCH' });
+    }
+    const relatedContracts = await client.query(
+      `SELECT id
+       FROM membership_applications
+       WHERE shopify_customer_id = $1
+         AND id <> $2
+         AND status IN ('active', 'cancel_requested')
+       LIMIT 1`,
+      [application.shopify_customer_id, application.id]
+    );
+    if (relatedContracts.rows.length) {
+      await client.query('ROLLBACK');
+      return res.status(409).json({ ok: false, error: 'TEST_RECORD_HAS_RELATED_CONTRACT' });
+    }
+
+    await removePremiumCustomerTags(application.shopify_customer_id);
+    const removed = await purgeTestApplication({ application, actor, reason }, client);
+    await client.query('COMMIT');
+    return res.json({ ok: true, removed });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('Test record purge failed:', error.message);
+    return res.status(502).json({ ok: false, error: 'TEST_RECORD_PURGE_FAILED' });
+  } finally {
+    client.release();
   }
 });
 

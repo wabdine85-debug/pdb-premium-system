@@ -3,11 +3,12 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 test('admin portal uses a password session without exposing credentials', async () => {
-  const [appSource, page, script, styles] = await Promise.all([
+  const [appSource, page, script, styles, officeMemberships] = await Promise.all([
     readFile(new URL('../app.js', import.meta.url), 'utf8'),
     readFile(new URL('../public/admin-contracts.html', import.meta.url), 'utf8'),
     readFile(new URL('../public/admin-assets/contracts.js', import.meta.url), 'utf8'),
-    readFile(new URL('../public/admin-assets/contracts.css', import.meta.url), 'utf8')
+    readFile(new URL('../public/admin-assets/contracts.css', import.meta.url), 'utf8'),
+    readFile(new URL('../pdb-office/components/memberships/PremiumAdministration.jsx', import.meta.url), 'utf8')
   ]);
   assert.match(appSource, /app\.get\('\/admin\/contracts'/);
   assert.match(appSource, /Cache-Control', 'no-store'/);
@@ -31,4 +32,10 @@ test('admin portal uses a password session without exposing credentials', async 
   assert.match(script, /Vertragsbestätigung erneut senden/);
   assert.match(script, /Test-Buchung 2 Stunden freigeben/);
   assert.match(script, /statusFilter\.value = 'active'/);
+  assert.match(script, /Vorzeitiger Leistungsbeginn/);
+  assert.match(script, /application\.early_start_requested_at/);
+  assert.match(script, /Testdatensatz vollständig löschen/);
+  assert.match(script, /TESTDATENSATZ ENDGÜLTIG LÖSCHEN/);
+  assert.match(officeMemberships, /Vorzeitiger Leistungsbeginn:/);
+  assert.match(officeMemberships, /contract\.early_start_requested_at/);
 });
