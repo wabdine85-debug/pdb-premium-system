@@ -34,8 +34,6 @@ test('admin portal uses a password session without exposing credentials', async 
   assert.match(script, /statusFilter\.value = 'active'/);
   assert.match(script, /Vorzeitiger Leistungsbeginn/);
   assert.match(script, /application\.early_start_requested_at/);
-  assert.match(script, /Testdatensatz vollständig löschen/);
-  assert.match(script, /TESTDATENSATZ ENDGÜLTIG LÖSCHEN/);
   assert.match(officeMemberships, /Vorzeitiger Leistungsbeginn:/);
   assert.match(officeMemberships, /contract\.early_start_requested_at/);
 });

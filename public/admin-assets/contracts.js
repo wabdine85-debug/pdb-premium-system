@@ -74,11 +74,7 @@
         APPLICATION_NOT_ACTIVATABLE: 'Dieser Antrag kann nicht aktiviert werden.',
         APPLICATION_NOT_ACTIVE: 'Diese Aktion ist nur für aktive Verträge möglich.',
         CONFIRMATION_EMAIL_NOT_SENT: 'Die E-Mail konnte nicht versendet werden. Bitte SMTP-Verbindung prüfen und erneut versuchen.',
-        TEST_BOOKING_ACCESS_FAILED: 'Der Testzugang konnte nicht gespeichert werden. Bitte erneut versuchen.',
-        TEST_RECORD_PURGE_CONFIRMATION_REQUIRED: 'Die Sicherheitsbestätigung für die Testdaten fehlt.',
-        TEST_RECORD_PURGE_TARGET_MISMATCH: 'Die Vertragsdaten stimmen nicht mit dem bestätigten Testkonto überein.',
-        TEST_RECORD_HAS_RELATED_CONTRACT: 'Für dieses Shopify-Konto besteht noch ein weiterer aktiver Vertrag.',
-        TEST_RECORD_PURGE_FAILED: 'Der Testdatensatz konnte nicht vollständig entfernt werden.'
+        TEST_BOOKING_ACCESS_FAILED: 'Der Testzugang konnte nicht gespeichert werden. Bitte erneut versuchen.'
       };
       if (result.error === 'ADMIN_AUTH_REQUIRED' && path !== '/admin/session') {
         recoveryToken = '';
@@ -230,16 +226,6 @@
         testAccessButton.dataset.reference = application.mandate_reference;
         actions.appendChild(testAccessButton);
 
-        const purgeButton = document.createElement('button');
-        purgeButton.className = 'button button-danger';
-        purgeButton.type = 'button';
-        purgeButton.textContent = 'Testdatensatz vollständig löschen';
-        purgeButton.dataset.action = 'purge-test-record';
-        purgeButton.dataset.id = application.id;
-        purgeButton.dataset.reference = application.mandate_reference;
-        purgeButton.dataset.email = application.email;
-        purgeButton.dataset.name = `${application.first_name} ${application.last_name}`;
-        actions.appendChild(purgeButton);
       }
 
       card.append(heading, grid, actions);
@@ -368,22 +354,6 @@
       adminActionConfirmButton.disabled = true;
       adminActionDialog.showModal();
     }
-    if (button.dataset.action === 'purge-test-record') {
-      pendingAdminAction = {
-        action: button.dataset.action,
-        id: button.dataset.id,
-        reference: button.dataset.reference,
-        email: button.dataset.email,
-        name: button.dataset.name
-      };
-      adminActionHeading.textContent = 'Testdatensatz endgültig löschen?';
-      adminActionCopy.textContent = `${button.dataset.name} (${button.dataset.reference}) wird vollständig aus Vertragsdatenbank, Online-Kontingenten und verknüpften CRM-Testdaten entfernt. Auch Testbuchungen und Premium-Tags werden gelöscht. Das Shopify-Kundenkonto bleibt bestehen.`;
-      adminActionConfirmationCopy.textContent = 'Ich bestätige, dass dies ein Testkonto ist und die genannten Daten endgültig gelöscht werden dürfen.';
-      adminActionConfirmButton.textContent = 'Endgültig löschen';
-      adminActionConfirmation.checked = false;
-      adminActionConfirmButton.disabled = true;
-      adminActionDialog.showModal();
-    }
   });
 
   sepaDialog.addEventListener('close', () => sepaDetails.replaceChildren());
@@ -433,28 +403,12 @@
     adminActionConfirmButton.disabled = true;
     adminActionConfirmButton.textContent = action.action === 'resend-confirmation'
       ? 'Bestätigung wird gesendet…'
-      : action.action === 'purge-test-record'
-        ? 'Testdaten werden gelöscht…'
-        : 'Testzugang wird freigegeben…';
+      : 'Testzugang wird freigegeben…';
     try {
-      const result = await adminRequest(`/admin/${encodeURIComponent(action.id)}/${action.action}`, {
-        method: 'POST',
-        ...(action.action === 'purge-test-record' ? {
-          body: JSON.stringify({
-            confirmation: 'TESTDATENSATZ ENDGÜLTIG LÖSCHEN',
-            confirmation_reference: action.reference,
-            expected_email: action.email,
-            actor: 'Codex',
-            reason: 'Vom Betreiber ausdrücklich als Testkonto bestätigt.'
-          })
-        } : {})
-      });
+      const result = await adminRequest(`/admin/${encodeURIComponent(action.id)}/${action.action}`, { method: 'POST' });
       adminActionDialog.close();
       if (action.action === 'resend-confirmation') {
         setStatus(adminStatus, 'Die Vertragsbestätigung wurde erneut versendet.');
-      } else if (action.action === 'purge-test-record') {
-        await loadApplications();
-        setStatus(adminStatus, `Der Testdatensatz ${action.reference} wurde vollständig entfernt.`);
       } else {
         const expiresAt = new Intl.DateTimeFormat('de-DE', {
           dateStyle: 'medium',
@@ -468,9 +422,7 @@
       adminActionConfirmButton.disabled = false;
       adminActionConfirmButton.textContent = action.action === 'resend-confirmation'
         ? 'Bestätigung senden'
-        : action.action === 'purge-test-record'
-          ? 'Endgültig löschen'
-          : '2 Stunden freigeben';
+        : '2 Stunden freigeben';
     }
   });
 
