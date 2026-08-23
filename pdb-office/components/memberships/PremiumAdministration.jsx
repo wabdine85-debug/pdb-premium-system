@@ -42,6 +42,13 @@ function formatDateTime(value) {
   });
 }
 
+function formatAccessDate(value) {
+  if (!value) return "—";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "—";
+  return date.toLocaleDateString("de-DE", { timeZone: "Europe/Berlin" });
+}
+
 function currentDate() {
   const now = new Date();
   now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
@@ -350,6 +357,9 @@ export default function PremiumAdministration({ crmMemberships = [] }) {
               <small>{contract.status} · {contract.masked_iban || "IBAN geschützt"}</small>
               <small className={contract.early_start_requested_at ? "premium-admin__consent premium-admin__consent--yes" : "premium-admin__consent"}>
                 Vorzeitiger Leistungsbeginn: {contract.early_start_requested_at ? `Ja · bestätigt am ${formatDateTime(contract.early_start_requested_at)} Uhr` : "Nein"}
+              </small>
+              <small className="premium-admin__access-date">
+                Buchungszugang sofort nach Annahme · Behandlung ab {formatAccessDate(contract.treatment_available_at)}
               </small>
             </div>
           ))}

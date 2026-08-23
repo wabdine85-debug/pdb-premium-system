@@ -48,6 +48,11 @@ input:focus-visible,select:focus-visible,.button:focus-visible{outline:3px solid
 .data-item{min-width:0;padding:13px;border-radius:12px;background:#f8f5f2}
 .data-label{display:block;color:var(--muted);font-size:12px}
 .data-value{display:block;margin-top:3px;font-weight:750;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+.access-guidance{display:grid;gap:3px;padding:15px 17px;border:1px solid var(--line);border-left-width:4px;border-radius:12px;background:#fbfaf8}
+.access-guidance strong{font-size:14px}
+.access-guidance span{color:var(--muted);font-size:13px}
+.access-guidance.is-confirmed{border-left-color:#4f735e;background:#f4f8f5}
+.access-guidance.is-waiting{border-left-color:#a06f39;background:#fbf6ee}
 .card-actions{display:flex;flex-wrap:wrap;gap:10px}
 .empty-state{padding:42px;text-align:center;border:1px dashed var(--line);border-radius:18px;background:rgba(255,255,255,.55)}
 dialog{width:min(620px,calc(100% - 28px));padding:0;border:0;border-radius:20px;color:var(--ink);box-shadow:0 26px 80px rgba(0,0,0,.28);overscroll-behavior:contain}

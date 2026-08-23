@@ -3,12 +3,14 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 test('admin portal uses a password session without exposing credentials', async () => {
-  const [appSource, page, script, styles, officeMemberships] = await Promise.all([
+  const [appSource, page, script, styles, officeMemberships, premiumTheme, productTheme] = await Promise.all([
     readFile(new URL('../app.js', import.meta.url), 'utf8'),
     readFile(new URL('../public/admin-contracts.html', import.meta.url), 'utf8'),
     readFile(new URL('../public/admin-assets/contracts.js', import.meta.url), 'utf8'),
     readFile(new URL('../public/admin-assets/contracts.css', import.meta.url), 'utf8'),
-    readFile(new URL('../pdb-office/components/memberships/PremiumAdministration.jsx', import.meta.url), 'utf8')
+    readFile(new URL('../pdb-office/components/memberships/PremiumAdministration.jsx', import.meta.url), 'utf8'),
+    readFile(new URL('../shopify-theme-premium-dummy-clean/sections/pdb-premium-membership.liquid', import.meta.url), 'utf8'),
+    readFile(new URL('../shopify-theme-premium-dummy-clean/sections/main-product.liquid', import.meta.url), 'utf8')
   ]);
   assert.match(appSource, /app\.get\('\/admin\/contracts'/);
   assert.match(appSource, /Cache-Control', 'no-store'/);
@@ -34,6 +36,12 @@ test('admin portal uses a password session without exposing credentials', async 
   assert.match(script, /statusFilter\.value = 'active'/);
   assert.match(script, /Vorzeitiger Leistungsbeginn/);
   assert.match(script, /application\.early_start_requested_at/);
+  assert.match(script, /Buchungszugang sofort nach Annahme/);
+  assert.match(script, /application\.treatment_available_at/);
   assert.match(officeMemberships, /Vorzeitiger Leistungsbeginn:/);
   assert.match(officeMemberships, /contract\.early_start_requested_at/);
+  assert.match(officeMemberships, /Behandlung ab/);
+  assert.match(premiumTheme, /\/apps\/pdb\/contracts\/early-start/);
+  assert.match(premiumTheme, /confirm_wertersatz/);
+  assert.match(productTheme, /TREATMENT_DATE_TOO_EARLY/);
 });

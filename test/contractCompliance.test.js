@@ -14,7 +14,8 @@ import {
 import { hasHouseNumber, hasRequiredContractConsents } from '../src/utils/contractConsent.js';
 import {
   calculateBookingAccess,
-  calculateBookingAccessWithTestOverride
+  calculateBookingAccessWithTestOverride,
+  isTreatmentDateAllowed
 } from '../src/services/bookingAccess.service.js';
 import {
   buildTransactionalMessage,
@@ -160,38 +161,46 @@ test('street address requires a house number', () => {
   assert.equal(hasHouseNumber('Rheinstraße'), false);
 });
 
-test('booking is blocked for 14 days when early performance was not requested', () => {
+test('booking opens immediately while treatment waits when early performance was not requested', () => {
   const application = {
     starts_on: '2026-08-01',
     activated_at: '2026-08-11T10:00:00.000Z',
     early_start_requested_at: null
   };
-  const blocked = calculateBookingAccess(application, new Date('2026-08-13T10:00:00.000Z'));
-  const allowed = calculateBookingAccess(application, new Date('2026-08-26T00:00:00.000Z'));
-  assert.equal(blocked.allowed, false);
-  assert.equal(blocked.reason, 'WITHDRAWAL_PERIOD_ACTIVE');
-  assert.equal(blocked.available_at, '2026-08-25T22:00:00.000Z');
-  assert.equal(allowed.allowed, true);
+  const access = calculateBookingAccess(application, new Date('2026-08-13T10:00:00.000Z'));
+  assert.equal(access.allowed, true);
+  assert.equal(access.reason, null);
+  assert.equal(access.treatment_allowed, false);
+  assert.equal(access.treatment_reason, 'WITHDRAWAL_PERIOD_ACTIVE');
+  assert.equal(access.treatment_available_at, '2026-08-25T22:00:00.000Z');
+  assert.equal(isTreatmentDateAllowed('2026-08-25', access.treatment_available_at), false);
+  assert.equal(isTreatmentDateAllowed('2026-08-26', access.treatment_available_at), true);
 });
 
-test('early performance permits booking from the contractual start date', () => {
+test('early performance permits treatment from the contractual start date', () => {
   const application = {
     starts_on: '2026-08-01',
     activated_at: '2026-08-11T10:00:00.000Z',
     early_start_requested_at: '2026-08-11T09:00:00.000Z'
   };
-  assert.equal(calculateBookingAccess(application, new Date('2026-08-11T10:01:00.000Z')).allowed, true);
+  const access = calculateBookingAccess(application, new Date('2026-08-11T10:01:00.000Z'));
+  assert.equal(access.allowed, true);
+  assert.equal(access.treatment_allowed, true);
+  assert.equal(isTreatmentDateAllowed('2026-08-11', access.treatment_available_at), true);
 });
 
-test('future contract start still blocks booking despite early-performance request', () => {
+test('future contract start permits planning but blocks an earlier treatment date', () => {
   const application = {
     starts_on: '2026-09-01',
     activated_at: '2026-08-11T10:00:00.000Z',
     early_start_requested_at: '2026-08-11T09:00:00.000Z'
   };
   const access = calculateBookingAccess(application, new Date('2026-08-20T10:00:00.000Z'));
-  assert.equal(access.allowed, false);
-  assert.equal(access.reason, 'CONTRACT_NOT_STARTED');
+  assert.equal(access.allowed, true);
+  assert.equal(access.treatment_allowed, false);
+  assert.equal(access.treatment_reason, 'CONTRACT_NOT_STARTED');
+  assert.equal(isTreatmentDateAllowed('2026-08-31', access.treatment_available_at), false);
+  assert.equal(isTreatmentDateAllowed('2026-09-01', access.treatment_available_at), true);
 });
 
 test('logged admin test access temporarily overrides booking timing without changing the contract', () => {
@@ -205,7 +214,10 @@ test('logged admin test access temporarily overrides booking timing without chan
     true,
     new Date('2026-08-11T12:00:00.000Z')
   );
-  assert.deepEqual(access, { allowed: true, reason: 'ADMIN_TEST_ACCESS', available_at: null });
+  assert.equal(access.allowed, true);
+  assert.equal(access.reason, 'ADMIN_TEST_ACCESS');
+  assert.equal(access.available_at, null);
+  assert.equal(access.treatment_allowed, false);
   assert.equal(application.early_start_requested_at, null);
   assert.equal(application.starts_on, '2026-09-01');
 });

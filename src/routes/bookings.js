@@ -18,7 +18,7 @@ import {
   requireShopifyCustomer,
   verifyShopifyAppProxy
 } from "../middleware/shopifyAppProxy.js";
-import { getMemberBookingAccess } from "../services/bookingAccess.service.js";
+import { getMemberBookingAccess, isTreatmentDateAllowed } from "../services/bookingAccess.service.js";
 import {
   getAuthorizedMember,
   isMemberAuthorizationError
@@ -311,6 +311,14 @@ router.post("/validate-slot", verifyShopifyAppProxy, requireShopifyCustomer, req
       });
     }
 
+    if (!isTreatmentDateAllowed(appointment_date, bookingAccess.treatment_available_at)) {
+      return res.status(403).json({
+        ok: false,
+        error: "TREATMENT_DATE_TOO_EARLY",
+        treatment_available_at: bookingAccess.treatment_available_at
+      });
+    }
+
     const allowedForPackage = getAllowedCategoriesForPackage(
       bookingToken.package_key
     );
@@ -512,6 +520,15 @@ router.post("/consume", verifyShopifyAppProxy, requireShopifyCustomer, requireMa
         ok: false,
         error: bookingAccess.reason,
         booking_available_at: bookingAccess.available_at
+      });
+    }
+
+    if (appointment_date && !isTreatmentDateAllowed(appointment_date, bookingAccess.treatment_available_at)) {
+      await client.query("ROLLBACK");
+      return res.status(403).json({
+        ok: false,
+        error: "TREATMENT_DATE_TOO_EARLY",
+        treatment_available_at: bookingAccess.treatment_available_at
       });
     }
 

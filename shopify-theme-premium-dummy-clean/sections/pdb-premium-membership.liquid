@@ -2265,7 +2265,7 @@ body.pdb-premium-page #wisy-hint-bubble{
               <label class="pdb-contract-check"><input type="checkbox" name="accept_withdrawal" required><span>Ich habe die <a href="/pages/premium-widerruf" target="_blank">Widerrufsbelehrung und das Widerrufsformular</a> erhalten und konnte sie speichern.</span></label>
               <div class="pdb-contract-mandate"><strong>SEPA-Basislastschriftmandat</strong>Zahlungsempfänger: PDB – AESTHETIC ROOM, Rheinstraße 59, 65185 Wiesbaden · Gläubiger-ID: DE73ZZZ00002018874 · Mandatsreferenz: wird nach dem Abschluss mitgeteilt. Ich ermächtige PDB – AESTHETIC ROOM, wiederkehrende Zahlungen aus dieser Mitgliedschaft sowie die einmalige Einrichtungsgebühr von meinem Konto einzuziehen. Zugleich weise ich mein Kreditinstitut an, die Lastschriften einzulösen. Ich kann innerhalb von acht Wochen ab Belastungsdatum die Erstattung des belasteten Betrags verlangen; es gelten die mit meinem Kreditinstitut vereinbarten Bedingungen.</div>
               <label class="pdb-contract-check"><input type="checkbox" name="accept_sepa" required><span>Ich erteile das oben beschriebene SEPA-Basislastschriftmandat.</span></label>
-              <label class="pdb-contract-check"><input type="checkbox" name="request_early_start"><span>Optional: Ich wünsche den Leistungsbeginn bereits innerhalb der 14-tägigen Widerrufsfrist und kenne die gesetzlichen Folgen.</span></label>
+              <label class="pdb-contract-check"><input type="checkbox" name="request_early_start"><span>Optional: Ich verlange ausdrücklich, dass PDB bereits vor Ablauf der 14-tägigen Widerrufsfrist mit der Dienstleistung beginnt. Mir ist bekannt, dass ich bei einem Widerruf für bis dahin erbrachte Leistungen gegebenenfalls einen angemessenen Wertersatz schulde.</span></label>
             </div>
 
             <div class="pdb-contract-security">Ihre IBAN wird verschlüsselt in unserem Vertragssystem gespeichert und nicht in Shopify-Kundennotizen oder Kundentags abgelegt.</div>
@@ -3102,6 +3102,63 @@ body.pdb-premium-page #wisy-hint-bubble{
       root.querySelector('.pdb-member-gate-card') ||
       root;
 
+    function formatContractDate(value) {
+      if (!value) return 'noch nicht berechnet';
+      return new Intl.DateTimeFormat('de-DE', { dateStyle: 'medium', timeZone: 'Europe/Berlin' }).format(new Date(value));
+    }
+
+    function appendEarlyStartControl(application) {
+      if (application.early_start_requested_at) return;
+      var consentCard = document.createElement('div');
+      consentCard.className = 'pdb-member-booking-card';
+      consentCard.innerHTML =
+        '<span class="pdb-member-badge">Ihre Entscheidung</span>' +
+        '<h3>Vorzeitigen Leistungsbeginn bestätigen</h3>' +
+        '<p>Der Buchungszugang wird nach der Vertragsannahme sofort freigeschaltet. Ohne diese Zustimmung sind Behandlungen erst ab ' + formatContractDate(application.treatment_available_at) + ' möglich.</p>' +
+        '<label class="pdb-contract-check"><input type="checkbox" data-early-start-request><span>Ich verlange ausdrücklich, dass PDB bereits vor Ablauf der 14-tägigen Widerrufsfrist mit der Dienstleistung beginnt.</span></label>' +
+        '<label class="pdb-contract-check"><input type="checkbox" data-early-start-compensation><span>Mir ist bekannt, dass ich bei einem Widerruf für bis dahin erbrachte Leistungen gegebenenfalls einen angemessenen Wertersatz schulde.</span></label>' +
+        '<button type="button" class="pdb-btn" data-confirm-early-start disabled>Vorzeitigen Leistungsbeginn bestätigen</button>' +
+        '<div class="pdb-contract-status" data-early-start-status role="status" aria-live="polite"></div>';
+      memberArea.appendChild(consentCard);
+
+      var requestCheck = consentCard.querySelector('[data-early-start-request]');
+      var compensationCheck = consentCard.querySelector('[data-early-start-compensation]');
+      var confirmButton = consentCard.querySelector('[data-confirm-early-start]');
+      var consentStatus = consentCard.querySelector('[data-early-start-status]');
+      function updateButton() {
+        confirmButton.disabled = !(requestCheck.checked && compensationCheck.checked);
+      }
+      requestCheck.addEventListener('change', updateButton);
+      compensationCheck.addEventListener('change', updateButton);
+      confirmButton.addEventListener('click', async function () {
+        confirmButton.disabled = true;
+        confirmButton.textContent = 'Zustimmung wird gespeichert…';
+        try {
+          var response = await fetch('/apps/pdb/contracts/early-start', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              application_id: application.id,
+              confirm_early_start: requestCheck.checked,
+              confirm_wertersatz: compensationCheck.checked
+            })
+          });
+          var result = await response.json();
+          if (!response.ok || !result.ok) throw new Error(result.error || 'EARLY_START_UPDATE_FAILED');
+          consentStatus.className = 'pdb-contract-status is-visible';
+          consentStatus.innerHTML = '<strong>Zustimmung gespeichert.</strong><br>Behandlungen sind ab ' + formatContractDate(result.application.treatment_available_at) + ' möglich. Die Bestätigung wurde in Ihrem Vertrag protokolliert.';
+          requestCheck.disabled = true;
+          compensationCheck.disabled = true;
+          confirmButton.hidden = true;
+        } catch (error) {
+          consentStatus.className = 'pdb-contract-status is-visible is-error';
+          consentStatus.textContent = 'Die Zustimmung konnte nicht gespeichert werden. Bitte versuchen Sie es erneut.';
+          confirmButton.disabled = false;
+          confirmButton.textContent = 'Vorzeitigen Leistungsbeginn bestätigen';
+        }
+      });
+    }
+
     async function loadContractManagement() {
       if (!isLoggedIn || !memberArea) return;
       try {
@@ -3113,12 +3170,14 @@ body.pdb-premium-page #wisy-hint-bubble{
         if (application.status === 'sepa_pending') {
           var pending = document.createElement('div');
           pending.className = 'pdb-member-booking-card';
-          pending.innerHTML = '<span class="pdb-member-badge">SEPA-Einrichtung ausstehend</span><h3>Ihr Antrag wird vorbereitet</h3><p>Mandatsreferenz: ' + application.mandate_reference + '. Nach der Einrichtung bei der Naspa wird Ihr Paket automatisch freigeschaltet.</p>';
+          pending.innerHTML = '<span class="pdb-member-badge">SEPA-Einrichtung ausstehend</span><h3>Ihr Antrag wird vorbereitet</h3><p>Mandatsreferenz: ' + application.mandate_reference + '. Nach der Einrichtung bei der Naspa wird der Buchungszugang sofort freigeschaltet. Behandlungen sind ab ' + formatContractDate(application.treatment_available_at) + ' möglich.</p>';
           memberArea.appendChild(pending);
+          appendEarlyStartControl(application);
           return;
         }
 
         if (application.status !== 'active') return;
+        appendEarlyStartControl(application);
         var card = document.createElement('div');
         card.className = 'pdb-member-booking-card';
         card.id = 'pdb-contract-cancellation';

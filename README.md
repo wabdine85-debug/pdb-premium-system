@@ -104,6 +104,14 @@ Activation sends the explicit acceptance and contract confirmation when SMTP
 is configured. The latest order or contract confirmation remains downloadable
 from the signed customer area.
 
+Activation opens appointment planning immediately. The selected appointment
+date is validated separately: treatment cannot take place before the contract
+start or, without an express early-performance request, before the protected
+withdrawal-period date. A signed-in customer can subsequently submit that
+request from the customer area. The request and its confirmation delivery are
+written to the contract event log; an administrator cannot submit it on the
+customer's behalf.
+
 ## Internal member administration
 
 The existing contract administration endpoints remain unchanged. Additional

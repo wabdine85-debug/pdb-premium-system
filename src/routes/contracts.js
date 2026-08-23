@@ -26,6 +26,7 @@ import {
   hasActiveBookingTestAccess,
   listContractActionRequests,
   listApplications,
+  requestEarlyPerformanceStart,
   requestCancellation
 } from '../repositories/contract.repository.js';
 import { createMember, findMemberByShopifyId, updateMemberByShopifyId } from '../repositories/member.repository.js';
@@ -38,6 +39,7 @@ import {
 import { sendTransactionalHtml } from '../services/mail.service.js';
 import { reserveNextMandateReference } from '../services/mandateReference.service.js';
 import { syncAcceptedContractToCrm } from '../services/crmContractSync.service.js';
+import { calculateBookingAccess } from '../services/bookingAccess.service.js';
 import { getPackageOffer, SETUP_FEE_CENTS } from '../utils/packageCatalog.js';
 import {
   decryptIban,
@@ -88,6 +90,16 @@ function cancellationConfirmationHtml(application) {
     requested_end_on: application.cancellation_effective_on,
     created_at: application.cancellation_requested_at
   });
+}
+
+function withAccessDetails(application, activatedAt = application?.activated_at || new Date()) {
+  if (!application) return application;
+  const bookingAccess = calculateBookingAccess({ ...application, activated_at: activatedAt });
+  return {
+    ...application,
+    booking_available_immediately_after_acceptance: true,
+    treatment_available_at: bookingAccess.treatment_available_at
+  };
 }
 
 router.post(
@@ -230,7 +242,7 @@ router.get('/status', verifyShopifyAppProxy, requireShopifyCustomer, async (req,
   );
   if (!application) return res.status(404).json({ ok: false, error: 'APPLICATION_NOT_FOUND' });
   res.set('Cache-Control', 'private, no-store');
-  return res.json({ ok: true, application: { ...application, masked_iban: maskIban(application.iban_last4) } });
+  return res.json({ ok: true, application: { ...withAccessDetails(application), masked_iban: maskIban(application.iban_last4) } });
 });
 
 router.get('/mine', verifyShopifyAppProxy, requireShopifyCustomer, async (req, res) => {
@@ -239,8 +251,66 @@ router.get('/mine', verifyShopifyAppProxy, requireShopifyCustomer, async (req, r
   if (!application) return res.json({ ok: true, application: null });
   return res.json({
     ok: true,
-    application: { ...application, masked_iban: maskIban(application.iban_last4) }
+    application: { ...withAccessDetails(application), masked_iban: maskIban(application.iban_last4) }
   });
+});
+
+router.post('/early-start', verifyShopifyAppProxy, requireShopifyCustomer, contractActionLimiter, async (req, res) => {
+  if (req.body?.confirm_early_start !== true || req.body?.confirm_wertersatz !== true) {
+    return res.status(400).json({ ok: false, error: 'EARLY_START_CONSENT_REQUIRED' });
+  }
+
+  try {
+    const application = await findLatestApplicationByCustomer(req.shopifyProxy.customerId);
+    if (
+      !application
+      || application.id !== cleanText(req.body?.application_id, 80)
+      || !['sepa_pending', 'active'].includes(application.status)
+    ) {
+      return res.status(409).json({ ok: false, error: 'APPLICATION_NOT_ELIGIBLE' });
+    }
+
+    if (application.early_start_requested_at) {
+      return res.json({ ok: true, application: withAccessDetails(application), already_confirmed: true });
+    }
+
+    const updated = await requestEarlyPerformanceStart(application.id, req.shopifyProxy.customerId);
+    if (!updated) return res.status(409).json({ ok: false, error: 'APPLICATION_NOT_ELIGIBLE' });
+
+    await addContractEvent(updated.id, 'early_start_requested', 'customer', {
+      consentVersion: 'early-start-v1',
+      expresslyRequested: true,
+      compensationNoticeAcknowledged: true
+    });
+
+    let mailDelivery = { sent: false, reason: 'DELIVERY_FAILED' };
+    try {
+      mailDelivery = await sendTransactionalHtml({
+        to: updated.email,
+        subject: `Ihre Zustimmung zum vorzeitigen Leistungsbeginn · ${updated.mandate_reference}`,
+        html: applicationConfirmationHtml(updated)
+      });
+      await addContractEvent(updated.id, 'early_start_confirmation_delivery', 'system', {
+        emailSent: mailDelivery.sent,
+        reason: mailDelivery.reason || null
+      });
+    } catch (mailError) {
+      console.error('Early-start confirmation email failed:', mailError.message);
+      await addContractEvent(updated.id, 'early_start_confirmation_delivery', 'system', {
+        emailSent: false,
+        reason: 'DELIVERY_FAILED'
+      });
+    }
+
+    return res.json({
+      ok: true,
+      application: withAccessDetails(updated),
+      confirmation_email_sent: mailDelivery.sent
+    });
+  } catch (error) {
+    console.error('POST /api/contracts/early-start failed:', error.message);
+    return res.status(500).json({ ok: false, error: 'EARLY_START_UPDATE_FAILED' });
+  }
 });
 
 router.get('/confirmation', verifyShopifyAppProxy, requireShopifyCustomer, async (req, res) => {
@@ -410,7 +480,13 @@ router.delete('/admin/session', deleteAdminSessionHandler);
 
 router.get('/admin', requireAdminAccess, async (req, res) => {
   const applications = await listApplications({ status: req.query.status, limit: req.query.limit });
-  return res.json({ ok: true, applications: applications.map((item) => ({ ...item, masked_iban: maskIban(item.iban_last4) })) });
+  return res.json({
+    ok: true,
+    applications: applications.map((item) => ({
+      ...withAccessDetails(item),
+      masked_iban: maskIban(item.iban_last4)
+    }))
+  });
 });
 
 router.get('/admin-actions', requireAdminAccess, async (req, res) => {
@@ -501,7 +577,7 @@ router.post('/admin/:id/activate', requireAdminAccess, async (req, res) => {
     }
     return res.json({
       ok: true,
-      application: activated,
+      application: withAccessDetails(activated),
       member_id: member.id,
       confirmation_email_sent: mailDelivery.sent,
       customer_confirmation_url: '/apps/pdb/contracts/confirmation-latest'

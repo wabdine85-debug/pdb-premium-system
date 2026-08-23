@@ -28,6 +28,14 @@ zusammengeführt.
 - Bei Online-Buchungen ändert diese Admin-Aktion den Premium-Kontingenteintrag.
   Ein verknüpfter Salonized-Termin muss bis zu einer eigenen Salonized-API-
   Integration zusätzlich dort geändert oder storniert werden.
+- Nach der Vertragsannahme ist die Terminplanung sofort verfügbar. Das System
+  prüft das gewählte Behandlungsdatum separat gegen Vertragsbeginn und
+  Widerrufsfrist. Die Vertragsansicht zeigt deshalb sowohl die Entscheidung zum
+  vorzeitigen Leistungsbeginn als auch das früheste Behandlungsdatum.
+- Eine nachträgliche Zustimmung zum vorzeitigen Leistungsbeginn kann nur die
+  eingeloggte Kundin im Shopify-Kundenbereich erteilen. Die Erklärung wird im
+  Vertragsereignisprotokoll gespeichert und per aktualisierter Bestätigung
+  dokumentiert; die Admin-Oberfläche kann sie nicht stellvertretend setzen.
 
 ## Produktions-Rollout
 

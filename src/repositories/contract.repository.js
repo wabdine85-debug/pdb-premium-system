@@ -166,6 +166,19 @@ export async function activateApplication(id, memberId, db = pool) {
   return result.rows[0] || null;
 }
 
+export async function requestEarlyPerformanceStart(id, customerId, db = pool) {
+  const result = await db.query(
+    `UPDATE membership_applications
+     SET early_start_requested_at = COALESCE(early_start_requested_at, NOW()), updated_at = NOW()
+     WHERE id = $1
+       AND shopify_customer_id = $2
+       AND status IN ('sepa_pending', 'active')
+     RETURNING ${PUBLIC_COLUMNS}`,
+    [id, customerId]
+  );
+  return result.rows[0] || null;
+}
+
 export async function requestCancellation(id, customerId, db = pool) {
   const result = await db.query(
     `UPDATE membership_applications

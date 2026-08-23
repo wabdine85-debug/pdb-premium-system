@@ -186,6 +186,16 @@
           : 'Nein'
       );
 
+      const accessGuidance = document.createElement('div');
+      accessGuidance.className = `access-guidance ${application.early_start_requested_at ? 'is-confirmed' : 'is-waiting'}`;
+      const accessHeading = document.createElement('strong');
+      accessHeading.textContent = application.early_start_requested_at
+        ? 'Vorzeitiger Leistungsbeginn bestätigt'
+        : 'Vorzeitiger Leistungsbeginn nicht bestätigt';
+      const accessCopy = document.createElement('span');
+      accessCopy.textContent = `Buchungszugang sofort nach Annahme · Behandlung ab ${date.format(new Date(application.treatment_available_at))}`;
+      accessGuidance.append(accessHeading, accessCopy);
+
       const actions = document.createElement('div');
       actions.className = 'card-actions';
       const sepaButton = document.createElement('button');
@@ -204,6 +214,8 @@
         activateButton.dataset.action = 'activate';
         activateButton.dataset.id = application.id;
         activateButton.dataset.reference = application.mandate_reference;
+        activateButton.dataset.earlyStart = application.early_start_requested_at ? 'yes' : 'no';
+        activateButton.dataset.treatmentAvailableAt = application.treatment_available_at;
         actions.appendChild(activateButton);
       }
 
@@ -228,7 +240,7 @@
 
       }
 
-      card.append(heading, grid, actions);
+      card.append(heading, grid, accessGuidance, actions);
       applicationList.appendChild(card);
     });
   }
@@ -328,8 +340,16 @@
       }
     }
     if (button.dataset.action === 'activate') {
-      pendingActivation = { id: button.dataset.id, reference: button.dataset.reference };
-      activateCopy.textContent = `Mandatsreferenz ${pendingActivation.reference}. Die Annahme setzt den Kundentag, aktiviert das Mitglied und versendet die Vertragsbestätigung.`;
+      pendingActivation = {
+        id: button.dataset.id,
+        reference: button.dataset.reference,
+        earlyStart: button.dataset.earlyStart,
+        treatmentAvailableAt: button.dataset.treatmentAvailableAt
+      };
+      const consentText = pendingActivation.earlyStart === 'yes'
+        ? 'Vorzeitiger Leistungsbeginn: JA.'
+        : 'Vorzeitiger Leistungsbeginn: NEIN.';
+      activateCopy.textContent = `Mandatsreferenz ${pendingActivation.reference}. ${consentText} Der Buchungszugang wird sofort freigeschaltet; Behandlungen sind ab ${date.format(new Date(pendingActivation.treatmentAvailableAt))} möglich. Die Annahme setzt den Kundentag, aktiviert das Mitglied und versendet die Vertragsbestätigung.`;
       activateConfirmation.checked = false;
       activateConfirmButton.disabled = true;
       activateDialog.showModal();
@@ -377,8 +397,8 @@
       setStatus(
         adminStatus,
         result.confirmation_email_sent
-          ? 'Vertrag ist aktiv. Kundentag und Vertragsbestätigung wurden verarbeitet.'
-          : 'Vertrag ist aktiv und der Kundentag wurde gesetzt. Die E-Mail konnte nicht versendet werden; nutzen Sie „Vertragsbestätigung erneut senden“.',
+          ? `Vertrag ist aktiv. Buchungszugang ist sofort verfügbar; Behandlung ab ${date.format(new Date(result.application.treatment_available_at))}.`
+          : `Vertrag ist aktiv und der Buchungszugang verfügbar. Behandlung ab ${date.format(new Date(result.application.treatment_available_at))}. Die E-Mail konnte nicht versendet werden; nutzen Sie „Vertragsbestätigung erneut senden“.`,
         !result.confirmation_email_sent
       );
     } catch (error) {

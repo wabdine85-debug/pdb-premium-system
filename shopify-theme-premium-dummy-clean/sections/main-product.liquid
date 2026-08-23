@@ -529,6 +529,13 @@ if (window.PDB_PREMIUM_PRODUCT.isPremiumDummy) {
 
       if (data.error === "APPOINTMENT_MONTH_NOT_ALLOWED") {
         alert("Premium-Termine können nur für den aktuellen oder den nächsten Monat gebucht werden.");
+      } else if (data.error === "TREATMENT_DATE_TOO_EARLY") {
+        var treatmentDate = data.treatment_available_at
+          ? new Intl.DateTimeFormat("de-DE", { dateStyle: "medium", timeZone: "Europe/Berlin" }).format(new Date(data.treatment_available_at))
+          : null;
+        alert(treatmentDate
+          ? "Bitte wähle einen Termin ab dem " + treatmentDate + ". Frühere Behandlungen sind für diesen Vertrag noch nicht freigegeben."
+          : "Der gewählte Behandlungstermin liegt vor dem zulässigen Leistungsbeginn.");
       } else if (data.error === "LIMIT_REACHED") {
         var selectedMonth = pdbGetAppointmentMonth(appointmentDate);
         var selectedLabel = pdbFormatBookingMonth(selectedMonth);
