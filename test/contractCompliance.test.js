@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
+  adminAcceptanceSummaryHtml,
   adminApplicationNotificationHtml,
   applicationConfirmationHtml,
   contractActionReceiptHtml,
@@ -89,6 +90,23 @@ test('admin notification contains no full IBAN or decryption material', () => {
   assert.match(html, /PDB-2026-TEST/);
   assert.match(html, /••1234/);
   assert.doesNotMatch(html, /iban_ciphertext|iban_auth_tag|iban_iv/i);
+});
+
+test('internal acceptance summary is useful and contains no bank data', () => {
+  const html = adminAcceptanceSummaryHtml({
+    ...baseApplication,
+    email: 'test@example.com',
+    status: 'active',
+    activated_at: '2026-08-24T08:15:00.000Z',
+    early_start_requested_at: null,
+    treatment_available_at: '2026-09-07T22:00:00.000Z'
+  }, { customerConfirmationSent: true });
+  assert.match(html, /Vertrag angenommen/);
+  assert.match(html, /PDB PREMIUM PRIVATE/);
+  assert.match(html, /Vorzeitiger Leistungsbeginn/);
+  assert.match(html, /Früheste Behandlung/);
+  assert.match(html, /Erfolgreich per E-Mail versendet/);
+  assert.doesNotMatch(html, /IBAN|1234|iban_ciphertext|iban_auth_tag|iban_iv/i);
 });
 
 test('withdrawal receipt contains durable receipt identifiers and escapes input', () => {

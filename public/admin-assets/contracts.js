@@ -74,7 +74,9 @@
         APPLICATION_NOT_ACTIVATABLE: 'Dieser Antrag kann nicht aktiviert werden.',
         APPLICATION_NOT_ACTIVE: 'Diese Aktion ist nur für aktive Verträge möglich.',
         CONFIRMATION_EMAIL_NOT_SENT: 'Die E-Mail konnte nicht versendet werden. Bitte SMTP-Verbindung prüfen und erneut versuchen.',
-        TEST_BOOKING_ACCESS_FAILED: 'Der Testzugang konnte nicht gespeichert werden. Bitte erneut versuchen.'
+        TEST_BOOKING_ACCESS_FAILED: 'Der Testzugang konnte nicht gespeichert werden. Bitte erneut versuchen.',
+        ADMIN_EMAIL_NOT_CONFIGURED: 'Die interne 1&1-Adminadresse ist noch nicht konfiguriert.',
+        ADMIN_SUMMARY_NOT_SENT: 'Die interne Vertragsübersicht konnte nicht versendet werden. Bitte die 1&1-Mailverbindung prüfen.'
       };
       if (result.error === 'ADMIN_AUTH_REQUIRED' && path !== '/admin/session') {
         recoveryToken = '';
@@ -229,6 +231,15 @@
         resendButton.dataset.reference = application.mandate_reference;
         actions.appendChild(resendButton);
 
+        const internalSummaryButton = document.createElement('button');
+        internalSummaryButton.className = 'button button-secondary';
+        internalSummaryButton.type = 'button';
+        internalSummaryButton.textContent = 'Interne Vertragsübersicht senden';
+        internalSummaryButton.dataset.action = 'send-internal-summary';
+        internalSummaryButton.dataset.id = application.id;
+        internalSummaryButton.dataset.reference = application.mandate_reference;
+        actions.appendChild(internalSummaryButton);
+
         const testAccessButton = document.createElement('button');
         testAccessButton.className = 'button button-secondary';
         testAccessButton.type = 'button';
@@ -364,6 +375,16 @@
       adminActionConfirmButton.disabled = true;
       adminActionDialog.showModal();
     }
+    if (button.dataset.action === 'send-internal-summary') {
+      pendingAdminAction = { action: button.dataset.action, id: button.dataset.id };
+      adminActionHeading.textContent = 'Interne Vertragsübersicht senden?';
+      adminActionCopy.textContent = `Die interne Übersicht für ${button.dataset.reference} wird an die hinterlegte 1&1-Adminadresse gesendet. Sie enthält keine IBAN.`;
+      adminActionConfirmationCopy.textContent = 'Ich möchte die interne Vertragsübersicht jetzt an meine Adminadresse senden.';
+      adminActionConfirmButton.textContent = 'Übersicht senden';
+      adminActionConfirmation.checked = false;
+      adminActionConfirmButton.disabled = true;
+      adminActionDialog.showModal();
+    }
     if (button.dataset.action === 'test-booking-access') {
       pendingAdminAction = { action: button.dataset.action, id: button.dataset.id };
       adminActionHeading.textContent = 'Test-Buchung freigeben?';
@@ -397,8 +418,8 @@
       setStatus(
         adminStatus,
         result.confirmation_email_sent
-          ? `Vertrag ist aktiv. Buchungszugang ist sofort verfügbar; Behandlung ab ${date.format(new Date(result.application.treatment_available_at))}.`
-          : `Vertrag ist aktiv und der Buchungszugang verfügbar. Behandlung ab ${date.format(new Date(result.application.treatment_available_at))}. Die E-Mail konnte nicht versendet werden; nutzen Sie „Vertragsbestätigung erneut senden“.`,
+          ? `Vertrag ist aktiv. Buchungszugang ist sofort verfügbar; Behandlung ab ${date.format(new Date(result.application.treatment_available_at))}.${result.admin_notification_sent ? ' Die interne Übersicht wurde an Ihre 1&1-Adresse gesendet.' : ' Die interne Übersicht konnte nicht versendet werden.'}`
+          : `Vertrag ist aktiv und der Buchungszugang verfügbar. Behandlung ab ${date.format(new Date(result.application.treatment_available_at))}. Die Kunden-E-Mail konnte nicht versendet werden; nutzen Sie „Vertragsbestätigung erneut senden“.${result.admin_notification_sent ? ' Die interne Übersicht wurde an Ihre 1&1-Adresse gesendet.' : ''}`,
         !result.confirmation_email_sent
       );
     } catch (error) {
@@ -423,12 +444,16 @@
     adminActionConfirmButton.disabled = true;
     adminActionConfirmButton.textContent = action.action === 'resend-confirmation'
       ? 'Bestätigung wird gesendet…'
-      : 'Testzugang wird freigegeben…';
+      : action.action === 'send-internal-summary'
+        ? 'Übersicht wird gesendet…'
+        : 'Testzugang wird freigegeben…';
     try {
       const result = await adminRequest(`/admin/${encodeURIComponent(action.id)}/${action.action}`, { method: 'POST' });
       adminActionDialog.close();
       if (action.action === 'resend-confirmation') {
         setStatus(adminStatus, 'Die Vertragsbestätigung wurde erneut versendet.');
+      } else if (action.action === 'send-internal-summary') {
+        setStatus(adminStatus, 'Die interne Vertragsübersicht wurde an die hinterlegte 1&1-Adminadresse gesendet.');
       } else {
         const expiresAt = new Intl.DateTimeFormat('de-DE', {
           dateStyle: 'medium',
@@ -442,7 +467,9 @@
       adminActionConfirmButton.disabled = false;
       adminActionConfirmButton.textContent = action.action === 'resend-confirmation'
         ? 'Bestätigung senden'
-        : '2 Stunden freigeben';
+        : action.action === 'send-internal-summary'
+          ? 'Übersicht senden'
+          : '2 Stunden freigeben';
     }
   });
 

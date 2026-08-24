@@ -32,6 +32,7 @@ test('admin portal uses a password session without exposing credentials', async 
   assert.match(styles, /\[hidden\]\{display:none!important\}/);
   assert.match(page, /admin-action-dialog/);
   assert.match(script, /Vertragsbestätigung erneut senden/);
+  assert.match(script, /Interne Vertragsübersicht senden/);
   assert.match(script, /Test-Buchung 2 Stunden freigeben/);
   assert.match(script, /statusFilter\.value = 'active'/);
   assert.match(script, /Vorzeitiger Leistungsbeginn/);

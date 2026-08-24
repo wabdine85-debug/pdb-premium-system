@@ -32,6 +32,7 @@ import {
 import { createMember, findMemberByShopifyId, updateMemberByShopifyId } from '../repositories/member.repository.js';
 import { setPremiumCustomerTag } from '../services/shopifyAdmin.service.js';
 import {
+  adminAcceptanceSummaryHtml,
   adminApplicationNotificationHtml,
   applicationConfirmationHtml,
   contractActionReceiptHtml
@@ -100,6 +101,15 @@ function withAccessDetails(application, activatedAt = application?.activated_at 
     booking_available_immediately_after_acceptance: true,
     treatment_available_at: bookingAccess.treatment_available_at
   };
+}
+
+async function sendInternalAcceptanceSummary(application, customerConfirmationSent) {
+  if (!env.contractAdminEmail) return { sent: false, reason: 'ADMIN_EMAIL_NOT_CONFIGURED' };
+  return sendTransactionalHtml({
+    to: env.contractAdminEmail,
+    subject: `Vertrag angenommen · ${application.first_name} ${application.last_name} · ${application.mandate_reference}`,
+    html: adminAcceptanceSummaryHtml(application, { customerConfirmationSent })
+  });
 }
 
 router.post(
@@ -575,11 +585,32 @@ router.post('/admin/:id/activate', requireAdminAccess, async (req, res) => {
         reason: 'DELIVERY_FAILED'
       });
     }
+    const activatedWithAccess = withAccessDetails(activated);
+    let adminMailDelivery = { sent: false, reason: 'ADMIN_EMAIL_NOT_CONFIGURED' };
+    try {
+      adminMailDelivery = await sendInternalAcceptanceSummary(activatedWithAccess, mailDelivery.sent);
+      await addContractEvent(application.id, 'admin_acceptance_summary_delivery', 'system', {
+        emailSent: adminMailDelivery.sent,
+        reason: adminMailDelivery.reason || null
+      });
+    } catch (adminMailError) {
+      console.error('Admin acceptance summary failed:', adminMailError.message);
+      try {
+        await addContractEvent(application.id, 'admin_acceptance_summary_delivery', 'system', {
+          emailSent: false,
+          reason: 'DELIVERY_FAILED'
+        });
+      } catch (eventError) {
+        console.error('Admin acceptance summary failure event could not be stored:', eventError.message);
+      }
+    }
+
     return res.json({
       ok: true,
-      application: withAccessDetails(activated),
+      application: activatedWithAccess,
       member_id: member.id,
       confirmation_email_sent: mailDelivery.sent,
+      admin_notification_sent: adminMailDelivery.sent,
       customer_confirmation_url: '/apps/pdb/contracts/confirmation-latest'
     });
   } catch (error) {
@@ -623,6 +654,33 @@ router.post('/admin/:id/resend-confirmation', requireAdminAccess, async (req, re
       console.error('Contract confirmation failure event could not be stored:', eventError.message);
     }
     return res.status(502).json({ ok: false, error: 'CONFIRMATION_EMAIL_NOT_SENT' });
+  }
+});
+
+router.post('/admin/:id/send-internal-summary', requireAdminAccess, async (req, res) => {
+  const application = await findApplicationForAdmin(req.params.id);
+  if (!application) return res.status(404).json({ ok: false, error: 'APPLICATION_NOT_FOUND' });
+  if (application.status !== 'active') {
+    return res.status(409).json({ ok: false, error: 'APPLICATION_NOT_ACTIVE' });
+  }
+  if (!env.contractAdminEmail) {
+    return res.status(503).json({ ok: false, error: 'ADMIN_EMAIL_NOT_CONFIGURED' });
+  }
+
+  try {
+    const applicationWithAccess = withAccessDetails(application);
+    const delivery = await sendInternalAcceptanceSummary(applicationWithAccess, null);
+    await addContractEvent(application.id, 'admin_acceptance_summary_resent', 'admin', {
+      emailSent: delivery.sent,
+      reason: delivery.reason || null
+    });
+    if (!delivery.sent) {
+      return res.status(503).json({ ok: false, error: 'ADMIN_SUMMARY_NOT_SENT' });
+    }
+    return res.json({ ok: true, admin_notification_sent: true });
+  } catch (error) {
+    console.error('Admin acceptance summary resend failed:', error.message);
+    return res.status(502).json({ ok: false, error: 'ADMIN_SUMMARY_NOT_SENT' });
   }
 });
 

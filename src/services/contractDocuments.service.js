@@ -69,6 +69,17 @@ export function adminApplicationNotificationHtml(application) {
   return documentShell('Neuer PDB PREMIUM Vertragsantrag', `<h1>Neuer PDB PREMIUM Vertragsantrag</h1><p>Ein neuer Antrag wurde sicher gespeichert und wartet auf die SEPA-Einrichtung sowie die ausdrückliche Annahme.</p><table><tr><td>Name</td><td>${escapeHtml(application.first_name)} ${escapeHtml(application.last_name)}</td></tr><tr><td>E-Mail</td><td>${escapeHtml(application.email)}</td></tr><tr><td>Paket</td><td>${escapeHtml(offer?.name)}</td></tr><tr><td>Monatsbeitrag</td><td>${money(application.monthly_price_cents)}</td></tr><tr><td>Vertragsbeginn</td><td>${escapeHtml(formatDate(application.starts_on))}</td></tr><tr><td>Mandatsreferenz</td><td>${escapeHtml(application.mandate_reference)}</td></tr><tr><td>IBAN</td><td>${escapeHtml(maskIban(application.iban_last4))}</td></tr><tr><td>Status</td><td>SEPA-Einrichtung ausstehend</td></tr></table><div class="note"><strong>Sicherheit:</strong> Die vollständige IBAN befindet sich nicht in dieser E-Mail. Öffnen Sie die geschützte Vertragsverwaltung unter <a href="https://pdb-premium-system.onrender.com/admin/contracts">pdb-premium-system.onrender.com/admin/contracts</a> und melden Sie sich mit Ihrem Admin-Passwort an.</div>`);
 }
 
+export function adminAcceptanceSummaryHtml(application, { customerConfirmationSent = false } = {}) {
+  const offer = getPackageOffer(application.package_key);
+  const earlyStart = application.early_start_requested_at
+    ? `Ja · bestätigt am ${formatDateTime(application.early_start_requested_at)}`
+    : 'Nein';
+  return documentShell(
+    'PDB PREMIUM Vertrag angenommen',
+    `<h1>Vertrag angenommen</h1><p>Die Mitgliedschaft wurde aktiviert. Diese interne Übersicht enthält bewusst keine vollständigen oder maskierten Bankdaten.</p><div class="status"><strong>Status:</strong> Vertrag aktiv</div><table><tr><td>Name</td><td>${escapeHtml(application.first_name)} ${escapeHtml(application.last_name)}</td></tr><tr><td>Kunden-E-Mail</td><td>${escapeHtml(application.email)}</td></tr><tr><td>Paket</td><td>PDB PREMIUM ${escapeHtml(offer?.name)}</td></tr><tr><td>Monatsbeitrag</td><td>${money(application.monthly_price_cents)}</td></tr><tr><td>Vertragsbeginn</td><td>${escapeHtml(formatDate(application.starts_on))}</td></tr><tr><td>Mandatsreferenz</td><td>${escapeHtml(application.mandate_reference)}</td></tr><tr><td>Vorzeitiger Leistungsbeginn</td><td>${escapeHtml(earlyStart)}</td></tr><tr><td>Früheste Behandlung</td><td>${escapeHtml(formatDate(application.treatment_available_at))}</td></tr><tr><td>Kundenbestätigung</td><td>${customerConfirmationSent === true ? 'Erfolgreich per E-Mail versendet' : customerConfirmationSent === false ? 'Nicht bestätigt versendet · bitte in der Vertragsverwaltung prüfen' : 'Versandstatus bei dieser nachträglichen Übersicht nicht erneut geprüft'}</td></tr><tr><td>Annahme</td><td>${escapeHtml(formatDateTime(application.activated_at || application.updated_at))}</td></tr></table><div class="note">Die vollständigen Vertrags- und SEPA-Daten bleiben ausschließlich in der geschützten Vertragsverwaltung: <a href="https://pdb-premium-system.onrender.com/admin/contracts">Vertragsverwaltung öffnen</a>.</div>`
+  );
+}
+
 export function contractActionReceiptHtml(action) {
   const isWithdrawal = action.action_type === 'withdrawal';
   const title = isWithdrawal ? 'Eingangsbestätigung Ihres Widerrufs' : 'Eingangsbestätigung Ihrer Kündigung';

@@ -104,6 +104,11 @@ Activation sends the explicit acceptance and contract confirmation when SMTP
 is configured. The latest order or contract confirmation remains downloadable
 from the signed customer area.
 
+When `CONTRACT_ADMIN_EMAIL` is configured, every activation also sends a
+bank-data-free internal summary to that address. Active contracts provide an
+admin action for resending this internal summary without resending the customer
+confirmation.
+
 Activation opens appointment planning immediately. The selected appointment
 date is validated separately: treatment cannot take place before the contract
 start or, without an express early-performance request, before the protected
