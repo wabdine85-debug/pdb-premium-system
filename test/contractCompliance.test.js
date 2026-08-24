@@ -109,6 +109,19 @@ test('internal acceptance summary is useful and contains no bank data', () => {
   assert.doesNotMatch(html, /IBAN|1234|iban_ciphertext|iban_auth_tag|iban_iv/i);
 });
 
+test('resent internal summary explains the customer email status in plain language', () => {
+  const html = adminAcceptanceSummaryHtml({
+    ...baseApplication,
+    email: 'test@example.com',
+    status: 'active',
+    activated_at: '2026-08-24T08:15:00.000Z',
+    treatment_available_at: '2026-09-07T22:00:00.000Z'
+  }, { customerConfirmationSent: null });
+  assert.match(html, /nachträglich erstellt/);
+  assert.match(html, /nicht erneut ausgelöst oder rückwirkend geprüft/);
+  assert.doesNotMatch(html, /Versandstatus bei dieser nachträglichen Übersicht nicht erneut geprüft/);
+});
+
 test('withdrawal receipt contains durable receipt identifiers and escapes input', () => {
   const html = contractActionReceiptHtml({
     id: 'request-123',
