@@ -58,11 +58,11 @@ export default function InvoicePrintView({ inv, profile, onClose, Button }) {
   }[profile.pdfDesignVariant] || { accent: "#1e40af", header: "#1e40af", logoBg: "#fff" };
 
   return (
-    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 1500, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
-      <div style={{ background: "#fff", borderRadius: 16, width: 720, maxWidth: "100%", maxHeight: "90vh", overflow: "auto", boxShadow: "0 24px 64px rgba(0,0,0,0.2)" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 24px", borderBottom: "1px solid #e2e8f0" }}>
+    <div className="invoice-preview-backdrop" style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 1500, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+      <div className="invoice-preview-modal" style={{ background: "#fff", borderRadius: 16, width: 720, maxWidth: "100%", maxHeight: "90vh", overflow: "auto", boxShadow: "0 24px 64px rgba(0,0,0,0.2)" }}>
+        <div className="invoice-preview-toolbar" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 24px", borderBottom: "1px solid #e2e8f0" }}>
           <h3 style={{ margin: 0, fontSize: 10, fontWeight: 700 }}>Druckvorschau — {inv.number}</h3>
-          <div style={{ display: "flex", gap: 10 }}>
+          <div className="invoice-preview-actions" style={{ display: "flex", gap: 10 }}>
             <form action="/api/office/invoice-pdf" method="post" onSubmit={event => {
               if (logoState.status === "loading") event.preventDefault();
               else setDownloadState("done");
@@ -81,30 +81,31 @@ export default function InvoicePrintView({ inv, profile, onClose, Button }) {
             <button aria-label="PDF-Vorschau schließen" onClick={onClose} style={{ background: "none", border: "none", fontSize: 17, cursor: "pointer", color: "#94a3b8" }}>×</button>
           </div>
         </div>
-        <div style={{ padding: "8px 24px", borderBottom: "1px solid #f1f5f9", fontSize: 11, color: "#64748b" }}>
+        <div className="invoice-preview-status" role="status" aria-live="polite" style={{ padding: "8px 24px", borderBottom: "1px solid #f1f5f9", fontSize: 11, color: "#64748b" }}>
           {downloadState === "done" ? "Der PDF-Download wurde gestartet." : logoState.status === "error" ? "Das Logo konnte nicht geladen werden. Die PDF wird mit Textkopf erstellt." : "Die Rechnung wird direkt als PDF-Datei heruntergeladen."}
         </div>
-        <div className="invoice-print-page" style={{ position: "relative", width: 680, minHeight: 960, boxSizing: "border-box", padding: "22px 34px 112px 46px", fontSize: 11, lineHeight: 1.38, background: "#fff", color: "#1e293b", fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", paddingBottom: 16, marginBottom: 18, borderBottom: `2px solid ${design.accent}` }}>
-            <div style={{ display: "flex", gap: 16 }}>
-              <div style={{ width: 70, height: 84, display: "flex", alignItems: "center", justifyContent: "flex-start", fontWeight: 800, color: "#1e293b", overflow: "hidden" }}>
-                {branding.logoUrl ? <img src={branding.logoUrl} alt={profile.companyName || "Logo"} style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} /> : (profile.logoPlaceholder || "PDB")}
+        <div className="invoice-preview-scroll">
+          <div className="invoice-print-page" style={{ position: "relative", width: 680, minHeight: 960, boxSizing: "border-box", padding: "22px 34px 112px 46px", fontSize: 11, lineHeight: 1.38, background: "#fff", color: "#1e293b", fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" }}>
+          <div className="invoice-print-header" style={{ display: "flex", justifyContent: "space-between", paddingBottom: 16, marginBottom: 18, borderBottom: `2px solid ${design.accent}` }}>
+            <div className="invoice-print-brand" style={{ display: "flex", gap: 16 }}>
+              <div className="invoice-print-logo" style={{ width: 70, height: 84, display: "flex", alignItems: "center", justifyContent: "flex-start", fontWeight: 800, color: "#1e293b", overflow: "hidden" }}>
+                {branding.logoUrl ? <img src={branding.logoUrl} alt={profile.companyName || "Logo"} width="70" height="84" fetchPriority="high" style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} /> : (profile.logoPlaceholder || "PDB")}
               </div>
-              <div>
-                <div style={{ fontSize: 17, fontWeight: 800 }}>{branding.headerPrimary}</div>
-                {branding.headerBrand && <div style={{ fontSize: 13, fontWeight: 800, color: "#1e293b", marginTop: 2 }}>{branding.headerBrand}</div>}
-                <div style={{ fontSize: 10, color: "#64748b", marginTop: 6, lineHeight: 1.35, whiteSpace: "pre-line" }}>{profile.companyEmail}</div>
+              <div className="invoice-print-brand-copy">
+                <div className="invoice-print-brand-primary" style={{ fontSize: 17, fontWeight: 800 }}>{branding.headerPrimary}</div>
+                {branding.headerBrand && <div className="invoice-print-brand-secondary" style={{ fontSize: 13, fontWeight: 800, color: "#1e293b", marginTop: 2 }}>{branding.headerBrand}</div>}
+                <div className="invoice-print-brand-email" style={{ fontSize: 10, color: "#64748b", marginTop: 6, lineHeight: 1.35, whiteSpace: "pre-line" }}>{profile.companyEmail}</div>
               </div>
             </div>
-            <div style={{ textAlign: "right" }}>
-              <div style={{ fontSize: 24, fontWeight: 800, color: design.accent }}>RECHNUNG</div>
+            <div className="invoice-print-meta" style={{ textAlign: "right" }}>
+              <div className="invoice-print-title" style={{ fontSize: 24, fontWeight: 800, color: design.accent }}>RECHNUNG</div>
               <div style={{ fontSize: 10, color: "#64748b", marginTop: 8, lineHeight: 1.45 }}>Rechnungsnr.: <strong>{inv.number}</strong><br />Datum: {fmtDate(inv.date)}<br />Fällig: {getInvoiceDueLabel(inv)}{inv.status === "bezahlt" && <><br />Bezahlt: {fmtDate(inv.paidDate || inv.date)}{inv.paymentMethod ? ` · ${inv.paymentMethod}` : ""}</>}</div>
             </div>
           </div>
-          <div style={{ background: "#fff", borderRadius: 0, padding: "0", marginBottom: 24, width: 430, minHeight: 96 }}>
-            <div style={{ width: 350, paddingBottom: 5, marginBottom: 10, borderBottom: "1px solid #cbd5e1", color: "#64748b" }}>
-              <div style={{ fontSize: 7, lineHeight: 1.3, whiteSpace: "nowrap" }}>{branding.senderName}</div>
-              {branding.senderAddress && <div style={{ fontSize: 7, lineHeight: 1.3, whiteSpace: "nowrap" }}>{branding.senderAddress}</div>}
+          <div className="invoice-print-recipient" style={{ background: "#fff", borderRadius: 0, padding: "0", marginBottom: 24, width: 430, minHeight: 96 }}>
+            <div className="invoice-print-sender" style={{ width: 350, paddingBottom: 5, marginBottom: 10, borderBottom: "1px solid #cbd5e1", color: "#64748b" }}>
+              <div className="invoice-print-sender-line" style={{ fontSize: 7, lineHeight: 1.3, whiteSpace: "nowrap" }}>{branding.senderName}</div>
+              {branding.senderAddress && <div className="invoice-print-sender-line" style={{ fontSize: 7, lineHeight: 1.3, whiteSpace: "nowrap" }}>{branding.senderAddress}</div>}
             </div>
             <div style={{ fontSize: 10, fontWeight: 700 }}>{inv.memberName}</div>
             {inv.customerAddress && <div style={{ fontSize: 10, color: "#64748b", marginTop: 4, whiteSpace: "pre-line", lineHeight: 1.35 }}>{inv.customerAddress}</div>}
@@ -115,7 +116,7 @@ export default function InvoicePrintView({ inv, profile, onClose, Button }) {
               <div style={{ fontSize: 9, color: "#475569", whiteSpace: "pre-line", lineHeight: 1.35 }}>{inv.diagnosis}</div>
             </div>
           )}
-          <table style={{ width: "100%", borderCollapse: "collapse", marginBottom: 20 }}>
+          <table className="invoice-print-table" style={{ width: "100%", borderCollapse: "collapse", marginBottom: 20 }}>
             <thead><tr style={{ background: design.header }}>
               {[getInvoicePositionDateLabel(profile, inv.invoiceCategory), "Beschreibung", "Menge", "Einzelpreis", "Gesamt"].map(h => <th key={h} style={{ padding: "7px 9px", textAlign: "left", color: "#fff", fontSize: 10 }}>{h}</th>)}
             </tr></thead>
@@ -131,8 +132,8 @@ export default function InvoicePrintView({ inv, profile, onClose, Button }) {
               ))}
             </tbody>
           </table>
-          <div style={{ display: "flex", justifyContent: "flex-end" }}>
-            <div style={{ width: 230 }}>
+          <div className="invoice-print-totals-wrap" style={{ display: "flex", justifyContent: "flex-end" }}>
+            <div className="invoice-print-totals" style={{ width: 230 }}>
               <div style={{ display: "flex", justifyContent: "space-between", padding: "3px 0", color: "#64748b" }}><span>Netto</span><span>{fmt(inv.net)}</span></div>
               <div style={{ display: "flex", justifyContent: "space-between", padding: "3px 0", color: "#64748b" }}><span>MwSt. {taxRate}%</span><span>{fmt(inv.tax)}</span></div>
               <div style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", fontWeight: 800, fontSize: 15, borderTop: `2px solid ${design.accent}`, marginTop: 4 }}><span>Gesamt brutto</span><span>{fmt(inv.total)}</span></div>
@@ -142,7 +143,7 @@ export default function InvoicePrintView({ inv, profile, onClose, Button }) {
             <div style={{ marginTop: 18, padding: "8px 10px", borderRadius: 4, background: "#fbfaf8", border: "1px solid #e8e1d6", color: "#475569", fontSize: 9, lineHeight: 1.45, whiteSpace: "pre-line" }}>{inv.invoiceNote}</div>
           )}
           {(profile.taxNumber || profile.vatId || profile.iban || profile.bic || profile.bankName) && (
-            <div style={{ position: "absolute", left: 46, right: 34, bottom: 24, display: "flex", justifyContent: "space-between", gap: 24, paddingTop: 8, borderTop: "1px solid #e2e8f0", fontSize: 8, color: "#64748b", lineHeight: 1.35 }}>
+            <div className="invoice-print-footer" style={{ position: "absolute", left: 46, right: 34, bottom: 24, display: "flex", justifyContent: "space-between", gap: 24, paddingTop: 8, borderTop: "1px solid #e2e8f0", fontSize: 8, color: "#64748b", lineHeight: 1.35 }}>
               <div>
                 {profile.taxNumber && <div>Steuernummer: {profile.taxNumber}</div>}
                 {profile.vatId && <div>USt-ID: {profile.vatId}</div>}
@@ -154,6 +155,7 @@ export default function InvoicePrintView({ inv, profile, onClose, Button }) {
               </div>
             </div>
           )}
+          </div>
         </div>
       </div>
     </div>
