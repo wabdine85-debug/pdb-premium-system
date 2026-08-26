@@ -1,5 +1,6 @@
 import { jsPDF } from "jspdf";
 import { getInvoiceDueLabel, getInvoicePositionDateLabel, isMedicalInvoiceProfile } from "./invoiceProfiles.js";
+import { getInvoiceBranding } from "./invoiceBranding.js";
 
 const PAGE_WIDTH = 210;
 const PAGE_HEIGHT = 297;
@@ -40,22 +41,42 @@ export function getInvoicePdfFileName(invoice) {
   return `${customer || "Kunde"}_${number || "Rechnung"}.pdf`;
 }
 
+function addProfileLogo(doc, profile) {
+  const source = String(profile?.pdfLogoDataUrl || profile?.logoUrl || "");
+  if (!source.startsWith("data:image/")) return false;
+  try {
+    doc.addImage(source, "PNG", MARGIN, 10, 21.5, 25.7, undefined, "FAST");
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function writePageHeader(doc, invoice, profile, accent) {
+  const branding = getInvoiceBranding(profile);
+  const hasLogo = addProfileLogo(doc, profile);
+  const brandX = hasLogo ? 44 : MARGIN;
+
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(17);
+  doc.setFontSize(14);
   doc.setTextColor(30, 41, 59);
-  doc.text(getBrandName(profile), MARGIN, 23);
+  doc.text(safeText(branding.headerPrimary), brandX, 18);
+
+  if (branding.headerBrand) {
+    doc.setFontSize(9.5);
+    doc.text(safeText(branding.headerBrand), brandX, 23.5);
+  }
 
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(8.5);
+  doc.setFontSize(7.5);
   doc.setTextColor(100, 116, 139);
   const email = safeText(profile?.companyEmail);
-  if (email) doc.text(email, MARGIN, 29);
+  if (email) doc.text(email, brandX, branding.headerBrand ? 29 : 24.5);
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(21);
   doc.setTextColor(...accent);
-  doc.text("RECHNUNG", PAGE_WIDTH - MARGIN, 22, { align: "right" });
+  doc.text("RECHNUNG", PAGE_WIDTH - MARGIN, 19, { align: "right" });
 
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8.5);
@@ -69,27 +90,31 @@ function writePageHeader(doc, invoice, profile, accent) {
     const paymentMethod = safeText(invoice?.paymentMethod).trim();
     metadata.push(`Bezahlt: ${formatDate(invoice.paidDate || invoice.date)}${paymentMethod ? ` · ${paymentMethod}` : ""}`);
   }
-  doc.text(metadata, PAGE_WIDTH - MARGIN, 29, { align: "right", lineHeightFactor: 1.45 });
+  doc.text(metadata, PAGE_WIDTH - MARGIN, 25.5, { align: "right", lineHeightFactor: 1.42 });
 
-  doc.setDrawColor(226, 232, 240);
-  doc.line(MARGIN, 45, PAGE_WIDTH - MARGIN, 45);
+  doc.setDrawColor(...accent);
+  doc.setLineWidth(0.35);
+  doc.line(MARGIN, 43, PAGE_WIDTH - MARGIN, 43);
 }
 
 function writeFooter(doc, profile) {
-  const details = [
+  const taxDetails = [
     profile?.taxNumber ? `Steuernummer: ${safeText(profile.taxNumber)}` : "",
     profile?.vatId ? `USt-ID: ${safeText(profile.vatId)}` : "",
+  ].filter(Boolean);
+  const bankDetails = [
     profile?.bankName ? safeText(profile.bankName) : "",
     profile?.iban ? `IBAN: ${safeText(profile.iban)}` : "",
     profile?.bic ? `BIC: ${safeText(profile.bic)}` : "",
   ].filter(Boolean);
-  if (!details.length) return;
+  if (!taxDetails.length && !bankDetails.length) return;
   doc.setDrawColor(226, 232, 240);
   doc.line(MARGIN, 275, PAGE_WIDTH - MARGIN, 275);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(7.5);
   doc.setTextColor(100, 116, 139);
-  doc.text(details.join("  ·  "), PAGE_WIDTH - MARGIN, 281, { align: "right", maxWidth: CONTENT_WIDTH });
+  if (taxDetails.length) doc.text(taxDetails, MARGIN, 280, { lineHeightFactor: 1.35 });
+  if (bankDetails.length) doc.text(bankDetails, PAGE_WIDTH - MARGIN, 280, { align: "right", lineHeightFactor: 1.35 });
 }
 
 function writeTableHeader(doc, y, invoice, profile, accent) {
@@ -127,21 +152,25 @@ export function buildInvoicePdf(invoice, profile) {
   });
   writePageHeader(doc, invoice, profile, accent);
 
+  const branding = getInvoiceBranding(profile);
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(7);
-  doc.setTextColor(148, 163, 184);
-  const sender = [getBrandName(profile), safeText(profile?.companyAddress).replace(/\n/g, ", ")].filter(Boolean).join(" · ");
-  doc.text(doc.splitTextToSize(sender, 105), MARGIN, 57);
+  doc.setFontSize(6.5);
+  doc.setTextColor(100, 116, 139);
+  doc.text(safeText(branding.senderName), MARGIN, 52.5);
+  if (branding.senderAddress) doc.text(safeText(branding.senderAddress), MARGIN, 56.5);
+  doc.setDrawColor(203, 213, 225);
+  doc.setLineWidth(0.2);
+  doc.line(MARGIN, 59, 119, 59);
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(10);
   doc.setTextColor(30, 41, 59);
-  doc.text(safeText(invoice?.memberName, "Kunde"), MARGIN, 66);
+  doc.text(safeText(invoice?.memberName, "Kunde"), MARGIN, 66.5);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
   doc.setTextColor(100, 116, 139);
   const customerAddress = safeText(invoice?.customerAddress);
-  if (customerAddress) doc.text(doc.splitTextToSize(customerAddress, 90), MARGIN, 72, { lineHeightFactor: 1.35 });
+  if (customerAddress) doc.text(doc.splitTextToSize(customerAddress, 90), MARGIN, 72.5, { lineHeightFactor: 1.35 });
 
   let y = 91;
   if (isMedicalInvoiceProfile(profile) && invoice?.diagnosis) {

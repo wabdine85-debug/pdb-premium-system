@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import fs from "node:fs";
 import { buildInvoicePdf, createInvoicePdfDownload } from "../modules/invoices/invoicePdf.js";
 
 test("buildInvoicePdf creates a valid PDF document", () => {
@@ -51,4 +52,33 @@ test("createInvoicePdfDownload returns a native PDF download target", () => {
   assert.equal(download.fileName, "Anastasija-Mitic_PDB-RE1002.pdf");
   assert.match(download.base64, /^[A-Za-z0-9+/=]+$/);
   assert.equal(new TextDecoder().decode(Uint8Array.from(Buffer.from(download.base64, "base64")).slice(0, 4)), "%PDF");
+});
+
+test("embeds the configured PDB logo in a medical invoice PDF", () => {
+  const logo = fs.readFileSync(new URL("../public/pdb-logo.png", import.meta.url)).toString("base64");
+  const invoice = {
+    number: "MED-RE1003",
+    memberName: "Anna Beispiel",
+    customerAddress: "Rheinstraße 1\n65185 Wiesbaden",
+    date: "2026-08-26",
+    paymentTerm: "14",
+    dueDate: "2026-09-09",
+    items: [{ desc: "Behandlung", qty: 1, price: 125.5, treatmentDate: "2026-08-26" }],
+    net: 125.5,
+    tax: 0,
+    total: 125.5,
+  };
+  const profile = {
+    id: "medical-doctor",
+    companyName: "Dr. Wafa Ahmed - Ärztliche Praxis - PDB Aesthetic Room",
+    companyAddress: "Rheinstraße 59\n65185 Wiesbaden\n0178 - 600 11 03",
+    companyEmail: "info@palaisdebeaute.de",
+    defaultTaxRate: 0,
+    pdfDesignVariant: "medical-clean",
+    pdfLogoDataUrl: `data:image/png;base64,${logo}`,
+  };
+
+  const pdf = buildInvoicePdf(invoice, profile);
+  assert.ok(pdf.getImageProperties(profile.pdfLogoDataUrl).width > 0);
+  assert.ok(pdf.output("arraybuffer").byteLength > 20_000);
 });

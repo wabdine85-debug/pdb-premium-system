@@ -1716,7 +1716,7 @@ function Settings({ data, save }) {
               <Field label="Firmen-/Praxisname"><input style={inp} value={profile.companyName || ""} onChange={e => updateProfile(profile.id, { companyName: e.target.value })} /></Field>
               <Field label="E-Mail"><input style={inp} value={profile.companyEmail || ""} onChange={e => updateProfile(profile.id, { companyEmail: e.target.value })} /></Field>
               <Field label="Logo-Platzhalter"><input style={inp} value={profile.logoPlaceholder || ""} onChange={e => updateProfile(profile.id, { logoPlaceholder: e.target.value })} /></Field>
-              <Field label="Logo URL/Pfad"><input style={inp} value={profile.logoUrl || ""} placeholder="/pdb-logo.png oder https://…" onChange={e => updateProfile(profile.id, { logoUrl: e.target.value })} /></Field>
+              <Field label="Logo URL/Pfad"><input style={inp} value={profile.logoUrl || ""} placeholder="/office/pdb-logo.png oder https://…" onChange={e => updateProfile(profile.id, { logoUrl: e.target.value })} /></Field>
               <Field label="Steuernummer"><input style={inp} value={profile.taxNumber || ""} onChange={e => updateProfile(profile.id, { taxNumber: e.target.value })} /></Field>
               <Field label="USt-ID"><input style={inp} value={profile.vatId || ""} onChange={e => updateProfile(profile.id, { vatId: e.target.value })} /></Field>
               <Field label="Bankname"><input style={inp} value={profile.bankName || ""} onChange={e => updateProfile(profile.id, { bankName: e.target.value })} /></Field>
