@@ -8,6 +8,7 @@ import { createMembershipExportRows, downloadMembershipCsv, downloadMembershipPd
 import { getNextMandateReference } from "./modules/memberships/mandateReferences.js";
 import { useStorage, migrateData } from "./services/crmStorage.js";
 import { DEFAULT_INVOICE_PROFILE_ID, INVOICE_PAYMENT_TERMS, PDB_INVOICE_CATEGORIES, buildInvoiceNumber, calculateInvoiceDueDate, calculateInvoiceTotals, defaultInvoiceProfiles, getInvoiceCategoryLabel, getInvoiceDueLabel, getInvoicePositionDateLabel, getInvoiceProfile, isMedicalInvoiceProfile } from "./modules/invoices/invoiceProfiles.js";
+import { buildDiagnosisSuggestion } from "./modules/invoices/diagnosisSuggestions.js";
 import { monthSummary } from "./modules/revenue/revenueUtils.js";
 import { getReturnCaseSummary } from "./modules/direct-debits/directDebitUtils.js";
 import { addDays, fmt, fmtDate, today } from "./utils/formatters.js";
@@ -15,61 +16,6 @@ import "./crm-system.css";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const uid = () => Math.random().toString(36).slice(2, 10);
-
-const DIAGNOSIS_TEMPLATES = {
-  hws: {
-    title: "HWS-Syndrom / Beschwerden der Halswirbelsäule",
-    symptoms: ["Nacken- und Schulterverspannungen", "eingeschränkte Beweglichkeit", "Kopfschmerz möglich", "ausstrahlende Beschwerden in Arm/Hand möglich"],
-    causes: ["muskuläre Dysbalancen", "Fehlhaltung / Bildschirmarbeit", "Blockierungen im Bereich der Halswirbelsäule", "Stressbedingte Tonuserhöhung"],
-    treatments: ["klinische Befundung und Funktionsprüfung", "manuelle bzw. physiotherapeutische Maßnahmen", "Wärme, Mobilisation und Haltungsschulung", "ärztliche Abklärung bei neurologischen Ausfällen, Trauma oder starken Schmerzen"],
-  },
-  lws: {
-    title: "LWS-Beschwerden / Lumbalgie",
-    symptoms: ["Schmerzen im unteren Rücken", "Bewegungseinschränkung", "mögliche Ausstrahlung in Gesäß/Bein", "Belastungs- oder Sitzschmerz"],
-    causes: ["muskuläre Überlastung", "Fehlbelastung", "Facettengelenk-/ISG-Irritation", "Bandscheibenbezogene Beschwerden möglich"],
-    treatments: ["Funktionsprüfung und Schmerzanamnese", "Mobilisation und stabilisierende Übungen", "Wärme und entlastende Lagerung", "ärztliche Abklärung bei Taubheit, Kraftverlust oder Blasen-/Darmstörungen"],
-  },
-  bws: {
-    title: "BWS-Beschwerden / Brustwirbelsäule",
-    symptoms: ["Schmerzen zwischen den Schulterblättern", "Druck- oder Engegefühl", "eingeschränkte Rotation", "atemabhängige Beschwerden möglich"],
-    causes: ["Haltungsbelastung", "Rippen-/Wirbelgelenk-Irritation", "muskuläre Verspannung", "Stress und flache Atmung"],
-    treatments: ["Beweglichkeitsprüfung", "Mobilisation der BWS/Rippenregion", "Atem- und Haltungsschulung", "ärztliche Abklärung bei Brustschmerz, Luftnot oder unklarer Symptomatik"],
-  },
-};
-
-function buildDiagnosisSuggestion(input) {
-  const key = (input || "").trim().toLowerCase();
-  const template = DIAGNOSIS_TEMPLATES[key];
-  if (!template) {
-    return [
-      `Befund: ${input || "Bitte Befund ergänzen"}`,
-      "",
-      "Symptome:",
-      "- bitte Symptome stichpunktartig ergänzen",
-      "",
-      "Mögliche Ursachen:",
-      "- bitte Ursache/Anamnese ergänzen",
-      "",
-      "Behandlungsmöglichkeiten:",
-      "- Befundorientierte Beratung und Dokumentation",
-      "- Behandlung nach medizinischer Indikation",
-      "- ärztliche Abklärung bei unklarer oder akuter Symptomatik",
-    ].join("\n");
-  }
-
-  return [
-    `Befund: ${template.title}`,
-    "",
-    "Symptome:",
-    ...template.symptoms.map(item => `- ${item}`),
-    "",
-    "Mögliche Ursachen:",
-    ...template.causes.map(item => `- ${item}`),
-    "",
-    "Behandlungsmöglichkeiten:",
-    ...template.treatments.map(item => `- ${item}`),
-  ].join("\n");
-}
 
 const STATUS_COLORS = {
   aktiv: { bg: "#d1fae5", color: "#065f46" },
@@ -855,6 +801,7 @@ function Invoices({ data, save }) {
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("alle");
   const [form, setForm] = useState({});
+  const [formError, setFormError] = useState("");
   const [items, setItems] = useState([{ treatmentDate: today(), desc: "", qty: 1, price: 0 }]);
   const [memberQuery, setMemberQuery] = useState("");
   const [memberPickerOpen, setMemberPickerOpen] = useState(false);
@@ -894,6 +841,7 @@ function Invoices({ data, save }) {
     setItems([{ treatmentDate: today(), desc: "", qty: 1, price: 0 }]);
     setMemberQuery("");
     setMemberPickerOpen(false);
+    setFormError("");
     setViewing(null);
     setShowForm(true);
   };
@@ -914,13 +862,34 @@ function Invoices({ data, save }) {
     })));
     setMemberQuery(invoice.memberName || "");
     setMemberPickerOpen(false);
+    setFormError("");
     setViewing(null);
     setPrinting(null);
     setShowForm(true);
   };
 
   const saveInvoice = () => {
-    if (!form.memberId || !form.invoiceProfileId) return;
+    if (!form.memberId) {
+      setFormError("Bitte zuerst eine Kundin oder einen Kunden auswählen.");
+      return;
+    }
+    if (!form.invoiceProfileId) {
+      setFormError("Bitte ein Rechnungsprofil auswählen.");
+      return;
+    }
+    if (!String(form.number || "").trim()) {
+      setFormError("Die Rechnungsnummer darf nicht leer sein.");
+      return;
+    }
+    const duplicateNumber = data.invoices.some(invoice => invoice.id !== form.id && invoice.number === form.number);
+    if (duplicateNumber) {
+      setFormError("Diese Rechnungsnummer ist bereits vergeben.");
+      return;
+    }
+    if (items.length === 0 || items.every(item => !String(item.desc || "").trim())) {
+      setFormError("Bitte mindestens eine Rechnungsposition beschreiben.");
+      return;
+    }
     const member = data.members.find(m => m.id === form.memberId);
     const profile = getInvoiceProfile(data, form.invoiceProfileId);
     const normalizedItems = items.map(item => ({
@@ -949,6 +918,8 @@ function Invoices({ data, save }) {
       total,
       taxRate: profile.defaultTaxRate,
       id: form.id || uid(),
+      createdAt: form.createdAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     };
     save(d => ({
       ...d,
@@ -956,6 +927,7 @@ function Invoices({ data, save }) {
       invoiceProfiles: isEditing ? (d.invoiceProfiles || defaultInvoiceProfiles) : (d.invoiceProfiles || defaultInvoiceProfiles).map(p => p.id === profile.id ? { ...p, nextInvoiceNumber: (Number(p.nextInvoiceNumber) || 0) + 1 } : p),
       settings: !isEditing && profile.id === DEFAULT_INVOICE_PROFILE_ID ? { ...d.settings, nextInvoiceNumber: (Number(profile.nextInvoiceNumber) || 0) + 1 } : d.settings,
     }));
+    setFormError("");
     setShowForm(false);
   };
 
@@ -1330,6 +1302,12 @@ function Invoices({ data, save }) {
               );
             })()}
           </div>
+
+          {formError && (
+            <div role="alert" style={{ marginBottom: 14, padding: "10px 12px", borderRadius: 10, background: "#fff7ed", border: "1px solid #fed7aa", color: "#9a3412", fontSize: 13, fontWeight: 600 }}>
+              {formError}
+            </div>
+          )}
 
           <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
             <Btn variant="ghost" onClick={() => setShowForm(false)}>Abbrechen</Btn>

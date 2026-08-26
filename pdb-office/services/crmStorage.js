@@ -3,8 +3,10 @@ import { DEFAULT_INVOICE_PROFILE_ID, defaultInvoiceProfiles } from "../modules/i
 import revenueSeed from "../data/revenue-seed-default.json";
 import { normalizeRevenueEntry } from "../modules/revenue/revenueUtils.js";
 import { getStorageRevision } from "./storageRevision.js";
+import { rebaseDataChange } from "./storageMerge.js";
 
 const STORAGE_KEY = "crm_data_v1";
+const INVOICE_RECOVERY_KEY = "crm_invoice_recovery_v1";
 const FILE_STORAGE_ENDPOINT = "/api/office/crm-data";
 const REMOVED_MEMBERSHIP_IDS = new Set(["4znpbozb", "kat3nvr9"]);
 
@@ -119,8 +121,27 @@ function stampData(previous, next) {
   };
 }
 
+function preserveInvoiceRecovery(raw) {
+  if (!raw) return;
+  try {
+    const data = JSON.parse(raw);
+    if (!Array.isArray(data?.invoices) || data.invoices.length === 0) return;
+    localStorage.setItem(INVOICE_RECOVERY_KEY, JSON.stringify({
+      savedAt: new Date().toISOString(),
+      storageRevision: getStorageRevision(data),
+      invoices: data.invoices,
+      invoiceProfiles: data.invoiceProfiles || [],
+    }));
+  } catch {}
+}
+
 function persistLocal(data) {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch {}
+  try {
+    const next = JSON.stringify(data);
+    const current = localStorage.getItem(STORAGE_KEY);
+    if (current && current !== next) preserveInvoiceRecovery(current);
+    localStorage.setItem(STORAGE_KEY, next);
+  } catch {}
 }
 
 async function persistFile(data) {
@@ -139,6 +160,7 @@ export function useStorage() {
 
   useEffect(() => {
     let cancelled = false;
+    const loadBaseline = dataRef.current;
     fetch(FILE_STORAGE_ENDPOINT, { cache: "no-store" })
       .then(response => response.ok ? response.json() : null)
       .then(raw => {
@@ -152,6 +174,9 @@ export function useStorage() {
           setSyncStatus("error");
           return;
         }
+        // A save may finish while the initial request is still in flight.
+        // Never replace that new local change with the older response.
+        if (dataRef.current !== loadBaseline) return;
         // The server is authoritative. A stale browser cache must never upload
         // itself automatically and overwrite changes made on another device.
         persistLocal(fileData);
@@ -184,11 +209,18 @@ export function useStorage() {
         const currentResponse = await fetch(FILE_STORAGE_ENDPOINT, { cache: "no-store" });
         if (!currentResponse.ok) return;
         const fileData = migrateData(await currentResponse.json());
-        dataRef.current = fileData;
-        persistLocal(fileData);
-        setData(fileData);
-        setSyncStatus("saved");
-        window.alert("Ein neuerer CRM-Datenstand wurde geladen. Bitte prüfen Sie Ihre letzte Änderung und führen Sie sie bei Bedarf erneut aus.");
+        const localData = dataRef.current;
+        const rebased = stampData(fileData, rebaseDataChange(previous, localData, fileData));
+        dataRef.current = rebased;
+        persistLocal(rebased);
+        setData(rebased);
+        const retryResponse = await persistFile(rebased);
+        if (retryResponse?.ok) {
+          setSyncStatus("saved");
+          return;
+        }
+        setSyncStatus("error");
+        window.alert("Die Änderung bleibt lokal erhalten, konnte aber noch nicht mit dem Server abgeglichen werden. Bitte die Seite geöffnet lassen und den Vorgang prüfen.");
       } catch {
         setSyncStatus("error");
       }
