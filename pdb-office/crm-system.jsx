@@ -83,16 +83,17 @@ function formatCustomerAddress(customer) {
   return [customer.address, [customer.zip, customer.city].filter(Boolean).join(" "), customer.country].filter(Boolean).join("\n");
 }
 
-function Modal({ title, onClose, children, wide, className = "" }) {
+function Modal({ title, onClose, children, footer, wide, className = "", overlayClassName = "" }) {
   const titleId = React.useId();
   return (
-    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+    <div className={`crm-modal-backdrop ${overlayClassName}`.trim()} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
       <div role="dialog" aria-modal="true" aria-labelledby={titleId} className={`crm-modal ${className}`.trim()} style={{ background: "#fff", borderRadius: 16, width: wide ? 720 : 520, maxWidth: "100%", maxHeight: "90vh", overflow: "auto", boxShadow: "0 24px 64px rgba(0,0,0,0.18)" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 24px 0" }}>
+        <div className="crm-modal__header" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 24px 0" }}>
           <h3 id={titleId} style={{ margin: 0, fontSize: 18, fontWeight: 700, color: "#1e293b" }}>{title}</h3>
           <button aria-label="Fenster schließen" onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 22, color: "#94a3b8", lineHeight: 1 }}>×</button>
         </div>
-        <div style={{ padding: 24 }}>{children}</div>
+        <div className="crm-modal__body" style={{ padding: 24 }}>{children}</div>
+        {footer && <div className="crm-modal__footer">{footer}</div>}
       </div>
     </div>
   );
@@ -806,6 +807,15 @@ function Invoices({ data, save }) {
   const [items, setItems] = useState([{ treatmentDate: today(), desc: "", qty: 1, price: "" }]);
   const [memberQuery, setMemberQuery] = useState("");
   const [memberPickerOpen, setMemberPickerOpen] = useState(false);
+  const [pendingItemFocus, setPendingItemFocus] = useState(null);
+  const recipientSectionRef = useRef(null);
+  const diagnosisSectionRef = useRef(null);
+  const positionsSectionRef = useRef(null);
+  const profileInputRef = useRef(null);
+  const invoiceNumberRef = useRef(null);
+  const memberSearchRef = useRef(null);
+  const descriptionInputRefs = useRef([]);
+  const priceInputRefs = useRef([]);
   const invoiceProfiles = data.invoiceProfiles || defaultInvoiceProfiles;
   const selectedProfile = getInvoiceProfile(data, form.invoiceProfileId);
   const isMedicalInvoice = isMedicalInvoiceProfile(selectedProfile);
@@ -824,6 +834,28 @@ function Invoices({ data, save }) {
     const matchesStatus = filterStatus === "alle" || inv.status === filterStatus;
     return matchesSearch && matchesStatus;
   });
+
+  const revealInvoiceControl = (control) => {
+    if (!control) return;
+    requestAnimationFrame(() => {
+      control.focus({ preventScroll: true });
+      control.scrollIntoView({ block: "center", behavior: "auto" });
+    });
+  };
+
+  useEffect(() => {
+    if (pendingItemFocus === null) return;
+    const control = descriptionInputRefs.current[pendingItemFocus];
+    if (!control) return;
+    revealInvoiceControl(control);
+    setPendingItemFocus(null);
+  }, [items.length, pendingItemFocus]);
+
+  const addInvoiceItem = () => {
+    const nextIndex = items.length;
+    setItems(current => [...current, { treatmentDate: form.date || today(), desc: "", qty: 1, price: "" }]);
+    setPendingItemFocus(nextIndex);
+  };
 
   const openNew = () => {
     const profile = getInvoiceProfile(data, DEFAULT_INVOICE_PROFILE_ID);
@@ -872,28 +904,36 @@ function Invoices({ data, save }) {
   const saveInvoice = () => {
     if (!form.memberId) {
       setFormError("Bitte zuerst eine Kundin oder einen Kunden auswählen.");
+      revealInvoiceControl(memberSearchRef.current);
       return;
     }
     if (!form.invoiceProfileId) {
       setFormError("Bitte ein Rechnungsprofil auswählen.");
+      revealInvoiceControl(profileInputRef.current);
       return;
     }
     if (!String(form.number || "").trim()) {
       setFormError("Die Rechnungsnummer darf nicht leer sein.");
+      revealInvoiceControl(invoiceNumberRef.current);
       return;
     }
     const normalizedInvoiceNumber = String(form.number).trim().toLocaleLowerCase("de-DE");
     const duplicateNumber = data.invoices.some(invoice => invoice.id !== form.id && String(invoice.number || "").trim().toLocaleLowerCase("de-DE") === normalizedInvoiceNumber);
     if (duplicateNumber) {
       setFormError("Diese Rechnungsnummer ist bereits vergeben.");
+      revealInvoiceControl(invoiceNumberRef.current);
       return;
     }
     if (items.length === 0 || items.some(item => !String(item.desc || "").trim())) {
       setFormError("Bitte jede Rechnungsposition beschreiben oder eine leere Position entfernen.");
+      const invalidIndex = Math.max(0, items.findIndex(item => !String(item.desc || "").trim()));
+      revealInvoiceControl(descriptionInputRefs.current[invalidIndex]);
       return;
     }
     if (items.some(item => parseLocalizedNumber(item.price) <= 0)) {
       setFormError("Bitte für jede Rechnungsposition einen Preis größer als 0,00 € eingeben.");
+      const invalidIndex = Math.max(0, items.findIndex(item => parseLocalizedNumber(item.price) <= 0));
+      revealInvoiceControl(priceInputRefs.current[invalidIndex]);
       return;
     }
     const member = data.members.find(m => m.id === form.memberId);
@@ -1142,22 +1182,51 @@ function Invoices({ data, save }) {
       {confirm && <ConfirmDialog message={confirm.message} detail={confirm.detail} onConfirm={confirm.onConfirm} onCancel={() => setConfirm(null)} />}
 
       {showForm && (
-        <Modal title={form.id ? `Rechnung ${form.number} bearbeiten` : "Neue Rechnung"} onClose={() => setShowForm(false)} wide className="invoice-modal">
-          <div className="invoice-form-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 16px" }}>
+        <Modal
+          title={form.id ? `Rechnung ${form.number} bearbeiten` : "Neue Rechnung"}
+          onClose={() => setShowForm(false)}
+          wide
+          className="invoice-modal"
+          overlayClassName="invoice-modal-backdrop"
+          footer={(
+            <div className="invoice-form-actions" style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+              <Btn variant="ghost" onClick={() => setShowForm(false)}>Abbrechen</Btn>
+              <Btn onClick={saveInvoice}>{form.id ? "Änderungen speichern" : "Rechnung erstellen"}</Btn>
+            </div>
+          )}
+        >
+          <nav className="invoice-form-progress" aria-label="Abschnitte der Rechnung">
+            <button type="button" onClick={() => recipientSectionRef.current?.scrollIntoView({ block: "start" })}><span>1</span> Empfänger</button>
+            {isMedicalInvoice && <button type="button" onClick={() => diagnosisSectionRef.current?.scrollIntoView({ block: "start" })}><span>2</span> Befund</button>}
+            <button type="button" onClick={() => positionsSectionRef.current?.scrollIntoView({ block: "start" })}><span>{isMedicalInvoice ? "3" : "2"}</span> Leistung</button>
+          </nav>
+
+          {formError && (
+            <div className="invoice-form-error" role="alert">
+              <strong>Eingabe prüfen</strong>
+              <span>{formError}</span>
+            </div>
+          )}
+
+          <section ref={recipientSectionRef} className="invoice-form-section" aria-labelledby="invoice-recipient-heading">
+            <div className="invoice-form-section__heading" id="invoice-recipient-heading"><span>1</span><div><strong>Empfänger</strong><small>Profil, Kunde und Zahlungsdaten</small></div></div>
+            <div className="invoice-form-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 16px" }}>
             <Field label="Rechnungsprofil" required>
               <select
+                ref={profileInputRef}
                 aria-label="Rechnungsprofil"
                 style={sel}
                 value={form.invoiceProfileId || ""}
                 onChange={e => {
                   const profile = getInvoiceProfile(data, e.target.value);
+                  setFormError("");
                   setForm(f => ({ ...f, invoiceProfileId: profile.id, number: f.id ? f.number : buildInvoiceNumber(profile) }));
                 }}
               >
                 {invoiceProfiles.map(profile => <option key={profile.id} value={profile.id}>{profile.name}</option>)}
               </select>
             </Field>
-            <Field label="Rechnungsnummer"><input style={inp} value={form.number || ""} onChange={e => setForm(f => ({ ...f, number: e.target.value }))} /></Field>
+            <Field label="Rechnungsnummer"><input ref={invoiceNumberRef} style={inp} value={form.number || ""} onChange={e => { setFormError(""); setForm(f => ({ ...f, number: e.target.value })); }} /></Field>
             {!isMedicalInvoice && (
               <Field label="Rechnungsart">
                 <select aria-label="Rechnungsart" style={sel} value={form.invoiceCategory || "treatment"} onChange={e => setForm(f => ({ ...f, invoiceCategory: e.target.value }))}>
@@ -1167,11 +1236,13 @@ function Invoices({ data, save }) {
             )}
             <Field label="Kunde suchen" required>
               <input
+                ref={memberSearchRef}
                 style={inp}
                 value={memberQuery}
                 placeholder="Name, E-Mail oder Telefon eingeben…"
                 onFocus={() => setMemberPickerOpen(true)}
                 onChange={e => {
+                  setFormError("");
                   setMemberQuery(e.target.value);
                   setForm(f => ({ ...f, memberId: "" }));
                   setMemberPickerOpen(true);
@@ -1184,7 +1255,7 @@ function Invoices({ data, save }) {
                 </div>
               )}
               {memberPickerOpen && (
-                <div style={{ marginTop: 8, border: "1px solid #e2e8f0", borderRadius: 10, maxHeight: 220, overflow: "auto", background: "#fff" }}>
+                <div className="invoice-customer-results" style={{ marginTop: 8, border: "1px solid #e2e8f0", borderRadius: 10, maxHeight: 220, overflow: "auto", background: "#fff" }}>
                   {memberMatches.length === 0 ? (
                     <div style={{ padding: "12px", fontSize: 13, color: "#94a3b8" }}>Keine Kunden gefunden</div>
                   ) : memberMatches.map(member => (
@@ -1192,6 +1263,7 @@ function Invoices({ data, save }) {
                       key={member.id}
                       type="button"
                       onClick={() => {
+                        setFormError("");
                         setForm(f => ({ ...f, memberId: member.id }));
                         setMemberQuery(member.name || "");
                         setMemberPickerOpen(false);
@@ -1258,28 +1330,36 @@ function Invoices({ data, save }) {
                 </div>
               </Field>
             )}
-          </div>
-
-          {isMedicalInvoice && <Field label="Befund / Diagnose">
-            <div className="invoice-diagnosis-controls" style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 8, marginBottom: 8 }}>
-              <input aria-label="Befund für Smart-Ausfüllen" style={inp} value={form.diagnosisCode || ""} placeholder="z. B. HWS, ISG oder Nacken" onChange={e => setForm(f => ({ ...f, diagnosisCode: e.target.value }))} />
-              <Btn variant="outline" onClick={() => setForm(f => ({ ...f, diagnosis: buildDiagnosisSuggestion(f.diagnosisCode) }))}>Smart ausfüllen</Btn>
             </div>
-            <textarea
-              style={{ ...inp, minHeight: 96, resize: "vertical", lineHeight: 1.35, fontSize: 13 }}
-              value={form.diagnosis || ""}
-              placeholder="Befund, Symptome, Ursache und Behandlungsmöglichkeiten dokumentieren…"
-              onChange={e => setForm(f => ({ ...f, diagnosis: e.target.value }))}
-            />
-          </Field>}
+          </section>
 
-          <section className="invoice-positions">
-            <div className="invoice-positions__heading">
-              <div>
-                <h4>Rechnungspositionen</h4>
-                <p>Leistung und Bruttopreis eingeben – Komma oder Punkt sind möglich.</p>
+          {isMedicalInvoice && <section ref={diagnosisSectionRef} className="invoice-form-section invoice-form-section--diagnosis" aria-labelledby="invoice-diagnosis-heading">
+            <div className="invoice-form-section__heading" id="invoice-diagnosis-heading"><span>2</span><div><strong>Befund</strong><small>Medizinische Dokumentation</small></div></div>
+            <Field label="Befund / Diagnose">
+              <div className="invoice-diagnosis-controls" style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 8, marginBottom: 8 }}>
+                <input aria-label="Befund für Smart-Ausfüllen" style={inp} value={form.diagnosisCode || ""} placeholder="z. B. HWS, ISG oder Nacken" onChange={e => setForm(f => ({ ...f, diagnosisCode: e.target.value }))} />
+                <Btn variant="outline" onClick={() => setForm(f => ({ ...f, diagnosis: buildDiagnosisSuggestion(f.diagnosisCode) }))}>Smart ausfüllen</Btn>
               </div>
-              <Btn small variant="ghost" onClick={() => setItems([...items, { treatmentDate: form.date || today(), desc: "", qty: 1, price: "" }])}>+ Position</Btn>
+              <textarea
+                aria-label="Befund und Diagnose"
+                style={{ ...inp, minHeight: 96, resize: "vertical", lineHeight: 1.35, fontSize: 13 }}
+                value={form.diagnosis || ""}
+                placeholder="Befund, Symptome, Ursache und Behandlungsmöglichkeiten dokumentieren…"
+                onChange={e => setForm(f => ({ ...f, diagnosis: e.target.value }))}
+              />
+            </Field>
+          </section>}
+
+          <section ref={positionsSectionRef} className="invoice-positions">
+            <div className="invoice-positions__heading">
+              <div className="invoice-positions__title">
+                <span className="invoice-positions__step">{isMedicalInvoice ? "3" : "2"}</span>
+                <div>
+                  <h4>Rechnungspositionen</h4>
+                  <p>Leistung und Bruttopreis eingeben – Komma oder Punkt sind möglich.</p>
+                </div>
+              </div>
+              <Btn small variant="ghost" onClick={addInvoiceItem}>+ Position</Btn>
             </div>
             <div className="invoice-line-head">
               <span>{getInvoicePositionDateLabel(selectedProfile, form.invoiceCategory)}</span>
@@ -1300,7 +1380,7 @@ function Invoices({ data, save }) {
                 </label>
                 <label className="invoice-line-field invoice-line-field--description">
                   <span>Beschreibung</span>
-                  <input style={inp} aria-label={`Beschreibung Position ${i + 1}`} placeholder="z. B. Hydrafacial Behandlung" value={item.desc} onChange={e => setItems(items.map((it, j) => j === i ? { ...it, desc: e.target.value } : it))} />
+                  <input ref={element => { descriptionInputRefs.current[i] = element; }} style={inp} aria-label={`Beschreibung Position ${i + 1}`} placeholder="z. B. Hydrafacial Behandlung" value={item.desc} onChange={e => { setFormError(""); setItems(items.map((it, j) => j === i ? { ...it, desc: e.target.value } : it)); }} />
                 </label>
                 <label className="invoice-line-field invoice-line-field--quantity">
                   <span>Menge</span>
@@ -1309,7 +1389,7 @@ function Invoices({ data, save }) {
                 <label className="invoice-line-field invoice-line-field--price">
                   <span>Preis brutto</span>
                   <span className="invoice-price-input">
-                    <input style={inp} type="text" inputMode="decimal" autoComplete="off" aria-label={`Preis brutto Position ${i + 1}`} placeholder="0,00" value={item.price} onFocus={e => e.currentTarget.select()} onChange={e => setItems(items.map((it, j) => j === i ? { ...it, price: normalizePriceInput(e.target.value) } : it))} />
+                    <input ref={element => { priceInputRefs.current[i] = element; }} style={inp} type="text" inputMode="decimal" autoComplete="off" aria-label={`Preis brutto Position ${i + 1}`} placeholder="0,00" value={item.price} onFocus={e => e.currentTarget.select()} onChange={e => { setFormError(""); setItems(items.map((it, j) => j === i ? { ...it, price: normalizePriceInput(e.target.value) } : it)); }} />
                     <span aria-hidden="true">€</span>
                   </span>
                 </label>
@@ -1354,16 +1434,6 @@ function Invoices({ data, save }) {
             })()}
           </div>
 
-          {formError && (
-            <div role="alert" style={{ marginBottom: 14, padding: "10px 12px", borderRadius: 10, background: "#fff7ed", border: "1px solid #fed7aa", color: "#9a3412", fontSize: 13, fontWeight: 600 }}>
-              {formError}
-            </div>
-          )}
-
-          <div className="invoice-form-actions" style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
-            <Btn variant="ghost" onClick={() => setShowForm(false)}>Abbrechen</Btn>
-            <Btn onClick={saveInvoice}>{form.id ? "Änderungen speichern" : "Rechnung erstellen"}</Btn>
-          </div>
         </Modal>
       )}
     </div>
