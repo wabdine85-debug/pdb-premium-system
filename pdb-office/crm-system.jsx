@@ -9,6 +9,7 @@ import { getNextMandateReference } from "./modules/memberships/mandateReferences
 import { useStorage, migrateData } from "./services/crmStorage.js";
 import { DEFAULT_INVOICE_PROFILE_ID, INVOICE_PAYMENT_TERMS, PDB_INVOICE_CATEGORIES, buildInvoiceNumber, calculateInvoiceDueDate, calculateInvoiceTotals, defaultInvoiceProfiles, getInvoiceCategoryLabel, getInvoiceDueLabel, getInvoicePositionDateLabel, getInvoiceProfile, isMedicalInvoiceProfile } from "./modules/invoices/invoiceProfiles.js";
 import { buildDiagnosisSuggestion } from "./modules/invoices/diagnosisSuggestions.js";
+import { normalizePriceInput, parseLocalizedNumber, toPriceInput } from "./modules/invoices/invoiceInputs.js";
 import { monthSummary } from "./modules/revenue/revenueUtils.js";
 import { getReturnCaseSummary } from "./modules/direct-debits/directDebitUtils.js";
 import { addDays, fmt, fmtDate, today } from "./utils/formatters.js";
@@ -82,11 +83,11 @@ function formatCustomerAddress(customer) {
   return [customer.address, [customer.zip, customer.city].filter(Boolean).join(" "), customer.country].filter(Boolean).join("\n");
 }
 
-function Modal({ title, onClose, children, wide }) {
+function Modal({ title, onClose, children, wide, className = "" }) {
   const titleId = React.useId();
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
-      <div role="dialog" aria-modal="true" aria-labelledby={titleId} className="crm-modal" style={{ background: "#fff", borderRadius: 16, width: wide ? 720 : 520, maxWidth: "100%", maxHeight: "90vh", overflow: "auto", boxShadow: "0 24px 64px rgba(0,0,0,0.18)" }}>
+      <div role="dialog" aria-modal="true" aria-labelledby={titleId} className={`crm-modal ${className}`.trim()} style={{ background: "#fff", borderRadius: 16, width: wide ? 720 : 520, maxWidth: "100%", maxHeight: "90vh", overflow: "auto", boxShadow: "0 24px 64px rgba(0,0,0,0.18)" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 24px 0" }}>
           <h3 id={titleId} style={{ margin: 0, fontSize: 18, fontWeight: 700, color: "#1e293b" }}>{title}</h3>
           <button aria-label="Fenster schließen" onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 22, color: "#94a3b8", lineHeight: 1 }}>×</button>
@@ -802,7 +803,7 @@ function Invoices({ data, save }) {
   const [filterStatus, setFilterStatus] = useState("alle");
   const [form, setForm] = useState({});
   const [formError, setFormError] = useState("");
-  const [items, setItems] = useState([{ treatmentDate: today(), desc: "", qty: 1, price: 0 }]);
+  const [items, setItems] = useState([{ treatmentDate: today(), desc: "", qty: 1, price: "" }]);
   const [memberQuery, setMemberQuery] = useState("");
   const [memberPickerOpen, setMemberPickerOpen] = useState(false);
   const invoiceProfiles = data.invoiceProfiles || defaultInvoiceProfiles;
@@ -838,7 +839,7 @@ function Invoices({ data, save }) {
       paymentMethod: "",
       paidDate: "",
     });
-    setItems([{ treatmentDate: today(), desc: "", qty: 1, price: 0 }]);
+    setItems([{ treatmentDate: today(), desc: "", qty: 1, price: "" }]);
     setMemberQuery("");
     setMemberPickerOpen(false);
     setFormError("");
@@ -858,7 +859,7 @@ function Invoices({ data, save }) {
       treatmentDate: item.treatmentDate || invoice.treatmentDate || invoice.date || today(),
       desc: item.desc || "",
       qty: item.qty || 1,
-      price: item.price || 0,
+      price: toPriceInput(item.price),
     })));
     setMemberQuery(invoice.memberName || "");
     setMemberPickerOpen(false);
@@ -881,13 +882,18 @@ function Invoices({ data, save }) {
       setFormError("Die Rechnungsnummer darf nicht leer sein.");
       return;
     }
-    const duplicateNumber = data.invoices.some(invoice => invoice.id !== form.id && invoice.number === form.number);
+    const normalizedInvoiceNumber = String(form.number).trim().toLocaleLowerCase("de-DE");
+    const duplicateNumber = data.invoices.some(invoice => invoice.id !== form.id && String(invoice.number || "").trim().toLocaleLowerCase("de-DE") === normalizedInvoiceNumber);
     if (duplicateNumber) {
       setFormError("Diese Rechnungsnummer ist bereits vergeben.");
       return;
     }
-    if (items.length === 0 || items.every(item => !String(item.desc || "").trim())) {
-      setFormError("Bitte mindestens eine Rechnungsposition beschreiben.");
+    if (items.length === 0 || items.some(item => !String(item.desc || "").trim())) {
+      setFormError("Bitte jede Rechnungsposition beschreiben oder eine leere Position entfernen.");
+      return;
+    }
+    if (items.some(item => parseLocalizedNumber(item.price) <= 0)) {
+      setFormError("Bitte für jede Rechnungsposition einen Preis größer als 0,00 € eingeben.");
       return;
     }
     const member = data.members.find(m => m.id === form.memberId);
@@ -896,7 +902,7 @@ function Invoices({ data, save }) {
       treatmentDate: item.treatmentDate || form.date || today(),
       desc: item.desc || "",
       qty: Number(item.qty) || 1,
-      price: Number(item.price) || 0,
+      price: parseLocalizedNumber(item.price),
     }));
     const { net, tax, total } = calculateInvoiceTotals(normalizedItems, profile.defaultTaxRate);
     const isEditing = Boolean(form.id);
@@ -1051,12 +1057,12 @@ function Invoices({ data, save }) {
 
   return (
     <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
+      <div className="invoice-page-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
         <h2 style={{ margin: 0, fontSize: 26, fontWeight: 800, color: "#1e293b" }}>Rechnungen</h2>
         <Btn onClick={openNew}>+ Neue Rechnung</Btn>
       </div>
 
-      <div style={{ display: "flex", gap: 12, marginBottom: 20 }}>
+      <div className="invoice-toolbar" style={{ display: "flex", gap: 12, marginBottom: 20 }}>
         <input aria-label="Rechnungen durchsuchen" value={search} onChange={e => setSearch(e.target.value)} placeholder="Suche…" style={{ ...inp, flex: 1 }} />
         <select aria-label="Rechnungsstatus filtern" value={filterStatus} onChange={e => setFilterStatus(e.target.value)} style={{ ...sel, width: 180 }}>
           <option value="alle">Alle Status</option>
@@ -1067,7 +1073,7 @@ function Invoices({ data, save }) {
         </select>
       </div>
 
-      <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #e2e8f0", overflow: "hidden" }}>
+      <div className="invoice-desktop-list" style={{ background: "#fff", borderRadius: 14, border: "1px solid #e2e8f0", overflow: "hidden" }}>
         <div className="crm-table-wrap">
         <table style={{ width: "100%", minWidth: 900, borderCollapse: "collapse" }}>
           <thead>
@@ -1105,6 +1111,27 @@ function Invoices({ data, save }) {
         </div>
       </div>
 
+      <div className="invoice-mobile-list">
+        {filtered.length === 0 ? (
+          <div className="invoice-empty-mobile">Keine Rechnungen vorhanden</div>
+        ) : filtered.map(inv => (
+          <article key={inv.id} className="invoice-mobile-card">
+            <button type="button" className="invoice-mobile-card__main" onClick={() => setPrinting(inv)}>
+              <span className="invoice-mobile-card__number">{inv.number}</span>
+              <span className="invoice-mobile-card__amount">{fmt(inv.total)}</span>
+              <strong>{inv.memberName}</strong>
+              <span>{fmtDate(inv.date)} · {getInvoiceDueLabel(inv)}</span>
+              <Badge status={inv.status} />
+            </button>
+            <div className="invoice-mobile-card__actions">
+              <Btn small variant="ghost" onClick={() => openEditInvoice(inv)}>Bearbeiten</Btn>
+              {inv.status !== "bezahlt" && <Btn small variant="success" onClick={() => updateStatus(inv.id, "bezahlt")}>Als bezahlt</Btn>}
+              <Btn small variant="danger" aria-label={`Rechnung ${inv.number} löschen`} onClick={() => deleteInvoice(inv.id)}>Löschen</Btn>
+            </div>
+          </article>
+        ))}
+      </div>
+
       {viewing && <InvoiceView inv={viewing} />}
       {printing && <InvoicePrintView
         inv={{ ...printing, customerAddress: printing.customerAddress || formatCustomerAddress(data.members.find(m => m.id === printing.memberId)) }}
@@ -1115,8 +1142,8 @@ function Invoices({ data, save }) {
       {confirm && <ConfirmDialog message={confirm.message} detail={confirm.detail} onConfirm={confirm.onConfirm} onCancel={() => setConfirm(null)} />}
 
       {showForm && (
-        <Modal title={form.id ? `Rechnung ${form.number} bearbeiten` : "Neue Rechnung"} onClose={() => setShowForm(false)} wide>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 16px" }}>
+        <Modal title={form.id ? `Rechnung ${form.number} bearbeiten` : "Neue Rechnung"} onClose={() => setShowForm(false)} wide className="invoice-modal">
+          <div className="invoice-form-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 16px" }}>
             <Field label="Rechnungsprofil" required>
               <select
                 aria-label="Rechnungsprofil"
@@ -1234,8 +1261,8 @@ function Invoices({ data, save }) {
           </div>
 
           {isMedicalInvoice && <Field label="Befund / Diagnose">
-            <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 8, marginBottom: 8 }}>
-              <input style={inp} value={form.diagnosisCode || ""} placeholder="z.B. HWS, BWS, LWS" onChange={e => setForm(f => ({ ...f, diagnosisCode: e.target.value }))} />
+            <div className="invoice-diagnosis-controls" style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 8, marginBottom: 8 }}>
+              <input aria-label="Befund für Smart-Ausfüllen" style={inp} value={form.diagnosisCode || ""} placeholder="z. B. HWS, ISG oder Nacken" onChange={e => setForm(f => ({ ...f, diagnosisCode: e.target.value }))} />
               <Btn variant="outline" onClick={() => setForm(f => ({ ...f, diagnosis: buildDiagnosisSuggestion(f.diagnosisCode) }))}>Smart ausfüllen</Btn>
             </div>
             <textarea
@@ -1246,26 +1273,50 @@ function Invoices({ data, save }) {
             />
           </Field>}
 
-          <div style={{ marginBottom: 16 }}>
-            <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#475569", marginBottom: 8 }}>Positionen</label>
-            <div style={{ display: "grid", gridTemplateColumns: "140px 1fr 80px 120px 40px", gap: 8, marginBottom: 6, fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase" }}>
+          <section className="invoice-positions">
+            <div className="invoice-positions__heading">
+              <div>
+                <h4>Rechnungspositionen</h4>
+                <p>Leistung und Bruttopreis eingeben – Komma oder Punkt sind möglich.</p>
+              </div>
+              <Btn small variant="ghost" onClick={() => setItems([...items, { treatmentDate: form.date || today(), desc: "", qty: 1, price: "" }])}>+ Position</Btn>
+            </div>
+            <div className="invoice-line-head">
               <span>{getInvoicePositionDateLabel(selectedProfile, form.invoiceCategory)}</span>
               <span>Beschreibung</span>
               <span>Menge</span>
-              <span>Preis</span>
+              <span>Preis brutto</span>
               <span></span>
             </div>
             {items.map((item, i) => (
-              <div key={i} style={{ display: "grid", gridTemplateColumns: "140px 1fr 80px 120px 40px", gap: 8, marginBottom: 8 }}>
-                <input style={inp} type="date" title={getInvoicePositionDateLabel(selectedProfile, form.invoiceCategory)} value={item.treatmentDate || form.date || today()} onChange={e => setItems(items.map((it, j) => j === i ? { ...it, treatmentDate: e.target.value } : it))} />
-                <input style={inp} placeholder="Beschreibung" value={item.desc} onChange={e => setItems(items.map((it, j) => j === i ? { ...it, desc: e.target.value } : it))} />
-                <input style={inp} type="number" min="1" placeholder="Menge" value={item.qty} onChange={e => setItems(items.map((it, j) => j === i ? { ...it, qty: parseFloat(e.target.value) || 1 } : it))} />
-                <input style={inp} type="number" step="0.01" placeholder="Preis €" value={item.price} onChange={e => setItems(items.map((it, j) => j === i ? { ...it, price: parseFloat(e.target.value) || 0 } : it))} />
-                <button onClick={() => setItems(items.filter((_, j) => j !== i))} style={{ background: "#fee2e2", border: "none", borderRadius: 8, cursor: "pointer", color: "#dc2626", fontWeight: 700 }}>×</button>
+              <div key={i} className="invoice-line-item">
+                <div className="invoice-line-item__mobile-head">
+                  <span>Position {i + 1}</span>
+                  <strong>{fmt((Number(item.qty) || 0) * parseLocalizedNumber(item.price))}</strong>
+                </div>
+                <label className="invoice-line-field invoice-line-field--date">
+                  <span>{getInvoicePositionDateLabel(selectedProfile, form.invoiceCategory)}</span>
+                  <input style={inp} type="date" aria-label={`${getInvoicePositionDateLabel(selectedProfile, form.invoiceCategory)} Position ${i + 1}`} value={item.treatmentDate || form.date || today()} onChange={e => setItems(items.map((it, j) => j === i ? { ...it, treatmentDate: e.target.value } : it))} />
+                </label>
+                <label className="invoice-line-field invoice-line-field--description">
+                  <span>Beschreibung</span>
+                  <input style={inp} aria-label={`Beschreibung Position ${i + 1}`} placeholder="z. B. Hydrafacial Behandlung" value={item.desc} onChange={e => setItems(items.map((it, j) => j === i ? { ...it, desc: e.target.value } : it))} />
+                </label>
+                <label className="invoice-line-field invoice-line-field--quantity">
+                  <span>Menge</span>
+                  <input style={inp} type="number" inputMode="decimal" min="0.01" step="0.01" aria-label={`Menge Position ${i + 1}`} placeholder="1" value={item.qty} onFocus={e => e.currentTarget.select()} onChange={e => setItems(items.map((it, j) => j === i ? { ...it, qty: e.target.value } : it))} />
+                </label>
+                <label className="invoice-line-field invoice-line-field--price">
+                  <span>Preis brutto</span>
+                  <span className="invoice-price-input">
+                    <input style={inp} type="text" inputMode="decimal" autoComplete="off" aria-label={`Preis brutto Position ${i + 1}`} placeholder="0,00" value={item.price} onFocus={e => e.currentTarget.select()} onChange={e => setItems(items.map((it, j) => j === i ? { ...it, price: normalizePriceInput(e.target.value) } : it))} />
+                    <span aria-hidden="true">€</span>
+                  </span>
+                </label>
+                <button type="button" className="invoice-line-remove" aria-label={`Position ${i + 1} entfernen`} disabled={items.length === 1} onClick={() => setItems(items.filter((_, j) => j !== i))}>Entfernen</button>
               </div>
             ))}
-            <Btn small variant="ghost" onClick={() => setItems([...items, { treatmentDate: form.date || today(), desc: "", qty: 1, price: 0 }])}>+ Position hinzufügen</Btn>
-          </div>
+          </section>
 
           {!isMedicalInvoice && (
             <Field label="Text auf der Rechnung">
@@ -1290,7 +1341,7 @@ function Invoices({ data, save }) {
             </Field>
           )}
 
-          <div style={{ background: "#f8fafc", borderRadius: 10, padding: 16, marginBottom: 16 }}>
+          <div className="invoice-summary" style={{ background: "#f8fafc", borderRadius: 10, padding: 16, marginBottom: 16 }}>
             {(() => {
               const { net, tax } = calculateInvoiceTotals(items, selectedProfile.defaultTaxRate);
               return (
@@ -1309,7 +1360,7 @@ function Invoices({ data, save }) {
             </div>
           )}
 
-          <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+          <div className="invoice-form-actions" style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
             <Btn variant="ghost" onClick={() => setShowForm(false)}>Abbrechen</Btn>
             <Btn onClick={saveInvoice}>{form.id ? "Änderungen speichern" : "Rechnung erstellen"}</Btn>
           </div>
@@ -4880,8 +4931,8 @@ export default function CRM() {
       <h1 className="crm-visually-hidden">PDB Office</h1>
       {isCompact && sidebarOpen && <button className="crm-sidebar-backdrop" aria-label="Seitenleiste schließen" onClick={() => setSidebarOpen(false)} />}
       {/* Sidebar */}
-      <aside className="crm-sidebar" style={{
-        width: sidebarOpen ? 220 : 64, background: "#161616", display: "flex", flexDirection: "column",
+      <aside className="crm-sidebar" aria-hidden={isCompact && !sidebarOpen ? "true" : undefined} inert={isCompact && !sidebarOpen ? true : undefined} style={{
+        width: isCompact ? (sidebarOpen ? 220 : 0) : (sidebarOpen ? 220 : 64), background: "#161616", display: "flex", flexDirection: "column",
         transition: "width 0.2s", flexShrink: 0, overflow: "hidden",
         position: isCompact && sidebarOpen ? "fixed" : "relative", inset: isCompact && sidebarOpen ? "0 auto 0 0" : undefined,
         zIndex: isCompact && sidebarOpen ? 1200 : undefined, boxShadow: isCompact && sidebarOpen ? "18px 0 50px rgba(0,0,0,.24)" : undefined,

@@ -1,3 +1,5 @@
+import { parseLocalizedNumber } from "./invoiceInputs.js";
+
 export const DEFAULT_INVOICE_PROFILE_ID = "pdb-aesthetic-room";
 
 export const INVOICE_PAYMENT_TERMS = [
@@ -64,7 +66,7 @@ export function buildInvoiceNumber(profile) {
 }
 
 export function calculateInvoiceTotals(items, taxRate) {
-  const total = items.reduce((sum, item) => sum + (Number(item.qty) || 0) * (Number(item.price) || 0), 0);
+  const total = items.reduce((sum, item) => sum + (Number(item.qty) || 0) * parseLocalizedNumber(item.price), 0);
   const rate = Number(taxRate) || 0;
   const net = rate > 0 ? total / (1 + rate / 100) : total;
   const tax = total - net;
