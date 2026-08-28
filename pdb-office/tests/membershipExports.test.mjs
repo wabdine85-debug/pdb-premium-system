@@ -20,6 +20,7 @@ test("creates filtered membership export rows with linked customer data", () => 
     mandateReference: "",
     email: "private@example.de",
     phone: "+49 123",
+    pauses: "",
     notes: "",
   });
 });

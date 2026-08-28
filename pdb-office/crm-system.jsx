@@ -6,6 +6,7 @@ import PremiumAdministration from "./components/memberships/PremiumAdministratio
 import DirectDebitWorkspace from "./components/direct-debits/DirectDebitWorkspace.jsx";
 import { createMembershipExportRows, downloadMembershipCsv, downloadMembershipPdf } from "./modules/memberships/membershipExports.js";
 import { getNextMandateReference } from "./modules/memberships/mandateReferences.js";
+import { extendDateByDays, getLatestPause, getPauseDays, resumeMembership, scheduleMembershipResume, startMembershipPause } from "./modules/memberships/membershipPauses.js";
 import { useStorage, migrateData } from "./services/crmStorage.js";
 import { DEFAULT_INVOICE_PROFILE_ID, INVOICE_PAYMENT_TERMS, PDB_INVOICE_CATEGORIES, buildInvoiceNumber, calculateInvoiceDueDate, calculateInvoiceTotals, defaultInvoiceProfiles, getInvoiceCategoryLabel, getInvoiceDueLabel, getInvoicePositionDateLabel, getInvoiceProfile, isMedicalInvoiceProfile } from "./modules/invoices/invoiceProfiles.js";
 import { buildDiagnosisSuggestion } from "./modules/invoices/diagnosisSuggestions.js";
@@ -2431,6 +2432,7 @@ function Memberships({ data, save }) {
   const [customerEditMembershipId, setCustomerEditMembershipId] = useState(null);
   const [membershipDetailEdit, setMembershipDetailEdit] = useState(null);
   const [scheduledEditId, setScheduledEditId] = useState("");
+  const [pauseEdit, setPauseEdit] = useState(null);
   const [confirm, setConfirm] = useState(null);
   const [membershipSort, setMembershipSort] = useState("recent-desc");
   const [membershipSearch, setMembershipSearch] = useState("");
@@ -2511,6 +2513,7 @@ function Memberships({ data, save }) {
       membership.plan,
       membership.scheduledPlan,
       membership.notes,
+      ...(membership.pauseHistory || []).flatMap(pause => [pause.startDate, pause.endDate, pause.plannedEndDate, pause.note]),
       membership.sepaIban,
       membership.mandateReference,
     ];
@@ -2570,14 +2573,20 @@ function Memberships({ data, save }) {
     const dueChanges = (data.memberships || []).filter(m => m.scheduledPlan && m.scheduledStartDate && m.scheduledStartDate <= today());
     const dueStartingMemberships = (data.memberships || []).filter(m => m.status === "vorbereitung" && m.startDate && m.startDate <= today());
     const expiredCancellations = (data.memberships || []).filter(m => m.status === "gekündigt" && m.endDate && m.endDate < today());
-    if (!dueChanges.length && !dueStartingMemberships.length && !expiredCancellations.length) return;
+    const dueReactivations = (data.memberships || []).filter(m => m.status === "pausiert" && m.scheduledReactivationAt && m.scheduledReactivationAt <= today());
+    if (!dueChanges.length && !dueStartingMemberships.length && !expiredCancellations.length && !dueReactivations.length) return;
     const dueIds = new Set(dueChanges.map(m => m.id));
     const startingIds = new Set(dueStartingMemberships.map(m => m.id));
     const expiredCancellationIds = new Set(expiredCancellations.map(m => m.id));
+    const dueReactivationIds = new Set(dueReactivations.map(m => m.id));
     save(d => {
       const applied = new Map();
       const activated = new Set();
       const nextMemberships = (d.memberships || []).map(m => {
+        if (dueReactivationIds.has(m.id)) {
+          activated.add(m.memberId);
+          return { ...resumeMembership(m, { endDate: m.scheduledReactivationAt, id: uid() }), updatedAt: today() };
+        }
         if (expiredCancellationIds.has(m.id)) {
           return { ...m, status: "abgelaufen", expiredAt: today(), updatedAt: today() };
         }
@@ -2664,6 +2673,7 @@ function Memberships({ data, save }) {
     if (dueStartingMemberships.length) messages.push(`${dueStartingMemberships.length} vorbereitete Member aktiviert`);
     if (dueChanges.length) messages.push(`${dueChanges.length} geplante Membership-Änderung${dueChanges.length === 1 ? "" : "en"} übernommen`);
     if (expiredCancellations.length) messages.push(`${expiredCancellations.length} Kündigung${expiredCancellations.length === 1 ? "" : "en"} auf abgelaufen gesetzt`);
+    if (dueReactivations.length) messages.push(`${dueReactivations.length} pausierte Membership${dueReactivations.length === 1 ? "" : "s"} reaktiviert und Laufzeit verlängert`);
     setMaintenanceStatus({ type: "success", message: `${messages.join(", ")}.` });
   }, [data.memberships, save]);
   useEffect(() => {
@@ -3110,6 +3120,54 @@ function Memberships({ data, save }) {
       return membership?.memberId === member.id ? { ...member, membershipTier: patch.plan } : member;
     }) : d.members,
   }));
+
+  const openPauseDialog = (membership) => {
+    setPauseEdit({ membershipId: membership.id, action: "pause", startDate: today(), plannedEndDate: "", endDate: "", note: "" });
+  };
+
+  const openResumeDialog = (membership) => {
+    const currentPause = getLatestPause(membership);
+    setPauseEdit({
+      membershipId: membership.id,
+      action: "resume",
+      startDate: currentPause?.startDate || membership.pausedAt || "",
+      plannedEndDate: currentPause?.plannedEndDate || "",
+      endDate: membership.scheduledReactivationAt || today(),
+      note: currentPause?.note || (!currentPause ? membership.notes || "" : ""),
+    });
+  };
+
+  const changeMembershipStatus = (membership, nextStatus) => {
+    const currentStatus = membership.status || "aktiv";
+    if (nextStatus === currentStatus) return;
+    if (nextStatus === "pausiert") return openPauseDialog(membership);
+    if (currentStatus === "pausiert" && nextStatus === "aktiv") return openResumeDialog(membership);
+    updateMembership(membership.id, { status: nextStatus });
+  };
+
+  const savePauseChange = () => {
+    const membership = memberships.find(item => item.id === pauseEdit?.membershipId);
+    if (!membership || !pauseEdit) return;
+    try {
+      const isFutureResume = pauseEdit.action === "resume" && pauseEdit.endDate > today();
+      const nextMembership = pauseEdit.action === "pause"
+        ? startMembershipPause(membership, { id: uid(), startDate: pauseEdit.startDate, plannedEndDate: pauseEdit.plannedEndDate, note: pauseEdit.note })
+        : (isFutureResume ? scheduleMembershipResume : resumeMembership)(membership, { id: uid(), fallbackStartDate: pauseEdit.startDate, endDate: pauseEdit.endDate, note: pauseEdit.note });
+      save(d => ({ ...d, memberships: (d.memberships || []).map(item => item.id === membership.id ? { ...nextMembership, updatedAt: today() } : item) }));
+      const days = pauseEdit.action === "resume" ? getPauseDays(pauseEdit.startDate, pauseEdit.endDate) : null;
+      setMaintenanceStatus({
+        type: "success",
+        message: pauseEdit.action === "pause"
+          ? `${getMemberDisplayName(membership)} ist ab ${fmtDate(pauseEdit.startDate)} pausiert. Der Vermerk bleibt im Pausenverlauf erhalten.`
+          : isFutureResume
+          ? `${getMemberDisplayName(membership)} bleibt bis ${fmtDate(pauseEdit.endDate)} pausiert und wird an diesem Tag automatisch reaktiviert. Dann werden ${days} Pausentage angehängt.`
+          : `${getMemberDisplayName(membership)} ist wieder aktiv. ${days} Pausentage wurden an das Vertragsende angehängt${nextMembership.endDate ? ` (neu: ${fmtDate(nextMembership.endDate)})` : ""}.`,
+      });
+      setPauseEdit(null);
+    } catch (error) {
+      setMaintenanceStatus({ type: "error", message: error.message });
+    }
+  };
 
   const updateScheduledBanking = (membership, status) => {
     const nextStatus = status === "geprüft" ? "erledigt" : status;
@@ -3796,9 +3854,10 @@ function Memberships({ data, save }) {
                     {isPaused && (
                       <>
                         <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>
-                          {m.plan} / {fmt(m.monthlyAmount)} · seit {fmtDate(m.updatedAt || m.startDate)}
+                          {m.plan} / {fmt(m.monthlyAmount)} · seit {fmtDate(getLatestPause(m)?.startDate || m.pausedAt || m.updatedAt || m.startDate)}
+                          {getLatestPause(m)?.plannedEndDate ? ` · geplant bis ${fmtDate(getLatestPause(m).plannedEndDate)}` : ""}
                         </div>
-                        {m.notes && <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>{m.notes}</div>}
+                        {(getLatestPause(m)?.note || m.notes) && <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>{getLatestPause(m)?.note || m.notes}</div>}
                       </>
                     )}
                     {(isPreparation || isSetupBanking) && (
@@ -3888,7 +3947,7 @@ function Memberships({ data, save }) {
                         </>
                       : isPaused
                       ? <>
-                          <Btn small variant="outline" disabled>Pausiert</Btn>
+                          <Btn small variant="outline" onClick={() => openResumeDialog(m)}>Wieder aktivieren</Btn>
                           {doneAt ? <Btn small variant="ghost" onClick={() => reopenAlert(m, alert.type)}>Wieder öffnen</Btn> : <Btn small variant="outline" onClick={() => markAlertDone(m, alert.type)}>Alles erledigt</Btn>}
                         </>
                       : isPreparation || isSetupBanking
@@ -4049,6 +4108,55 @@ function Memberships({ data, save }) {
           </div>
         </Modal>
       )}
+
+      {pauseEdit && (() => {
+        const membership = memberships.find(item => item.id === pauseEdit.membershipId);
+        if (!membership) return null;
+        const isResume = pauseEdit.action === "resume";
+        const pauseDays = isResume ? getPauseDays(pauseEdit.startDate, pauseEdit.endDate) : null;
+        return (
+          <Modal title={`${isResume ? "Membership reaktivieren" : "Membership pausieren"} – ${getMemberDisplayName(membership)}`} onClose={() => setPauseEdit(null)}>
+            <div style={{ padding: 14, borderRadius: 12, background: "#fcfaf7", border: "1px solid #e7dfd2", marginBottom: 16 }}>
+              <div style={{ fontSize: 11, color: "#8a6f47", fontWeight: 800, textTransform: "uppercase", letterSpacing: ".05em" }}>Vertragslaufzeit</div>
+              <div style={{ marginTop: 4, fontWeight: 800, color: "#1e293b" }}>{fmtDate(membership.startDate)} – {fmtDate(membership.endDate)}</div>
+              <div style={{ marginTop: 5, fontSize: 12, lineHeight: 1.45, color: "#64748b" }}>
+                {isResume ? "Die tatsächliche Pausendauer wird automatisch an das Vertragsende angehängt." : "Beginn, geplantes Ende und Vermerk werden dauerhaft im Vertrag gespeichert."}
+              </div>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: "0 14px" }}>
+              <Field label="Pause von" required>
+                <input style={inp} type="date" value={pauseEdit.startDate} onChange={e => setPauseEdit(current => ({ ...current, startDate: e.target.value }))} />
+              </Field>
+              {isResume ? (
+                <Field label="Pause bis / wieder aktiv ab" required>
+                  <input style={inp} type="date" value={pauseEdit.endDate} min={pauseEdit.startDate || undefined} onChange={e => setPauseEdit(current => ({ ...current, endDate: e.target.value }))} />
+                </Field>
+              ) : (
+                <Field label="Geplantes Ende (optional)">
+                  <input style={inp} type="date" value={pauseEdit.plannedEndDate} min={pauseEdit.startDate || undefined} onChange={e => setPauseEdit(current => ({ ...current, plannedEndDate: e.target.value }))} />
+                </Field>
+              )}
+            </div>
+            <Field label="Pausenvermerk">
+              <textarea style={{ ...inp, minHeight: 82, resize: "vertical" }} value={pauseEdit.note} onChange={e => setPauseEdit(current => ({ ...current, note: e.target.value }))} placeholder="z. B. SEPA pausieren, Vereinbarung mit Member …" />
+            </Field>
+            {isResume && pauseDays != null && (
+              <div style={{ padding: "11px 13px", borderRadius: 10, background: "#eef7f3", border: "1px solid #cfe5da", color: "#285b48", fontSize: 13, fontWeight: 800, marginBottom: 16 }}>
+                {pauseDays} Pausentage · neues Vertragsende {membership.endDate ? fmtDate(extendDateByDays(membership.endDate, pauseDays)) : "nicht berechenbar (Vertragsende fehlt)"}
+              </div>
+            )}
+            {isResume && !(membership.currentPause || (membership.pauseHistory || []).some(pause => !pause.endDate)) && (
+              <div style={{ padding: "10px 12px", borderRadius: 10, background: "#fff7ed", border: "1px solid #fed7aa", color: "#9a3412", fontSize: 12, lineHeight: 1.45, marginBottom: 16 }}>
+                Altbestand ohne strukturierte Pausendaten: Bitte den tatsächlichen Beginn prüfen. Der bestehende Member-Vermerk bleibt erhalten.
+              </div>
+            )}
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, flexWrap: "wrap" }}>
+              <Btn variant="ghost" onClick={() => setPauseEdit(null)}>Abbrechen</Btn>
+              <Btn disabled={!pauseEdit.startDate || (isResume && !pauseEdit.endDate)} onClick={savePauseChange}>{isResume ? (pauseEdit.endDate > today() ? "Reaktivierung vormerken" : "Aktivieren & Laufzeit verlängern") : "Pause speichern"}</Btn>
+            </div>
+          </Modal>
+        );
+      })()}
 
       {scheduledEditMembership && (
         <Modal title={`Vertragsänderung – ${getMemberDisplayName(scheduledEditMembership)}`} onClose={() => setScheduledEditId("")}>
@@ -4511,12 +4619,12 @@ function Memberships({ data, save }) {
           </div>
         </div>
         <div className="crm-table-wrap">
-        <table style={{ width: "100%", minWidth: 1450, borderCollapse: "collapse" }}>
+        <table style={{ width: "100%", minWidth: 1660, borderCollapse: "collapse" }}>
           <thead><tr style={{ background: "#f8fafc" }}>
-            {["Nr.", "Name", "Aktuell", "Unterschrift", "Eintritt", "Vertragsende", "Monat", "Mandatsreferenz", "Upgrade / Planung", "Status", "Notiz", ""].map(h => <th key={h} style={{ padding: "12px 14px", textAlign: "left", fontSize: 12, fontWeight: 700, color: "#64748b", textTransform: "uppercase" }}>{h}</th>)}
+            {["Nr.", "Name", "Aktuell", "Unterschrift", "Eintritt", "Vertragsende", "Monat", "Mandatsreferenz", "Upgrade / Planung", "Status", "Pause / Verlauf", "Notiz", ""].map(h => <th key={h} style={{ padding: "12px 14px", textAlign: "left", fontSize: 12, fontWeight: 700, color: "#64748b", textTransform: "uppercase" }}>{h}</th>)}
           </tr></thead>
           <tbody>
-            {sortedMemberships.length === 0 ? <tr><td colSpan={12} style={{ padding: 36, textAlign: "center", color: "#94a3b8" }}>Noch keine Member angelegt</td></tr> :
+            {sortedMemberships.length === 0 ? <tr><td colSpan={13} style={{ padding: 36, textAlign: "center", color: "#94a3b8" }}>Noch keine Member angelegt</td></tr> :
               pagedMemberships.map((m, index) => {
                 const displayName = getMemberDisplayName(m);
                 const scheduledAmount = getScheduledAmount(m);
@@ -4566,9 +4674,31 @@ function Memberships({ data, save }) {
                     )}
                   </td>
                   <td style={{ padding: "12px 14px" }}>
-                    <select aria-label={`Memberstatus ${displayName}`} style={{ ...sel, minWidth: 112 }} value={m.status || "aktiv"} onChange={e => updateMembership(m.id, { status: e.target.value })}>
+                    <select aria-label={`Memberstatus ${displayName}`} style={{ ...sel, minWidth: 112 }} value={m.status || "aktiv"} onChange={e => changeMembershipStatus(m, e.target.value)}>
                       {["aktiv", "vorbereitung", "pausiert", "gekündigt", "abgelaufen"].map(status => <option key={status} value={status}>{status}</option>)}
                     </select>
+                  </td>
+                  <td style={{ padding: "12px 14px", minWidth: 210 }}>
+                    {getLatestPause(m) ? (
+                      <div style={{ display: "grid", gap: 5, padding: "9px 10px", borderRadius: 10, background: m.status === "pausiert" ? "#f0f8fa" : "#fafaf9", border: `1px solid ${m.status === "pausiert" ? "#c9e2e8" : "#e7e5e4"}` }}>
+                        <div style={{ fontSize: 12, color: "#1e293b", fontWeight: 800 }}>
+                          {fmtDate(getLatestPause(m).startDate)} – {getLatestPause(m).endDate ? fmtDate(getLatestPause(m).endDate) : getLatestPause(m).plannedEndDate ? `${fmtDate(getLatestPause(m).plannedEndDate)} geplant` : "offen"}
+                        </div>
+                        <div style={{ fontSize: 11, color: "#64748b" }}>
+                          {getLatestPause(m).days != null ? `${getLatestPause(m).days} Tage angehängt` : "Laufzeitverlängerung bei Reaktivierung"}
+                          {(m.pauseHistory || []).length > 1 ? ` · ${(m.pauseHistory || []).length} Pausen gesamt` : ""}
+                        </div>
+                        {getLatestPause(m).note && <div style={{ fontSize: 11, color: "#475569" }}>{getLatestPause(m).note}</div>}
+                        {m.status === "pausiert" && <Btn small variant="outline" onClick={() => openResumeDialog(m)}>Wieder aktivieren</Btn>}
+                      </div>
+                    ) : m.status === "pausiert" ? (
+                      <div style={{ display: "grid", gap: 7 }}>
+                        <span style={{ fontSize: 11, color: "#b45309" }}>Alt-Pause: Zeitraum noch erfassen</span>
+                        <Btn small variant="outline" onClick={() => openResumeDialog(m)}>Wieder aktivieren</Btn>
+                      </div>
+                    ) : (
+                      <Btn small variant="ghost" onClick={() => openPauseDialog(m)}>Pause eintragen</Btn>
+                    )}
                   </td>
                   <td style={{ padding: "12px 14px", minWidth: 220 }}>
                     <input aria-label={`Member-Notiz ${displayName}`} style={inp} value={m.notes || ""} placeholder="Notiz hinzufügen…" onChange={e => updateMembership(m.id, { notes: e.target.value })} />

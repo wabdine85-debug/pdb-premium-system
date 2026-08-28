@@ -19,6 +19,15 @@ function formatDate(value) {
   return Number.isNaN(date.getTime()) ? cleanCell(value) : date.toLocaleDateString("de-DE");
 }
 
+function formatPauseHistory(membership) {
+  return (membership.pauseHistory || []).map(pause => {
+    const end = pause.endDate || (pause.plannedEndDate ? `${pause.plannedEndDate} geplant` : "offen");
+    const duration = pause.days != null ? ` (${pause.days} Tage)` : "";
+    const note = pause.note ? ` – ${pause.note}` : "";
+    return `${pause.startDate || "?"} bis ${end}${duration}${note}`;
+  }).join(" | ");
+}
+
 export function createMembershipExportRows(memberships, memberById, getDisplayName) {
   return (memberships || []).map((membership, index) => {
     const customer = memberById.get(membership.memberId) || {};
@@ -35,13 +44,14 @@ export function createMembershipExportRows(memberships, memberById, getDisplayNa
       mandateReference: membership.mandateReference || "",
       email: customer.email || membership.memberEmail || "",
       phone: customer.phone || membership.memberPhone || "",
+      pauses: formatPauseHistory(membership),
       notes: membership.notes || "",
     };
   });
 }
 
 export function membershipRowsToCsv(rows) {
-  const header = ["Nr.", "Name", "Paket", "Status", "Monatsbeitrag", "Unterschrift", "Eintritt", "Vertragsende", "Abbuchungstag", "Mandatsreferenz", "E-Mail", "Telefon", "Notiz"];
+  const header = ["Nr.", "Name", "Paket", "Status", "Monatsbeitrag", "Unterschrift", "Eintritt", "Vertragsende", "Abbuchungstag", "Mandatsreferenz", "E-Mail", "Telefon", "Pausenverlauf", "Notiz"];
   const values = rows.map(row => [
     row.number,
     row.name,
@@ -55,6 +65,7 @@ export function membershipRowsToCsv(rows) {
     row.mandateReference,
     row.email,
     row.phone,
+    row.pauses,
     row.notes,
   ]);
   return `\ufeff${[header, ...values].map(line => line.map(csvCell).join(";")).join("\n")}`;
