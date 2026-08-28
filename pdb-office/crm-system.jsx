@@ -6,7 +6,8 @@ import PremiumAdministration from "./components/memberships/PremiumAdministratio
 import DirectDebitWorkspace from "./components/direct-debits/DirectDebitWorkspace.jsx";
 import { createMembershipExportRows, downloadMembershipCsv, downloadMembershipPdf } from "./modules/memberships/membershipExports.js";
 import { getNextMandateReference } from "./modules/memberships/mandateReferences.js";
-import { extendDateByDays, getLatestPause, getPauseDays, resumeMembership, scheduleMembershipResume, startMembershipPause } from "./modules/memberships/membershipPauses.js";
+import { createReactivationSepaTask, extendDateByDays, getLatestPause, getPauseDays, resumeMembership, scheduleMembershipResume, startMembershipPause } from "./modules/memberships/membershipPauses.js";
+import { createMembershipTimeline, getMembershipNextAction } from "./modules/memberships/membershipPresentation.js";
 import { useStorage, migrateData } from "./services/crmStorage.js";
 import { DEFAULT_INVOICE_PROFILE_ID, INVOICE_PAYMENT_TERMS, PDB_INVOICE_CATEGORIES, buildInvoiceNumber, calculateInvoiceDueDate, calculateInvoiceTotals, defaultInvoiceProfiles, getInvoiceCategoryLabel, getInvoiceDueLabel, getInvoicePositionDateLabel, getInvoiceProfile, isMedicalInvoiceProfile } from "./modules/invoices/invoiceProfiles.js";
 import { buildDiagnosisSuggestion } from "./modules/invoices/diagnosisSuggestions.js";
@@ -2466,6 +2467,7 @@ function Memberships({ data, save }) {
   const nextMandateReference = getNextMandateReference(memberships);
   const scheduledEditMembership = memberships.find(membership => membership.id === scheduledEditId) || null;
   const customerEditMembership = memberships.find(membership => membership.id === customerEditMembershipId) || null;
+  const customerEditTimeline = customerEditMembership ? createMembershipTimeline(customerEditMembership) : [];
   const deferredMembershipSearch = useDeferredValue(membershipSearch);
   const memberById = useMemo(() => new Map(data.members.map(member => [member.id, member])), [data.members]);
   const getMemberDisplayName = (membership) => {
@@ -2574,18 +2576,28 @@ function Memberships({ data, save }) {
     const dueStartingMemberships = (data.memberships || []).filter(m => m.status === "vorbereitung" && m.startDate && m.startDate <= today());
     const expiredCancellations = (data.memberships || []).filter(m => m.status === "gekündigt" && m.endDate && m.endDate < today());
     const dueReactivations = (data.memberships || []).filter(m => m.status === "pausiert" && m.scheduledReactivationAt && m.scheduledReactivationAt <= today());
-    if (!dueChanges.length && !dueStartingMemberships.length && !expiredCancellations.length && !dueReactivations.length) return;
+    const missingReactivationSepaTasks = (data.memberships || []).filter(m => (
+      m.status === "pausiert"
+      && m.scheduledReactivationAt
+      && !m.reactivationSepaStatus
+      && (m.paymentMethod || "SEPA") === "SEPA"
+    ));
+    if (!dueChanges.length && !dueStartingMemberships.length && !expiredCancellations.length && !dueReactivations.length && !missingReactivationSepaTasks.length) return;
     const dueIds = new Set(dueChanges.map(m => m.id));
     const startingIds = new Set(dueStartingMemberships.map(m => m.id));
     const expiredCancellationIds = new Set(expiredCancellations.map(m => m.id));
     const dueReactivationIds = new Set(dueReactivations.map(m => m.id));
+    const missingReactivationSepaTaskIds = new Set(missingReactivationSepaTasks.map(m => m.id));
     save(d => {
       const applied = new Map();
       const activated = new Set();
       const nextMemberships = (d.memberships || []).map(m => {
+        const membershipWithSepaTask = missingReactivationSepaTaskIds.has(m.id)
+          ? createReactivationSepaTask(m, { id: uid(), dueDate: m.scheduledReactivationAt, createdAt: today() })
+          : m;
         if (dueReactivationIds.has(m.id)) {
           activated.add(m.memberId);
-          return { ...resumeMembership(m, { endDate: m.scheduledReactivationAt, id: uid() }), updatedAt: today() };
+          return { ...resumeMembership(membershipWithSepaTask, { endDate: m.scheduledReactivationAt, id: uid() }), updatedAt: today() };
         }
         if (expiredCancellationIds.has(m.id)) {
           return { ...m, status: "abgelaufen", expiredAt: today(), updatedAt: today() };
@@ -2594,7 +2606,7 @@ function Memberships({ data, save }) {
           activated.add(m.memberId);
           return { ...m, status: "aktiv", activatedAt: today(), updatedAt: today() };
         }
-        if (!dueIds.has(m.id) || !m.scheduledPlan) return m;
+        if (!dueIds.has(m.id) || !m.scheduledPlan) return membershipWithSepaTask;
         const nextAmount = m.scheduledPlan === "Individuell"
           ? Number(m.scheduledMonthlyAmount || m.monthlyAmount) || 0
           : MEMBERSHIP_PLANS[m.scheduledPlan]?.amount || 0;
@@ -2856,6 +2868,16 @@ function Memberships({ data, save }) {
   const pausedAlerts = memberships
     .filter(m => m.status === "pausiert")
     .map(membership => ({ type: "paused", date: membership.updatedAt || membership.startDate || today(), sortDate: getMembershipActivityDate(membership), membership }));
+  const reactivationSepaAlerts = memberships
+    .filter(m => m.reactivationSepaStatus)
+    .map(membership => ({
+      type: "reactivation-sepa",
+      date: membership.reactivationSepaDueAt || membership.scheduledReactivationAt || today(),
+      sortDate: membership.reactivationSepaCreatedAt || getMembershipActivityDate(membership),
+      membership,
+      completed: isTaskDone(membership.reactivationSepaStatus),
+      completionDate: membership.reactivationSepaDoneAt || "",
+    }));
   const preparationAlerts = memberships
     .filter(m => m.status === "vorbereitung")
     .map(membership => ({ type: "preparation", date: membership.startDate || today(), sortDate: getMembershipActivityDate(membership), membership }));
@@ -2931,6 +2953,7 @@ function Memberships({ data, save }) {
     .filter(m => m.status !== "vorbereitung" && !m.setupBankingStatus && m.newMemberNoticeAt && m.newMemberNoticeAt >= addDays(today(), -14))
     .map(membership => ({ type: "new-member", date: membership.newMemberNoticeAt || membership.createdAt || today(), sortDate: getMembershipActivityDate(membership), membership }));
   const openTaskAlerts = [
+    ...reactivationSepaAlerts.filter(alert => !alert.completed),
     ...openSetupAlerts,
     ...setupFeeAlerts,
     ...preparationAlerts.filter(alert => !alert.membership.alertDone?.[alert.type]),
@@ -2945,6 +2968,7 @@ function Memberships({ data, save }) {
     ...plannedAppliedPlanAlerts,
   ].sort(sortByRecentActivity);
   const recentlyCompletedAlerts = [
+    ...reactivationSepaAlerts.filter(alert => alert.completed && alert.completionDate >= addDays(today(), -14)),
     ...completedSetupAlerts,
     ...completedAppliedPlanAlerts,
   ].sort(sortByRecentActivity);
@@ -3132,7 +3156,7 @@ function Memberships({ data, save }) {
       action: "resume",
       startDate: currentPause?.startDate || membership.pausedAt || "",
       plannedEndDate: currentPause?.plannedEndDate || "",
-      endDate: membership.scheduledReactivationAt || today(),
+      endDate: membership.scheduledReactivationAt || currentPause?.plannedEndDate || today(),
       note: currentPause?.note || (!currentPause ? membership.notes || "" : ""),
     });
   };
@@ -3150,9 +3174,12 @@ function Memberships({ data, save }) {
     if (!membership || !pauseEdit) return;
     try {
       const isFutureResume = pauseEdit.action === "resume" && pauseEdit.endDate > today();
-      const nextMembership = pauseEdit.action === "pause"
+      const pauseMembership = pauseEdit.action === "pause"
         ? startMembershipPause(membership, { id: uid(), startDate: pauseEdit.startDate, plannedEndDate: pauseEdit.plannedEndDate, note: pauseEdit.note })
         : (isFutureResume ? scheduleMembershipResume : resumeMembership)(membership, { id: uid(), fallbackStartDate: pauseEdit.startDate, endDate: pauseEdit.endDate, note: pauseEdit.note });
+      const nextMembership = pauseEdit.action === "resume"
+        ? createReactivationSepaTask(pauseMembership, { id: uid(), dueDate: pauseEdit.endDate, createdAt: today() })
+        : pauseMembership;
       save(d => ({ ...d, memberships: (d.memberships || []).map(item => item.id === membership.id ? { ...nextMembership, updatedAt: today() } : item) }));
       const days = pauseEdit.action === "resume" ? getPauseDays(pauseEdit.startDate, pauseEdit.endDate) : null;
       setMaintenanceStatus({
@@ -3160,8 +3187,8 @@ function Memberships({ data, save }) {
         message: pauseEdit.action === "pause"
           ? `${getMemberDisplayName(membership)} ist ab ${fmtDate(pauseEdit.startDate)} pausiert. Der Vermerk bleibt im Pausenverlauf erhalten.`
           : isFutureResume
-          ? `${getMemberDisplayName(membership)} bleibt bis ${fmtDate(pauseEdit.endDate)} pausiert und wird an diesem Tag automatisch reaktiviert. Dann werden ${days} Pausentage angehängt.`
-          : `${getMemberDisplayName(membership)} ist wieder aktiv. ${days} Pausentage wurden an das Vertragsende angehängt${nextMembership.endDate ? ` (neu: ${fmtDate(nextMembership.endDate)})` : ""}.`,
+          ? `${getMemberDisplayName(membership)} bleibt bis ${fmtDate(pauseEdit.endDate)} pausiert und wird an diesem Tag automatisch reaktiviert. Dann werden ${days} Pausentage angehängt. Die NASPA-SEPA-Aufgabe steht jetzt unter „Offene Aufgaben“.`
+          : `${getMemberDisplayName(membership)} ist wieder aktiv. ${days} Pausentage wurden an das Vertragsende angehängt${nextMembership.endDate ? ` (neu: ${fmtDate(nextMembership.endDate)})` : ""}. Die NASPA-SEPA-Aufgabe steht unter „Offene Aufgaben“.`,
       });
       setPauseEdit(null);
     } catch (error) {
@@ -3219,6 +3246,31 @@ function Memberships({ data, save }) {
       } : m),
     }));
     setMaintenanceStatus({ type: "success", message: `${getMemberDisplayName(membership)}: Onlinebanking wurde als ${nextStatus} markiert.` });
+  };
+
+  const updateReactivationSepa = (membership, status) => {
+    const nextStatus = status === "geprüft" ? "erledigt" : status;
+    const doneAt = isTaskDone(nextStatus) ? (membership.reactivationSepaDoneAt || today()) : "";
+    save(d => ({
+      ...d,
+      memberships: (d.memberships || []).map(m => m.id === membership.id ? {
+        ...m,
+        reactivationSepaStatus: nextStatus,
+        reactivationSepaDoneAt: doneAt,
+        reactivationSepaHistory: [
+          ...(m.reactivationSepaHistory || []),
+          {
+            id: uid(),
+            status: nextStatus,
+            dueDate: m.reactivationSepaDueAt || "",
+            date: today(),
+            note: m.reactivationSepaNote || "",
+          },
+        ],
+        updatedAt: today(),
+      } : m),
+    }));
+    setMaintenanceStatus({ type: "success", message: `${getMemberDisplayName(membership)}: NASPA-SEPA wurde als ${nextStatus} markiert.` });
   };
 
   const updateSetupFee = (membership, status) => {
@@ -3511,10 +3563,16 @@ function Memberships({ data, save }) {
     setCustomerEdit({ ...customer });
     setCustomerEditMembershipId(membership.id);
     setMembershipDetailEdit({
+      plan: membership.plan || "",
+      contractSignedAt: membership.contractSignedAt || "",
+      startDate: membership.startDate || "",
+      endDate: membership.endDate || "",
+      monthlyAmount: membership.monthlyAmount ?? "",
       mandateReference: membership.mandateReference || "",
       sepaIban: membership.sepaIban || customer.iban || "",
       debitDay: membership.debitDay || "1",
       paymentMethod: membership.paymentMethod || "SEPA",
+      notes: membership.notes || "",
     });
   };
 
@@ -3538,10 +3596,17 @@ function Memberships({ data, save }) {
         memberName: trimmedName,
         memberEmail: customerEdit.email || "",
         memberPhone: customerEdit.phone || "",
+        plan: membershipDetailEdit?.plan || membership.plan,
+        contractSignedAt: membershipDetailEdit?.contractSignedAt || "",
+        startDate: membershipDetailEdit?.startDate || membership.startDate || "",
+        endDate: membershipDetailEdit?.endDate || membership.endDate || "",
+        monthlyAmount: Number(membershipDetailEdit?.monthlyAmount) || 0,
         mandateReference: membershipDetailEdit?.mandateReference?.trim() || membership.mandateReference || "",
         sepaIban: membershipDetailEdit?.sepaIban?.trim() || "",
         debitDay: membershipDetailEdit?.debitDay || membership.debitDay || "1",
         paymentMethod: membershipDetailEdit?.paymentMethod || membership.paymentMethod || "SEPA",
+        notes: membershipDetailEdit?.notes || "",
+        updatedAt: today(),
       } : membership),
     }));
     setMaintenanceStatus({ type: "success", message: `${trimmedName}: Personendaten wurden aktualisiert.` });
@@ -3785,14 +3850,17 @@ function Memberships({ data, save }) {
       </div>
 
       {membershipAlerts.length > 0 && (
-        <div style={{ background: "#fff7ed", border: "1px solid #fed7aa", borderRadius: 14, padding: 16, marginBottom: 22 }}>
+        <section className="crm-membership-workspace" aria-labelledby="membership-workspace-title">
           <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", marginBottom: 10 }}>
-            <h3 style={{ margin: 0, fontSize: 16, color: "#9a3412" }}>Member-Hinweise</h3>
-            <span style={{ fontSize: 12, color: "#9a3412", fontWeight: 700 }}>{membershipAlerts.length} wichtig</span>
+            <div>
+              <h3 id="membership-workspace-title" style={{ margin: 0, fontSize: 16, color: "#273a35" }}>Arbeitsbereich</h3>
+              <p style={{ margin: "3px 0 0", fontSize: 12, color: "#64748b" }}>Aufgaben, geplante Änderungen und pausierte Memberships – klar voneinander getrennt.</p>
+            </div>
+            <span className="crm-workspace-count">{openTaskAlerts.length} offen</span>
           </div>
           <div style={{ display: "grid", gap: 12 }}>
             {membershipAlertGroups.map(group => (
-              <div key={group.key} style={{ display: "grid", gap: 8 }}>
+              <div className={`crm-workspace-group crm-workspace-group--${group.key}`} key={group.key} style={{ display: "grid", gap: 8 }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, padding: "0 2px" }}>
                   <div style={{ fontSize: 12, fontWeight: 900, color: group.key === "paused" ? "#075985" : group.key === "cancellations" ? "#991b1b" : "#9a3412", textTransform: "uppercase", letterSpacing: 0 }}>
                     {group.label}
@@ -3818,11 +3886,12 @@ function Memberships({ data, save }) {
               const isCancellation = alert.type === "cancellation";
               const isNewMember = alert.type === "new-member";
               const isPaused = alert.type === "paused";
+              const isReactivationSepa = alert.type === "reactivation-sepa";
               const isPreparation = alert.type === "preparation";
               const isSetupBanking = alert.type === "setup-banking";
               const isSetupFee = alert.type === "setup-fee";
               const isAppliedPlan = alert.type === "applied-plan";
-              const doneAt = alert.completed ? alert.completionDate : m.alertDone?.[alert.type];
+              const doneAt = isPaused ? "" : (alert.completed ? alert.completionDate : m.alertDone?.[alert.type]);
               const text = isCancellation
                 ? `${name} ist gekündigt zum ${fmtDate(m.endDate)}`
                 : isNewMember
@@ -3833,6 +3902,8 @@ function Memberships({ data, save }) {
                   ? `${name}: Member-Einrichtung offen`
                 : isSetupFee
                   ? `${name}: Einrichtungsgebühr ${fmt(Number(m.setupFeeAmount) || 39)} abbuchen`
+                : isReactivationSepa
+                  ? `${name}: SEPA in NASPA zur Reaktivierung neu einrichten`
                 : isAppliedPlan
                   ? `${name}: Änderung auf ${appliedPlanChange.toPlan} seit ${fmtDate(appliedPlanChange.effectiveDate)}`
                 : isPaused
@@ -3858,6 +3929,17 @@ function Memberships({ data, save }) {
                           {getLatestPause(m)?.plannedEndDate ? ` · geplant bis ${fmtDate(getLatestPause(m).plannedEndDate)}` : ""}
                         </div>
                         {(getLatestPause(m)?.note || m.notes) && <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>{getLatestPause(m)?.note || m.notes}</div>}
+                      </>
+                    )}
+                    {isReactivationSepa && (
+                      <>
+                        <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>
+                          Reaktivierung am {fmtDate(m.reactivationSepaDueAt || m.scheduledReactivationAt)} · {m.plan} / {fmt(m.monthlyAmount)}
+                        </div>
+                        <div style={{ fontSize: 12, color: "#b45309", marginTop: 2, fontWeight: 700 }}>
+                          NASPA: neue wiederkehrende SEPA-Lastschrift ab {fmtDate(m.reactivationSepaDueAt || m.scheduledReactivationAt)} einrichten
+                        </div>
+                        {m.reactivationSepaNote && <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>{m.reactivationSepaNote}</div>}
                       </>
                     )}
                     {(isPreparation || isSetupBanking) && (
@@ -3916,7 +3998,7 @@ function Memberships({ data, save }) {
                         {appliedPlanChange.bankingNote && <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>{appliedPlanChange.bankingNote}</div>}
                       </>
                     )}
-                    {!isCancellation && !isNewMember && !isPaused && !isPreparation && !isSetupBanking && !isSetupFee && !isAppliedPlan && (
+                    {!isCancellation && !isNewMember && !isPaused && !isReactivationSepa && !isPreparation && !isSetupBanking && !isSetupFee && !isAppliedPlan && (
                       <>
                         <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>
                           Aktuell {m.plan} / {fmt(m.monthlyAmount)} → {m.scheduledPlan} / {fmt(scheduledAmount)}
@@ -3934,22 +4016,23 @@ function Memberships({ data, save }) {
                         {m.notes && <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>{m.notes}</div>}
                       </>
                     )}
-                    {doneAt && <div style={{ fontSize: 12, color: "#047857", marginTop: 4, fontWeight: 800 }}>Alles erledigt am {fmtDate(doneAt)}</div>}
+                    {doneAt && <div style={{ fontSize: 12, color: "#047857", marginTop: 4, fontWeight: 800 }}>Erledigt am {fmtDate(doneAt)}</div>}
                   </div>
                   <div className="crm-member-alert-actions" style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", flexWrap: "wrap", gap: 8, flexShrink: 0 }}>
-                    <Badge status={doneAt ? "erledigt" : isCancellation || isPaused ? (m.status || alert.type) : isNewMember ? "erledigt" : isSetupFee ? "Gebühr offen" : isSetupBanking ? (alert.planned ? "SEPA geplant" : "Einrichtung offen") : isAppliedPlan ? (hasDetailedAppliedWorkflow ? (appliedImmediateChargeStatus === "offen" ? "Abbuchung offen" : appliedSetupFeeStatus === "offen" ? "Gebühr offen" : "SEPA offen") : appliedBankingStatus !== "erledigt" ? `Banking ${appliedBankingStatus}` : "Gebühr offen") : isPreparation ? `Banking ${setupBankingStatus}` : `Banking ${bankingStatus}`} />
+                    <Badge status={doneAt ? "erledigt" : isReactivationSepa ? "Banking offen" : isCancellation || isPaused ? (m.status || alert.type) : isNewMember ? "erledigt" : isSetupFee ? "Gebühr offen" : isSetupBanking ? (alert.planned ? "SEPA geplant" : "Einrichtung offen") : isAppliedPlan ? (hasDetailedAppliedWorkflow ? (appliedImmediateChargeStatus === "offen" ? "Abbuchung offen" : appliedSetupFeeStatus === "offen" ? "Gebühr offen" : "SEPA offen") : appliedBankingStatus !== "erledigt" ? `Banking ${appliedBankingStatus}` : "Gebühr offen") : isPreparation ? `Banking ${setupBankingStatus}` : `Banking ${bankingStatus}`} />
                     {isNewMember
-                      ? doneAt ? <Btn small variant="ghost" onClick={() => reopenAlert(m, alert.type)}>Wieder öffnen</Btn> : <Btn small variant="outline" onClick={() => markAlertDone(m, alert.type)}>Alles erledigt</Btn>
+                      ? doneAt ? <Btn small variant="ghost" onClick={() => reopenAlert(m, alert.type)}>Hinweis wieder öffnen</Btn> : <Btn small variant="outline" onClick={() => markAlertDone(m, alert.type)}>Hinweis schließen</Btn>
                       : isCancellation
                       ? <>
                           <Btn small variant="outline" onClick={() => openCancellationPreview(m)}>{m.cancellationEmailSentAt ? "Erneut prüfen" : "E-Mail prüfen"}</Btn>
-                          {doneAt ? <Btn small variant="ghost" onClick={() => reopenAlert(m, alert.type)}>Wieder öffnen</Btn> : <Btn small variant="outline" onClick={() => markAlertDone(m, alert.type)}>Alles erledigt</Btn>}
+                          {doneAt ? <Btn small variant="ghost" onClick={() => reopenAlert(m, alert.type)}>Vorgang wieder öffnen</Btn> : <Btn small variant="outline" onClick={() => markAlertDone(m, alert.type)}>Vorgang abschließen</Btn>}
                         </>
                       : isPaused
-                      ? <>
-                          <Btn small variant="outline" onClick={() => openResumeDialog(m)}>Wieder aktivieren</Btn>
-                          {doneAt ? <Btn small variant="ghost" onClick={() => reopenAlert(m, alert.type)}>Wieder öffnen</Btn> : <Btn small variant="outline" onClick={() => markAlertDone(m, alert.type)}>Alles erledigt</Btn>}
-                        </>
+                      ? <Btn small variant="outline" onClick={() => openResumeDialog(m)}>{m.scheduledReactivationAt ? "Reaktivierung ändern" : "Reaktivierung planen"}</Btn>
+                      : isReactivationSepa
+                      ? doneAt
+                        ? <Btn small variant="ghost" onClick={() => updateReactivationSepa(m, "offen")}>SEPA-Aufgabe wieder öffnen</Btn>
+                        : <Btn small onClick={() => updateReactivationSepa(m, "erledigt")}>SEPA eingerichtet</Btn>
                       : isPreparation || isSetupBanking
                       ? <>
                           <select
@@ -3973,7 +4056,6 @@ function Memberships({ data, save }) {
                               <option value="entfällt">Gebühr entfällt</option>
                             </select>
                           )}
-                          {alert.completed ? <Btn small variant="outline" disabled>Erledigt</Btn> : <Btn small variant="outline" onClick={() => markAlertDone(m, alert.type)}>Alles erledigt</Btn>}
                           {isPreparation && <Btn small variant="outline" disabled>{m.startDate && m.startDate <= today() ? "Wird aktiviert" : "Wartet auf Eintritt"}</Btn>}
                         </>
                       : isSetupFee
@@ -3988,7 +4070,6 @@ function Memberships({ data, save }) {
                             <option value="erledigt">Gebühr erledigt</option>
                             <option value="entfällt">Gebühr entfällt</option>
                           </select>
-                          {doneAt ? <Btn small variant="ghost" onClick={() => reopenAlert(m, alert.type)}>Wieder öffnen</Btn> : <Btn small variant="outline" onClick={() => markAlertDone(m, alert.type)}>Alles erledigt</Btn>}
                         </>
                       : isAppliedPlan
                       ? <>
@@ -4036,7 +4117,6 @@ function Memberships({ data, save }) {
                               <option value="erledigt">SEPA erledigt</option>
                             </select>
                           )}
-                          {alert.completed ? <Btn small variant="outline" disabled>Erledigt</Btn> : <Btn small variant="outline" onClick={() => markAppliedPlanDone(m, appliedPlanChange)}>Alles erledigt</Btn>}
                         </>
                       : <>
                           <select
@@ -4048,7 +4128,6 @@ function Memberships({ data, save }) {
                             <option value="offen">Banking offen</option>
                             <option value="erledigt">Banking erledigt</option>
                           </select>
-                          {doneAt ? <Btn small variant="ghost" onClick={() => reopenAlert(m, alert.type)}>Wieder öffnen</Btn> : <Btn small variant="outline" onClick={() => markAlertDone(m, alert.type)}>Alles erledigt</Btn>}
                           <Btn small variant="outline" disabled={!(m.scheduledStartDate && m.scheduledStartDate <= today())} onClick={() => applyScheduledPlan(m)}>{m.scheduledStartDate && m.scheduledStartDate <= today() ? "Übernehmen" : "Vorgemerkt"}</Btn>
                         </>}
                   </div>
@@ -4058,11 +4137,11 @@ function Memberships({ data, save }) {
               </div>
             ))}
           </div>
-        </div>
+        </section>
       )}
 
       {mailStatus && (
-        <div style={{
+        <div role="status" aria-live="polite" style={{
           background: mailStatus.type === "success" ? "#f0fdf4" : mailStatus.type === "pending" ? "#eff6ff" : "#fef2f2",
           border: `1px solid ${mailStatus.type === "success" ? "#bbf7d0" : mailStatus.type === "pending" ? "#bfdbfe" : "#fecaca"}`,
           color: mailStatus.type === "success" ? "#065f46" : mailStatus.type === "pending" ? "#1e40af" : "#991b1b",
@@ -4077,7 +4156,7 @@ function Memberships({ data, save }) {
       )}
 
       {maintenanceStatus && (
-        <div style={{
+        <div role="status" aria-live="polite" style={{
           background: maintenanceStatus.type === "error" ? "#fef2f2" : "#f0fdf4",
           border: `1px solid ${maintenanceStatus.type === "error" ? "#fecaca" : "#bbf7d0"}`,
           color: maintenanceStatus.type === "error" ? "#991b1b" : "#065f46",
@@ -4141,8 +4220,10 @@ function Memberships({ data, save }) {
               <textarea style={{ ...inp, minHeight: 82, resize: "vertical" }} value={pauseEdit.note} onChange={e => setPauseEdit(current => ({ ...current, note: e.target.value }))} placeholder="z. B. SEPA pausieren, Vereinbarung mit Member …" />
             </Field>
             {isResume && pauseDays != null && (
-              <div style={{ padding: "11px 13px", borderRadius: 10, background: "#eef7f3", border: "1px solid #cfe5da", color: "#285b48", fontSize: 13, fontWeight: 800, marginBottom: 16 }}>
-                {pauseDays} Pausentage · neues Vertragsende {membership.endDate ? fmtDate(extendDateByDays(membership.endDate, pauseDays)) : "nicht berechenbar (Vertragsende fehlt)"}
+              <div className="crm-reactivation-preview">
+                <div><span>Status</span><strong>{pauseEdit.endDate > today() ? `Pausiert bis ${fmtDate(pauseEdit.endDate)}` : `Aktiv ab ${fmtDate(pauseEdit.endDate)}`}</strong></div>
+                <div><span>Vertragslaufzeit</span><strong>{pauseDays} Pausentage · neues Ende {membership.endDate ? fmtDate(extendDateByDays(membership.endDate, pauseDays)) : "nicht berechenbar"}</strong></div>
+                {(membership.paymentMethod || "SEPA") === "SEPA" && <div><span>NASPA</span><strong>Offene Aufgabe: SEPA ab {fmtDate(pauseEdit.endDate)} neu einrichten</strong></div>}
               </div>
             )}
             {isResume && !(membership.currentPause || (membership.pauseHistory || []).some(pause => !pause.endDate)) && (
@@ -4152,7 +4233,7 @@ function Memberships({ data, save }) {
             )}
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, flexWrap: "wrap" }}>
               <Btn variant="ghost" onClick={() => setPauseEdit(null)}>Abbrechen</Btn>
-              <Btn disabled={!pauseEdit.startDate || (isResume && !pauseEdit.endDate)} onClick={savePauseChange}>{isResume ? (pauseEdit.endDate > today() ? "Reaktivierung vormerken" : "Aktivieren & Laufzeit verlängern") : "Pause speichern"}</Btn>
+              <Btn disabled={!pauseEdit.startDate || (isResume && !pauseEdit.endDate)} onClick={savePauseChange}>{isResume ? (pauseEdit.endDate > today() ? "Reaktivierung verbindlich planen" : "Jetzt reaktivieren") : "Pause speichern"}</Btn>
             </div>
           </Modal>
         );
@@ -4233,19 +4314,29 @@ function Memberships({ data, save }) {
 
       {customerEdit && (
         <Modal title={`Memberdetails – ${customerEdit.name || "Member"}`} onClose={() => { setCustomerEdit(null); setCustomerEditMembershipId(null); setMembershipDetailEdit(null); }} wide>
-          <div style={{ fontSize: 12, color: "#64748b", fontWeight: 800, textTransform: "uppercase", letterSpacing: ".05em", marginBottom: 10 }}>Personendaten</div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 16px" }}>
+          {customerEditMembership && (
+            <div className="crm-member-detail-summary">
+              <div>
+                <span className="crm-eyebrow">Membership</span>
+                <strong>{customerEditMembership.plan} · {fmt(customerEditMembership.monthlyAmount)}</strong>
+                <small>{fmtDate(customerEditMembership.startDate)} – {fmtDate(customerEditMembership.endDate)}</small>
+              </div>
+              <Badge status={customerEditMembership.status || "aktiv"} />
+            </div>
+          )}
+          <div className="crm-detail-section-title">Person</div>
+          <div className="crm-detail-grid">
             <Field label="Name" required>
-              <input style={inp} value={customerEdit.name || ""} onChange={e => setCustomerEdit(c => ({ ...c, name: e.target.value }))} />
+              <input style={inp} name="memberName" autoComplete="name" value={customerEdit.name || ""} onChange={e => setCustomerEdit(c => ({ ...c, name: e.target.value }))} />
             </Field>
             <Field label="E-Mail">
-              <input style={inp} type="email" value={customerEdit.email || ""} onChange={e => setCustomerEdit(c => ({ ...c, email: e.target.value }))} />
+              <input style={inp} name="memberEmail" type="email" autoComplete="email" spellCheck={false} value={customerEdit.email || ""} onChange={e => setCustomerEdit(c => ({ ...c, email: e.target.value }))} />
             </Field>
             <Field label="Telefon">
-              <input style={inp} value={customerEdit.phone || ""} onChange={e => setCustomerEdit(c => ({ ...c, phone: e.target.value }))} />
+              <input style={inp} name="memberPhone" type="tel" inputMode="tel" autoComplete="tel" value={customerEdit.phone || ""} onChange={e => setCustomerEdit(c => ({ ...c, phone: e.target.value }))} />
             </Field>
             <Field label="Geburtsdatum">
-              <input style={inp} type="date" value={customerEdit.birthdate || ""} onChange={e => setCustomerEdit(c => ({ ...c, birthdate: e.target.value }))} />
+              <input style={inp} name="memberBirthdate" type="date" autoComplete="bday" value={customerEdit.birthdate || ""} onChange={e => setCustomerEdit(c => ({ ...c, birthdate: e.target.value }))} />
             </Field>
             <Field label="Mitgliedschaft">
               <select style={sel} value={customerEdit.membershipTier || "Keine Mitgliedschaft"} onChange={e => setCustomerEdit(c => ({ ...c, membershipTier: e.target.value }))}>
@@ -4262,31 +4353,49 @@ function Memberships({ data, save }) {
             </Field>
           </div>
           <Field label="Adresse">
-            <input style={inp} value={customerEdit.address || ""} onChange={e => setCustomerEdit(c => ({ ...c, address: e.target.value }))} placeholder="Straße und Hausnummer" />
+            <input style={inp} name="memberAddress" autoComplete="street-address" value={customerEdit.address || ""} onChange={e => setCustomerEdit(c => ({ ...c, address: e.target.value }))} placeholder="Straße und Hausnummer …" />
           </Field>
-          <div style={{ display: "grid", gridTemplateColumns: "120px 1fr 1fr", gap: "0 12px" }}>
+          <div className="crm-detail-address-grid">
             <Field label="PLZ">
-              <input style={inp} value={customerEdit.zip || ""} onChange={e => setCustomerEdit(c => ({ ...c, zip: e.target.value }))} />
+              <input style={inp} name="memberPostalCode" inputMode="numeric" autoComplete="postal-code" value={customerEdit.zip || ""} onChange={e => setCustomerEdit(c => ({ ...c, zip: e.target.value }))} />
             </Field>
             <Field label="Ort">
-              <input style={inp} value={customerEdit.city || ""} onChange={e => setCustomerEdit(c => ({ ...c, city: e.target.value }))} />
+              <input style={inp} name="memberCity" autoComplete="address-level2" value={customerEdit.city || ""} onChange={e => setCustomerEdit(c => ({ ...c, city: e.target.value }))} />
             </Field>
             <Field label="Land">
-              <input style={inp} value={customerEdit.country || ""} onChange={e => setCustomerEdit(c => ({ ...c, country: e.target.value }))} />
+              <input style={inp} name="memberCountry" autoComplete="country-name" value={customerEdit.country || ""} onChange={e => setCustomerEdit(c => ({ ...c, country: e.target.value }))} />
             </Field>
           </div>
           {customerEditMembership && membershipDetailEdit && (
-            <div style={{ margin: "10px 0 16px", padding: 16, borderRadius: 12, border: "1px solid #e7dfd2", background: "#fcfaf7" }}>
+            <div className="crm-member-detail-section">
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, marginBottom: 12 }}>
                 <div>
-                  <div style={{ fontSize: 12, color: "#8a6f47", fontWeight: 800, textTransform: "uppercase", letterSpacing: ".05em" }}>Vertrag &amp; SEPA</div>
+                  <div className="crm-detail-section-title" style={{ margin: 0 }}>Vertrag &amp; Zahlung</div>
                   <div style={{ fontSize: 15, color: "#1e293b", fontWeight: 800, marginTop: 3 }}>
                     {customerEditMembership.packageLabel || "Vertrag"} · {customerEditMembership.plan}
                   </div>
                 </div>
                 <Badge status={customerEditMembership.status || "aktiv"} />
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 14px" }}>
+              <div className="crm-detail-grid">
+                <Field label="Paket">
+                  <input style={inp} value={membershipDetailEdit.plan || ""} readOnly />
+                </Field>
+                <Field label="Monatsbeitrag">
+                  <input style={inp} type="number" min="0" step="0.01" inputMode="decimal" value={membershipDetailEdit.monthlyAmount} readOnly={membershipDetailEdit.plan !== "Individuell"} onChange={e => setMembershipDetailEdit(current => ({ ...current, monthlyAmount: e.target.value }))} />
+                </Field>
+                <Field label="Vertrag unterschrieben">
+                  <input style={inp} type="date" value={membershipDetailEdit.contractSignedAt} onChange={e => setMembershipDetailEdit(current => ({ ...current, contractSignedAt: e.target.value }))} />
+                </Field>
+                <Field label="Vertragsbeginn">
+                  <input style={inp} type="date" value={membershipDetailEdit.startDate} onChange={e => setMembershipDetailEdit(current => ({ ...current, startDate: e.target.value }))} />
+                </Field>
+                <Field label="Vertragsende">
+                  <input style={inp} type="date" min={membershipDetailEdit.startDate || undefined} value={membershipDetailEdit.endDate} onChange={e => setMembershipDetailEdit(current => ({ ...current, endDate: e.target.value }))} />
+                </Field>
+              </div>
+              <div className="crm-detail-divider" />
+              <div className="crm-detail-grid">
                 <Field label="Mandatsreferenz">
                   <input
                     style={{ ...inp, fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", fontWeight: 700 }}
@@ -4303,7 +4412,7 @@ function Memberships({ data, save }) {
                   </select>
                 </Field>
                 <Field label="IBAN">
-                  <input style={inp} value={membershipDetailEdit.sepaIban || ""} onChange={e => setMembershipDetailEdit(current => ({ ...current, sepaIban: e.target.value }))} placeholder="DE…" />
+                  <input style={inp} name="membershipIban" autoComplete="off" spellCheck={false} value={membershipDetailEdit.sepaIban || ""} onChange={e => setMembershipDetailEdit(current => ({ ...current, sepaIban: e.target.value }))} placeholder="DE…" />
                 </Field>
                 <Field label="Abbuchungstag">
                   <select style={sel} value={membershipDetailEdit.debitDay || "1"} onChange={e => setMembershipDetailEdit(current => ({ ...current, debitDay: e.target.value }))}>
@@ -4312,9 +4421,33 @@ function Memberships({ data, save }) {
                 </Field>
               </div>
               <div style={{ fontSize: 11, color: "#64748b" }}>Die Mandatsreferenz gehört zu diesem Vertrag. Bei mehreren Verträgen werden deshalb unterschiedliche Referenzen verwendet.</div>
+              <Field label="Membership-Notiz">
+                <textarea style={{ ...inp, minHeight: 74, resize: "vertical" }} value={membershipDetailEdit.notes || ""} onChange={e => setMembershipDetailEdit(current => ({ ...current, notes: e.target.value }))} placeholder="Vereinbarungen oder interne Hinweise …" />
+              </Field>
+              <div className="crm-member-detail-actions">
+                {customerEditMembership.status === "pausiert"
+                  ? <Btn small variant="outline" onClick={() => { setCustomerEdit(null); setCustomerEditMembershipId(null); setMembershipDetailEdit(null); openResumeDialog(customerEditMembership); }}>{customerEditMembership.scheduledReactivationAt ? "Reaktivierung ändern" : "Reaktivierung planen"}</Btn>
+                  : <Btn small variant="outline" onClick={() => { setCustomerEdit(null); setCustomerEditMembershipId(null); setMembershipDetailEdit(null); openPauseDialog(customerEditMembership); }}>Pause eintragen</Btn>}
+                <Btn small variant="outline" onClick={() => { setCustomerEdit(null); setCustomerEditMembershipId(null); setMembershipDetailEdit(null); setScheduledEditId(customerEditMembership.id); }}>Vertragsänderung planen</Btn>
+              </div>
             </div>
           )}
-          <Field label="Member-Notiz">
+          {customerEditMembership && (
+            <div className="crm-member-detail-section">
+              <div className="crm-detail-section-title" style={{ margin: 0 }}>Pausen &amp; Verlauf</div>
+              {customerEditTimeline.length ? (
+                <ol className="crm-membership-timeline">
+                  {customerEditTimeline.map(entry => (
+                    <li key={entry.id}>
+                      <time>{fmtDate(entry.date)}</time>
+                      <div><strong>{entry.title}</strong><span>{entry.detail}</span></div>
+                    </li>
+                  ))}
+                </ol>
+              ) : <div className="crm-empty-detail">Noch keine Vertragsänderungen oder Pausen gespeichert.</div>}
+            </div>
+          )}
+          <Field label="Allgemeine Personennotiz">
             <textarea style={{ ...inp, minHeight: 70, resize: "vertical" }} value={customerEdit.notes || ""} onChange={e => setCustomerEdit(c => ({ ...c, notes: e.target.value }))} />
           </Field>
           <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 8 }}>
@@ -4619,9 +4752,9 @@ function Memberships({ data, save }) {
           </div>
         </div>
         <div className="crm-table-wrap">
-        <table style={{ width: "100%", minWidth: 1660, borderCollapse: "collapse" }}>
+        <table className="crm-membership-table" style={{ width: "100%", minWidth: 1040, borderCollapse: "collapse" }}>
           <thead><tr style={{ background: "#f8fafc" }}>
-            {["Nr.", "Name", "Aktuell", "Unterschrift", "Eintritt", "Vertragsende", "Monat", "Mandatsreferenz", "Upgrade / Planung", "Status", "Pause / Verlauf", "Notiz", ""].map(h => <th key={h} style={{ padding: "12px 14px", textAlign: "left", fontSize: 12, fontWeight: 700, color: "#64748b", textTransform: "uppercase" }}>{h}</th>)}
+            {["Nr.", "Name", "Paket", "Unterschrift", "Eintritt", "Vertragsende", "Monat", "Mandatsreferenz", "Nächster Schritt", "Status", "Pause / Verlauf", "Notiz", "Aktionen"].map(h => <th key={h} style={{ padding: "12px 14px", textAlign: "left", fontSize: 12, fontWeight: 700, color: "#64748b", textTransform: "uppercase" }}>{h}</th>)}
           </tr></thead>
           <tbody>
             {sortedMemberships.length === 0 ? <tr><td colSpan={13} style={{ padding: 36, textAlign: "center", color: "#94a3b8" }}>Noch keine Member angelegt</td></tr> :
@@ -4630,6 +4763,7 @@ function Memberships({ data, save }) {
                 const scheduledAmount = getScheduledAmount(m);
                 const canApplyScheduledPlan = m.scheduledPlan && m.scheduledStartDate && m.scheduledStartDate <= today();
                 const scheduledDelta = m.scheduledPlan ? scheduledAmount - (Number(m.monthlyAmount) || 0) : 0;
+                const nextAction = getMembershipNextAction(m, today());
                 return (
                 <tr key={m.id} style={{ borderTop: "1px solid #f1f5f9" }}>
                   <td style={{ padding: "12px 14px", color: "#94a3b8", fontSize: 13, fontWeight: 700 }}>{(visibleMembershipPage - 1) * membershipPageSize + index + 1}</td>
@@ -4640,38 +4774,26 @@ function Memberships({ data, save }) {
                   <td style={{ padding: "12px 14px", fontSize: 13, color: "#1e293b", fontWeight: 800 }}>
                     {m.plan}
                   </td>
-                  <td style={{ padding: "12px 14px" }}><input aria-label={`Vertragsunterschrift ${displayName}`} style={{ ...inp, minWidth: 128 }} type="date" value={m.contractSignedAt || ""} onChange={e => updateMembership(m.id, { contractSignedAt: e.target.value })} /></td>
+                  <td style={{ padding: "12px 14px", color: "#64748b", fontSize: 13 }}>{fmtDate(m.contractSignedAt)}</td>
                   <td style={{ padding: "12px 14px", color: "#64748b", fontSize: 13 }}>{fmtDate(m.startDate)}</td>
-                  <td style={{ padding: "12px 14px" }}><input aria-label={`Vertragsende ${displayName}`} style={{ ...inp, minWidth: 128 }} type="date" value={m.endDate || ""} onChange={e => updateMembership(m.id, { endDate: e.target.value })} /></td>
-                  <td style={{ padding: "12px 14px", fontWeight: 700 }}>
-                    {m.plan === "Individuell"
-                      ? <input aria-label={`Monatsbetrag ${displayName}`} style={{ ...inp, minWidth: 92 }} type="number" step="0.01" value={m.monthlyAmount || ""} onChange={e => updateMembership(m.id, { monthlyAmount: e.target.value })} />
-                      : fmt(m.monthlyAmount)}
-                  </td>
+                  <td style={{ padding: "12px 14px", color: "#64748b", fontSize: 13 }}>{fmtDate(m.endDate)}</td>
+                  <td style={{ padding: "12px 14px", fontWeight: 700 }}>{fmt(m.monthlyAmount)}</td>
                   <td style={{ padding: "12px 14px", minWidth: 166 }}>
                     <code style={{ fontSize: 12, color: m.mandateReference ? "#334155" : "#b45309", whiteSpace: "nowrap" }}>
                       {m.mandateReference || "noch nicht vergeben"}
                     </code>
                   </td>
                   <td style={{ padding: "12px 14px", minWidth: 220 }}>
-                    {m.scheduledPlan ? (
-                      <div style={{ display: "grid", gap: 7, padding: "10px 11px", borderRadius: 10, background: "#fcfaf7", border: "1px solid #e7dfd2" }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "center" }}>
-                          <strong style={{ fontSize: 13, color: "#1e293b" }}>{m.scheduledPlan} ab {fmtDate(m.scheduledStartDate)}</strong>
-                          <span style={{ fontSize: 10, fontWeight: 800, color: "#8a6f47", textTransform: "uppercase" }}>Vorgemerkt</span>
-                        </div>
-                        <div style={{ fontSize: 11, color: "#64748b" }}>
-                          {scheduledAmount ? fmt(scheduledAmount) : "Betrag offen"}{scheduledDelta ? ` · ${scheduledDelta > 0 ? "+" : ""}${fmt(scheduledDelta)}` : ""}
-                          {m.scheduledBankingStatus ? ` · Banking ${m.scheduledBankingStatus === "geprüft" ? "erledigt" : m.scheduledBankingStatus}` : ""}
-                        </div>
-                        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                          <Btn small variant="outline" onClick={() => setScheduledEditId(m.id)}>Bearbeiten</Btn>
-                          {canApplyScheduledPlan && <Btn small onClick={() => applyScheduledPlan(m)}>Jetzt übernehmen</Btn>}
-                        </div>
-                      </div>
-                    ) : (
-                      <Btn small variant="ghost" onClick={() => setScheduledEditId(m.id)}>Änderung planen</Btn>
-                    )}
+                    <div className={`crm-next-action crm-next-action--${nextAction.tone}`}>
+                      <strong>{nextAction.label}</strong>
+                      {nextAction.date && <span>{fmtDate(nextAction.date)}</span>}
+                      {m.scheduledPlan && <span>{scheduledAmount ? fmt(scheduledAmount) : "Betrag offen"}{scheduledDelta ? ` · ${scheduledDelta > 0 ? "+" : ""}${fmt(scheduledDelta)}` : ""}</span>}
+                    </div>
+                    <div className="crm-next-action-buttons">
+                      {m.status === "pausiert" && <Btn small variant="outline" onClick={() => openResumeDialog(m)}>{m.scheduledReactivationAt ? "Reaktivierung ändern" : "Reaktivierung planen"}</Btn>}
+                      {m.scheduledPlan && <Btn small variant="outline" onClick={() => setScheduledEditId(m.id)}>Planung bearbeiten</Btn>}
+                      {canApplyScheduledPlan && <Btn small onClick={() => applyScheduledPlan(m)}>Änderung übernehmen</Btn>}
+                    </div>
                   </td>
                   <td style={{ padding: "12px 14px" }}>
                     <select aria-label={`Memberstatus ${displayName}`} style={{ ...sel, minWidth: 112 }} value={m.status || "aktiv"} onChange={e => changeMembershipStatus(m, e.target.value)}>
@@ -4700,12 +4822,10 @@ function Memberships({ data, save }) {
                       <Btn small variant="ghost" onClick={() => openPauseDialog(m)}>Pause eintragen</Btn>
                     )}
                   </td>
-                  <td style={{ padding: "12px 14px", minWidth: 220 }}>
-                    <input aria-label={`Member-Notiz ${displayName}`} style={inp} value={m.notes || ""} placeholder="Notiz hinzufügen…" onChange={e => updateMembership(m.id, { notes: e.target.value })} />
-                  </td>
+                  <td style={{ padding: "12px 14px", minWidth: 220, color: "#64748b", fontSize: 12 }}>{m.notes || "—"}</td>
                   <td style={{ padding: "12px 14px", textAlign: "right" }}>
                     <div style={{ display: "flex", gap: 6, justifyContent: "flex-end", flexWrap: "wrap" }}>
-                      <Btn small variant="ghost" onClick={() => openCustomerEditFromMembership(m)}>Details</Btn>
+                      <Btn small variant="ghost" onClick={() => openCustomerEditFromMembership(m)}>Member öffnen</Btn>
                       {m.status === "gekündigt" && <Btn small variant="outline" onClick={() => openCancellationPreview(m)}>{m.cancellationEmailSentAt ? "Erneut prüfen" : "E-Mail prüfen"}</Btn>}
                       <Btn small variant="danger" onClick={() => requestRemoveMembership(m)}>Löschen</Btn>
                     </div>

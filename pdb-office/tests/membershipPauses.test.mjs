@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { extendDateByDays, getPauseDays, resumeMembership, scheduleMembershipResume, startMembershipPause } from "../modules/memberships/membershipPauses.js";
+import { createReactivationSepaTask, extendDateByDays, getPauseDays, resumeMembership, scheduleMembershipResume, startMembershipPause } from "../modules/memberships/membershipPauses.js";
 
 test("calculates pause days with date-only arithmetic", () => {
   assert.equal(getPauseDays("2026-07-01", "2026-09-01"), 62);
@@ -22,4 +22,19 @@ test("schedules a future reactivation without activating early", () => {
   const resumed = resumeMembership(scheduled, { endDate: scheduled.scheduledReactivationAt });
   assert.equal(resumed.totalPausedDays, 62);
   assert.equal(resumed.endDate, "2026-08-29");
+});
+
+test("creates an open NASPA task when a SEPA membership is reactivated", () => {
+  const membership = createReactivationSepaTask(
+    { id: "m1", paymentMethod: "SEPA", status: "pausiert" },
+    { id: "task1", dueDate: "2026-09-01", createdAt: "2026-08-28" },
+  );
+  assert.equal(membership.reactivationSepaStatus, "offen");
+  assert.equal(membership.reactivationSepaDueAt, "2026-09-01");
+  assert.equal(membership.reactivationSepaHistory[0].status, "offen");
+});
+
+test("does not create a NASPA task for a non-SEPA membership", () => {
+  const membership = { id: "m1", paymentMethod: "Überweisung" };
+  assert.equal(createReactivationSepaTask(membership, { id: "task1", dueDate: "2026-09-01", createdAt: "2026-08-28" }), membership);
 });

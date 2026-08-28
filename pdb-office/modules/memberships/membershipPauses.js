@@ -79,6 +79,28 @@ export function scheduleMembershipResume(membership, { endDate, fallbackStartDat
   };
 }
 
+export function createReactivationSepaTask(membership, { id, dueDate, createdAt, note = "" }) {
+  if ((membership.paymentMethod || "SEPA") !== "SEPA") return membership;
+  if (!id) throw new Error("Für die NASPA-Aufgabe fehlt eine ID.");
+  if (!parseDateOnly(dueDate)) throw new Error("Für die NASPA-Aufgabe fehlt ein gültiges Aktivierungsdatum.");
+  if (!parseDateOnly(createdAt)) throw new Error("Für die NASPA-Aufgabe fehlt ein gültiges Erstellungsdatum.");
+  const taskNote = note.trim() || "SEPA in NASPA zur Reaktivierung neu einrichten";
+  return {
+    ...membership,
+    reactivationSepaStatus: "offen",
+    reactivationSepaDueAt: dueDate,
+    reactivationSepaCreatedAt: membership.reactivationSepaStatus === "offen"
+      ? (membership.reactivationSepaCreatedAt || createdAt)
+      : createdAt,
+    reactivationSepaDoneAt: "",
+    reactivationSepaNote: taskNote,
+    reactivationSepaHistory: [
+      ...(membership.reactivationSepaHistory || []),
+      { id, status: "offen", dueDate, date: createdAt, note: taskNote },
+    ],
+  };
+}
+
 export function getLatestPause(membership) {
   return membership.currentPause || (membership.pauseHistory || []).at(-1) || null;
 }

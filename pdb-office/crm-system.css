@@ -423,7 +423,177 @@ textarea:focus-visible,
   font-weight: 700;
 }
 
+.crm-membership-table th:nth-child(1),
+.crm-membership-table td:nth-child(1),
+.crm-membership-table th:nth-child(4),
+.crm-membership-table td:nth-child(4),
+.crm-membership-table th:nth-child(8),
+.crm-membership-table td:nth-child(8),
+.crm-membership-table th:nth-child(11),
+.crm-membership-table td:nth-child(11),
+.crm-membership-table th:nth-child(12),
+.crm-membership-table td:nth-child(12) { display: none; }
+
+.crm-membership-table tbody tr { transition: background-color 160ms ease, box-shadow 160ms ease; }
+.crm-membership-table tbody tr:hover { background: #fcfbf9; }
+.crm-membership-table td { vertical-align: middle; }
+
+.crm-next-action {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  padding-left: 10px;
+  border-left: 2px solid #d6d3d1;
+}
+.crm-next-action strong { color: #334155; font-size: 12px; line-height: 1.35; }
+.crm-next-action span { color: #64748b; font-size: 11px; line-height: 1.35; }
+.crm-next-action--warning { border-left-color: #c29152; }
+.crm-next-action--warning strong { color: #8a5d25; }
+.crm-next-action--info { border-left-color: #6b98a5; }
+.crm-next-action--info strong { color: #285b68; }
+.crm-next-action--danger { border-left-color: #c46b6b; }
+.crm-next-action--danger strong { color: #8f3434; }
+.crm-next-action-buttons { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+
+.crm-membership-workspace {
+  margin-bottom: 22px;
+  padding: 16px;
+  border: 1px solid #dfe6e3;
+  border-radius: 16px;
+  background: #f7faf8;
+}
+.crm-workspace-count {
+  flex: 0 0 auto;
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: #f2e9dc;
+  color: #7b5729;
+  font-size: 11px;
+  font-weight: 800;
+}
+.crm-workspace-group--paused .crm-member-alert { border-color: #c9e2e8 !important; }
+.crm-workspace-group--completed .crm-member-alert { border-color: #cfe5da !important; }
+.crm-workspace-group--cancellations .crm-member-alert { border-color: #efcccc !important; }
+.crm-member-alert > div:first-child { min-width: 0; overflow-wrap: anywhere; }
+
+.crm-member-detail-summary {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px;
+  margin: -4px 0 20px;
+  border: 1px solid #d9e5e2;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #f6faf8 0%, #fcfbf8 100%);
+}
+.crm-member-detail-summary > div { display: grid; gap: 3px; min-width: 0; }
+.crm-member-detail-summary strong { color: #183d35; font-size: 17px; }
+.crm-member-detail-summary small { color: #64748b; font-size: 12px; }
+.crm-eyebrow,
+.crm-detail-section-title {
+  color: #7b6545;
+  font-size: 11px;
+  font-weight: 850;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+.crm-detail-section-title { margin: 0 0 10px; }
+.crm-member-detail-section {
+  margin: 16px 0;
+  padding: 16px;
+  border: 1px solid #e7dfd2;
+  border-radius: 14px;
+  background: #fcfaf7;
+}
+.crm-detail-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 14px; }
+.crm-detail-address-grid { display: grid; grid-template-columns: 120px minmax(0, 1fr) minmax(0, 1fr); gap: 0 12px; }
+.crm-detail-divider { height: 1px; margin: 4px 0 16px; background: #e7dfd2; }
+.crm-member-detail-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.crm-membership-timeline { list-style: none; display: grid; gap: 0; margin: 14px 0 0; padding: 0; }
+.crm-membership-timeline li { display: grid; grid-template-columns: 92px 1fr; gap: 14px; padding: 12px 0; border-top: 1px solid #e7dfd2; }
+.crm-membership-timeline time { color: #7b6545; font-size: 11px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.crm-membership-timeline li > div { display: grid; gap: 3px; min-width: 0; }
+.crm-membership-timeline strong { color: #1e293b; font-size: 13px; }
+.crm-membership-timeline span { color: #64748b; font-size: 12px; line-height: 1.45; overflow-wrap: anywhere; }
+.crm-empty-detail { margin-top: 12px; color: #64748b; font-size: 12px; }
+.crm-reactivation-preview {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 16px;
+  padding: 13px;
+  border: 1px solid #cfe5da;
+  border-radius: 12px;
+  background: #eef7f3;
+}
+.crm-reactivation-preview > div { display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: 10px; }
+.crm-reactivation-preview span { color: #5f766e; font-size: 11px; font-weight: 800; text-transform: uppercase; }
+.crm-reactivation-preview strong { color: #285b48; font-size: 12px; line-height: 1.4; }
+
 @media (max-width: 759px) {
+  .crm-table-wrap { overflow: visible; }
+  .crm-membership-table { display: block; min-width: 0 !important; }
+  .crm-membership-table thead { display: none; }
+  .crm-membership-table tbody { display: grid; gap: 12px; padding: 12px; }
+  .crm-membership-table tbody tr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "name status"
+      "plan amount"
+      "start end"
+      "next next"
+      "actions actions";
+    gap: 10px 14px;
+    padding: 16px;
+    border: 1px solid #e7dfd2 !important;
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: 0 8px 24px rgba(30, 41, 59, .05);
+  }
+  .crm-membership-table td { display: none !important; padding: 0 !important; min-width: 0 !important; }
+  .crm-membership-table td:nth-child(2),
+  .crm-membership-table td:nth-child(3),
+  .crm-membership-table td:nth-child(5),
+  .crm-membership-table td:nth-child(6),
+  .crm-membership-table td:nth-child(7),
+  .crm-membership-table td:nth-child(9),
+  .crm-membership-table td:nth-child(10),
+  .crm-membership-table td:nth-child(13) { display: block !important; }
+  .crm-membership-table td:nth-child(2) { grid-area: name; font-size: 15px; }
+  .crm-membership-table td:nth-child(3) { grid-area: plan; }
+  .crm-membership-table td:nth-child(5) { grid-area: start; }
+  .crm-membership-table td:nth-child(6) { grid-area: end; }
+  .crm-membership-table td:nth-child(7) { grid-area: amount; text-align: right; }
+  .crm-membership-table td:nth-child(9) { grid-area: next; padding-top: 4px !important; }
+  .crm-membership-table td:nth-child(10) { grid-area: status; }
+  .crm-membership-table td:nth-child(13) { grid-area: actions; padding-top: 4px !important; }
+  .crm-membership-table td:nth-child(5)::before,
+  .crm-membership-table td:nth-child(6)::before,
+  .crm-membership-table td:nth-child(7)::before {
+    display: block;
+    margin-bottom: 2px;
+    color: #94a3b8;
+    font-size: 9px;
+    font-weight: 850;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+  }
+  .crm-membership-table td:nth-child(5)::before { content: "Eintritt"; }
+  .crm-membership-table td:nth-child(6)::before { content: "Vertragsende"; }
+  .crm-membership-table td:nth-child(7)::before { content: "Monat"; }
+  .crm-membership-table td:nth-child(10) select { min-width: 104px !important; max-width: 118px; padding: 7px 26px 7px 8px !important; font-size: 12px; }
+  .crm-membership-table td:nth-child(13) > div { display: grid !important; grid-template-columns: 1fr 1fr; gap: 8px !important; }
+  .crm-membership-table td:nth-child(13) button:first-child { grid-column: 1 / -1; }
+  .crm-membership-table td[colspan] { display: block !important; grid-area: 1 / 1 / -1 / -1; }
+  .crm-next-action-buttons > * { flex: 1 1 150px; }
+  .crm-detail-grid { grid-template-columns: 1fr; }
+  .crm-detail-address-grid { grid-template-columns: 1fr; }
+  .crm-member-detail-section { padding: 14px; }
+  .crm-member-detail-actions > * { flex: 1 1 160px; }
+  .crm-membership-timeline li { grid-template-columns: 1fr; gap: 4px; }
+  .crm-reactivation-preview > div { grid-template-columns: 1fr; gap: 2px; }
+
   .crm-appbar {
     position: relative;
     display: grid;
