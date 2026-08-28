@@ -8,6 +8,7 @@ import { createMembershipExportRows, downloadMembershipCsv, downloadMembershipPd
 import { getNextMandateReference } from "./modules/memberships/mandateReferences.js";
 import { createReactivationSepaTask, extendDateByDays, getLatestPause, getPauseDays, resumeMembership, scheduleMembershipResume, startMembershipPause } from "./modules/memberships/membershipPauses.js";
 import { createMembershipTimeline, getMembershipNextAction } from "./modules/memberships/membershipPresentation.js";
+import { findSafeIdentityMatch } from "./modules/memberships/identityMatching.js";
 import { useStorage, migrateData } from "./services/crmStorage.js";
 import { DEFAULT_INVOICE_PROFILE_ID, INVOICE_PAYMENT_TERMS, PDB_INVOICE_CATEGORIES, buildInvoiceNumber, calculateInvoiceDueDate, calculateInvoiceTotals, defaultInvoiceProfiles, getInvoiceCategoryLabel, getInvoiceDueLabel, getInvoicePositionDateLabel, getInvoiceProfile, isMedicalInvoiceProfile } from "./modules/invoices/invoiceProfiles.js";
 import { buildDiagnosisSuggestion } from "./modules/invoices/diagnosisSuggestions.js";
@@ -2477,23 +2478,11 @@ function Memberships({ data, save }) {
       || cleanSepaName(membership.memberName)
       || "Name fehlt";
   };
-  const findCustomerForMembership = (membership) => {
-    const displayName = getMemberDisplayName(membership);
-    const candidates = data.members.filter(member => {
-      const memberName = normalizeMemberName(member.name);
-      const membershipName = normalizeMemberName(displayName || membership.memberName);
-      if (!memberName || !membershipName) return false;
-      const memberTokens = memberName.split(" ").filter(Boolean);
-      const membershipTokens = membershipName.split(" ").filter(Boolean);
-      const tokenHits = membershipTokens.filter(token => memberTokens.includes(token)).length;
-      return member.id === membership.memberId
-        || memberName === membershipName
-        || memberName.includes(membershipName)
-        || membershipName.includes(memberName)
-        || (membershipTokens.length >= 2 && tokenHits >= 2);
-    });
-    return candidates.find(member => member.email) || candidates[0] || data.members.find(member => member.id === membership.memberId);
-  };
+  const findCustomerForMembership = (membership) => findSafeIdentityMatch(data.members, {
+    currentMemberId: membership.memberId,
+    name: getMemberDisplayName(membership) || membership.memberName,
+    iban: membership.sepaIban,
+  });
   const getScheduledAmount = (membership) => {
     if (!membership.scheduledPlan) return Number(membership.monthlyAmount) || 0;
     return membership.scheduledPlan === "Individuell"
@@ -2981,28 +2970,10 @@ function Memberships({ data, save }) {
   ].filter(group => group.alerts.length > 0);
   const membershipAlerts = membershipAlertGroups.flatMap(group => group.alerts);
   const selectedCustomer = data.members.find(m => m.id === selectedId);
-  const findCustomerMatch = (name) => {
-    const normalized = normalizeMemberName(name);
-    if (!normalized) return null;
-    const nameTokens = normalized.split(" ").filter(Boolean);
-    return data.members.find(member => normalizeMemberName(member.name) === normalized)
-      || data.members.find(member => {
-        const memberName = normalizeMemberName(member.name);
-        const memberTokens = memberName.split(" ").filter(Boolean);
-        if (isIncompleteName(member.name) || nameTokens.length < 2 || memberTokens.length < 2) return false;
-        return memberName && (memberName.includes(normalized) || normalized.includes(memberName));
-      })
-      || data.members.find(member => {
-        const memberTokens = normalizeMemberName(member.name).split(" ").filter(Boolean);
-        if (nameTokens.length < 2 || memberTokens.length < 2) return false;
-        const hits = nameTokens.filter(token => memberTokens.includes(token)).length;
-        return hits >= Math.min(2, nameTokens.length);
-      })
-      || null;
-  };
+  const findCustomerMatch = (name, iban = "") => findSafeIdentityMatch(data.members, { name, iban });
   const importedPreview = importRows.map(row => ({
     ...row,
-    matchedCustomer: findCustomerMatch(row.name),
+    matchedCustomer: findCustomerMatch(row.name, row.iban),
     existingMembership: memberships.find(m => (row.iban && m.sepaIban === row.iban) || normalizeMemberName(m.memberName) === normalizeMemberName(row.name)),
     alreadyMember: memberships.some(m => (row.iban && m.sepaIban === row.iban) || normalizeMemberName(m.memberName) === normalizeMemberName(row.name)),
   }));
@@ -3672,20 +3643,11 @@ function Memberships({ data, save }) {
     let relinked = 0;
     const findCustomer = (membership) => {
       const fixedName = fixedMemberNameForIban(membership.sepaIban);
-      const membershipName = normalizeMemberName(fixedName || membership.memberName);
-      const candidates = d.members.filter(member => {
-        const memberName = normalizeMemberName(member.name);
-        if (!memberName || !membershipName) return false;
-        const memberTokens = memberName.split(" ").filter(Boolean);
-        const membershipTokens = membershipName.split(" ").filter(Boolean);
-        const tokenHits = membershipTokens.filter(token => memberTokens.includes(token)).length;
-        return member.id === membership.memberId
-          || memberName === membershipName
-          || memberName.includes(membershipName)
-          || membershipName.includes(memberName)
-          || (membershipTokens.length >= 2 && tokenHits >= 2);
+      return findSafeIdentityMatch(d.members, {
+        currentMemberId: membership.memberId,
+        name: fixedName || membership.memberName,
+        iban: membership.sepaIban,
       });
-      return candidates.find(member => member.email) || candidates[0] || d.members.find(member => member.id === membership.memberId);
     };
     const next = {
       ...d,
