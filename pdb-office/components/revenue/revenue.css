@@ -166,11 +166,14 @@
 
 .revenue-form-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
 .revenue-field label { display: block; font-size: 11px; font-weight: 800; color: #6f685f; margin-bottom: 6px; letter-spacing: .025em; }
+.revenue-field { min-width: 0; }
 .revenue-field.span-2 { grid-column: span 2; }
 .revenue-field.span-3 { grid-column: span 3; }
 
 .revenue-input {
   width: 100%;
+  min-width: 0;
+  min-height: 44px;
   box-sizing: border-box;
   border: 1px solid #ded7cd;
   background: rgba(255,255,255,.9);
@@ -221,6 +224,11 @@
 .revenue-month-bar { display: grid; grid-template-columns: 64px 1fr 100px; align-items: center; gap: 10px; font-size: 12px; }
 .revenue-month-bar-track { height: 9px; border-radius: 999px; background: #ece6de; overflow: hidden; }
 .revenue-month-bar-fill { height: 100%; border-radius: inherit; background: #171717; transition: width .35s ease; }
+
+.revenue-month-summary { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line); }
+.revenue-month-summary span { display: block; margin-bottom: 3px; color: var(--muted); font-size: 11px; }
+.revenue-month-summary strong { color: var(--ink); font-size: 18px; }
+.revenue-month-summary > div:last-child { text-align: right; }
 
 .revenue-status {
   display: inline-flex;
@@ -287,7 +295,15 @@
   .revenue-card { padding: 16px; border-radius: 16px; }
   .revenue-month-switcher { width: 100%; max-width: 100%; }
   .revenue-inline-actions { width: 100%; flex-wrap: wrap; justify-content: flex-start; }
-  .revenue-inline-actions .revenue-button { min-height: 40px; }
+  .revenue-inline-actions .revenue-button { min-height: 40px; flex: 1 1 145px; }
+  .revenue-month-bar { grid-template-columns: 54px minmax(70px, 1fr) minmax(94px, auto); gap: 8px; }
+}
+
+@media (max-width: 390px) {
+  .revenue-grid.metrics { grid-template-columns: 1fr; }
+  .revenue-staff-grid { grid-template-columns: 1fr; }
+  .revenue-month-summary { align-items: flex-start; flex-direction: column; }
+  .revenue-month-summary > div:last-child { text-align: left; }
 }
 
 @media (prefers-reduced-motion: reduce) {

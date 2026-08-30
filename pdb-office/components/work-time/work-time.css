@@ -99,12 +99,14 @@
   display: flex;
   gap: 10px;
   align-items: center;
+  min-width: 0;
 }
 
 .work-time__field,
 .work-time__modal-field {
   display: grid;
   gap: 6px;
+  min-width: 0;
 }
 
 .work-time__field span,
@@ -123,6 +125,7 @@
 .work-time__modal-field textarea {
   box-sizing: border-box;
   width: 100%;
+  min-width: 0;
   min-height: 40px;
   padding: 9px 11px;
   border: 1px solid var(--work-line);
@@ -412,11 +415,20 @@
     flex-direction: column;
   }
 
-  .work-time__actions,
-  .work-time__filters { flex-wrap: wrap; }
-  .work-time__field { flex: 1 1 140px; }
+  .work-time__filters {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+  }
+  .work-time__actions { flex-wrap: wrap; }
+  .work-time__field { width: 100%; }
   .work-time__summary { grid-template-columns: 1fr 1fr; }
   .work-time__summary strong { font-size: 19px; }
   .work-time__form-grid { grid-template-columns: 1fr; }
   .work-time__form-grid .work-time__modal-field--wide { grid-column: auto; }
+}
+
+@media (max-width: 390px) {
+  .work-time__filters { grid-template-columns: 1fr; }
+  .work-time__summary { grid-template-columns: 1fr; }
 }

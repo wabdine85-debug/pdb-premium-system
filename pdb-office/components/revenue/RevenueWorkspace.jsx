@@ -300,6 +300,8 @@ export default function RevenueWorkspace({ data, save }) {
   };
 
   const maxMonthlyTotal = Math.max(...monthlySummaries.map(item => item.total), 1);
+  const comparedMonthsTotal = monthlySummaries.reduce((sum, item) => sum + item.total, 0);
+  const comparedMonthsAverage = monthlySummaries.length ? comparedMonthsTotal / monthlySummaries.length : 0;
   const compositionTotal = Math.max(financeReady ? summary.total : summary.total - summary.premium, 1);
   const sortedReports = [...reports].sort((left, right) => right.month.localeCompare(left.month) || right.version - left.version);
 
@@ -425,6 +427,10 @@ export default function RevenueWorkspace({ data, save }) {
                 <div className="revenue-month-bar"><strong>{monthLabel(item.month, { month: "short", year: "2-digit" })}</strong><div className="revenue-month-bar-track"><div className="revenue-month-bar-fill" style={{ width: `${Math.max(1, (item.total / maxMonthlyTotal) * 100)}%` }} /></div><strong style={{ textAlign: "right" }}>{fmt(item.total)}</strong></div>
               </button>
             ))}
+            <div className="revenue-month-summary">
+              <div><span>Gesamtsumme · {monthlySummaries.length} Monate</span><strong>{fmt(comparedMonthsTotal)}</strong></div>
+              <div><span>Ø pro Monat</span><strong>{fmt(comparedMonthsAverage)}</strong></div>
+            </div>
           </div>}
         </div>
       </section>

@@ -178,6 +178,20 @@ function Dashboard({ data, onNavigate }) {
   const revenue = monthSummary(data.revenueEntries || [], currentMonth, premiumAmount);
   const ueberfaellig = invoices.filter(i => i.status === "überfällig").length;
   const returnSummary = getReturnCaseSummary(data.returnDebitCases || []);
+  const dashboardRevenueSeries = Array.from({ length: 6 }, (_, index) => {
+    const date = new Date();
+    date.setDate(1);
+    date.setMonth(date.getMonth() - (5 - index));
+    const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+    const premium = key === currentMonth ? premiumAmount : Number(data.revenuePremiumFallbacks?.[key]) || 0;
+    return {
+      key,
+      label: new Intl.DateTimeFormat("de-DE", { month: "short" }).format(date).replace(".", ""),
+      total: monthSummary(data.revenueEntries || [], key, premium).total,
+    };
+  });
+  const dashboardRevenueMax = Math.max(1, ...dashboardRevenueSeries.map(item => item.total));
+  const dashboardRevenueTotal = dashboardRevenueSeries.reduce((sum, item) => sum + item.total, 0);
 
   const cards = [
     { label: "Aktive Member", value: aktiv, icon: "💎", color: "#1e40af", bg: "#eff6ff", action: () => onNavigate("memberships") },
@@ -195,7 +209,7 @@ function Dashboard({ data, onNavigate }) {
   return (
     <div>
       <h2 style={{ margin: "0 0 24px", fontSize: 26, fontWeight: 800, color: "#1e293b" }}>Dashboard</h2>
-      <div className="crm-dashboard-cards" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16, marginBottom: 32 }}>
+      <div className="dashboard-card-grid">
         {cards.map(c => (
           <button type="button" key={c.label} onClick={c.action} style={{ background: c.bg, borderRadius: 14, padding: "20px 22px", cursor: "pointer", border: `1.5px solid ${c.color}22`, transition: "box-shadow 0.15s", textAlign: "left", font: "inherit" }}
             onMouseEnter={e => e.currentTarget.style.boxShadow = "0 4px 20px rgba(0,0,0,0.1)"}
@@ -207,7 +221,22 @@ function Dashboard({ data, onNavigate }) {
         ))}
       </div>
 
-      <div className="crm-dashboard-columns" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+      <section className="dashboard-chart" aria-labelledby="dashboard-revenue-title">
+        <div className="dashboard-chart__header">
+          <div><div className="dashboard-chart__eyebrow">Finanzverlauf</div><h3 id="dashboard-revenue-title">Gesamtzufluss · 6 Monate</h3></div>
+          <div className="dashboard-chart__total"><span>Gesamtsumme</span><strong>{fmt(dashboardRevenueTotal)}</strong></div>
+        </div>
+        <div className="dashboard-chart__bars" role="img" aria-label={`Gesamtzufluss der letzten sechs Monate, insgesamt ${fmt(dashboardRevenueTotal)}`}>
+          {dashboardRevenueSeries.map(item => (
+            <div className="dashboard-chart__column" key={item.key} title={`${item.label}: ${fmt(item.total)}`}>
+              <div className="dashboard-chart__track"><div className="dashboard-chart__bar" style={{ height: `${Math.max(3, (item.total / dashboardRevenueMax) * 100)}%` }} /></div>
+              <div className="dashboard-chart__label">{item.label}</div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <div className="dashboard-overview-grid">
         <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #e2e8f0", padding: 20 }}>
           <h3 style={{ margin: "0 0 16px", fontSize: 16, fontWeight: 700, color: "#1e293b" }}>Neue Member</h3>
           {recentMemberships.length === 0 ? <p style={{ color: "#94a3b8", fontSize: 14 }}>Noch keine Member</p> :
@@ -5009,13 +5038,13 @@ function MemberFinance({ data }) {
         ))}
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1.1fr) minmax(320px, 0.9fr)", gap: 18, marginBottom: 22 }}>
+      <div className="member-finance-chart-grid">
         <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 14, padding: 18 }}>
           <h3 style={{ margin: "0 0 14px", fontSize: 16, color: "#1e293b" }}>Monatsverlauf</h3>
           <div style={{ display: "grid", gap: 10 }}>
             {months.map(month => (
-              <button key={month.month} onClick={() => setSelectedMonth(month.month)} style={{ border: 0, background: month.month === currentMonth.month ? "#eff6ff" : "transparent", borderRadius: 8, padding: 8, cursor: "pointer", textAlign: "left" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", gap: 12, fontSize: 13, fontWeight: 800, color: "#1e293b", marginBottom: 5 }}>
+              <button className="member-finance-month-button" key={month.month} onClick={() => setSelectedMonth(month.month)} style={{ border: 0, background: month.month === currentMonth.month ? "#eff6ff" : "transparent", borderRadius: 8, padding: 8, cursor: "pointer", textAlign: "left" }}>
+                <div className="member-finance-month-row" style={{ fontSize: 13, fontWeight: 800, color: "#1e293b", marginBottom: 5 }}>
                   <span>{monthLabel(month.month)}</span>
                   <span>{fmt(month.amount)} · {month.count} Einzüge</span>
                 </div>
@@ -5032,7 +5061,7 @@ function MemberFinance({ data }) {
           <div style={{ display: "grid", gap: 12 }}>
             {byPlan.map(plan => (
               <div key={plan.plan}>
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, fontWeight: 800, color: "#1e293b", marginBottom: 5 }}>
+                <div className="member-finance-plan-row" style={{ fontSize: 13, fontWeight: 800, color: "#1e293b", marginBottom: 5 }}>
                   <span>{plan.plan}</span>
                   <span>{fmt(plan.amount)} · {plan.count}</span>
                 </div>
