@@ -126,6 +126,7 @@
   box-sizing: border-box;
   width: 100%;
   min-width: 0;
+  max-width: 100%;
   min-height: 40px;
   padding: 9px 11px;
   border: 1px solid var(--work-line);
@@ -133,6 +134,26 @@
   background: #fff;
   color: var(--work-ink);
   outline: none;
+}
+
+/* iOS Safari assigns an intrinsic width to native calendar controls. Reset it
+   so month and date fields stay inside the work-time form column. */
+.work-time input[type="month"],
+.work-time input[type="date"] {
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
+  inline-size: 100%;
+  min-inline-size: 0;
+  max-inline-size: 100%;
+  height: 40px;
+}
+
+.work-time input[type="month"]::-webkit-date-and-time-value,
+.work-time input[type="date"]::-webkit-date-and-time-value {
+  min-width: 0;
+  margin: 0;
+  text-align: left;
 }
 
 .work-time__summary {
@@ -422,7 +443,7 @@
     width: 100%;
   }
   .work-time__actions { flex-wrap: wrap; }
-  .work-time__field { width: 100%; }
+  .work-time__field { width: 100%; max-width: 100%; }
   .work-time__summary { grid-template-columns: 1fr 1fr; }
   .work-time__summary strong { font-size: 19px; }
   .work-time__form-grid { grid-template-columns: 1fr; }
