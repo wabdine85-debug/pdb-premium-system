@@ -4,6 +4,7 @@ import RevenueWorkspace from "./components/revenue/RevenueWorkspace.jsx";
 import WorkTimeWorkspace from "./components/work-time/WorkTimeWorkspace.jsx";
 import PremiumAdministration from "./components/memberships/PremiumAdministration.jsx";
 import DirectDebitWorkspace from "./components/direct-debits/DirectDebitWorkspace.jsx";
+import NewsletterReconciliation from "./components/customers/NewsletterReconciliation.jsx";
 import { createMembershipExportRows, downloadMembershipCsv, downloadMembershipPdf } from "./modules/memberships/membershipExports.js";
 import { getNextMandateReference } from "./modules/memberships/mandateReferences.js";
 import { createReactivationSepaTask, extendDateByDays, getLatestPause, getPauseDays, resumeMembership, scheduleMembershipResume, startMembershipPause } from "./modules/memberships/membershipPauses.js";
@@ -5165,6 +5166,7 @@ function FinanceList({ title, items, empty, render }) {
 // ─── App Shell ────────────────────────────────────────────────────────────────
 const NAV = [
   { id: "dashboard", label: "Dashboard", icon: "📊" },
+  { id: "email-reconciliation", label: "E-Mail-Abgleich", icon: "@" },
   { id: "memberships", label: "Member", icon: "💎" },
   { id: "member-finance", label: "Member Finanzen", icon: "📈" },
   { id: "direct-debits", label: "Lastschriften", icon: "↩" },
@@ -5254,7 +5256,7 @@ export default function CRM() {
           {sidebarOpen && <button aria-label="Seitenleiste einklappen" onClick={() => setSidebarOpen(false)} style={{ background: "none", border: "none", color: "#94a3b8", cursor: "pointer", marginLeft: "auto", fontSize: 18, flexShrink: 0 }}>◀</button>}
         </div>
 
-        <nav style={{ flex: 1, padding: "12px 8px" }}>
+        <nav style={{ flex: 1, padding: "12px 8px", overflowY: "auto" }}>
           {NAV.map(n => (
             <button key={n.id} aria-label={n.label} aria-current={page === n.id ? "page" : undefined} onClick={() => navigateToPage(n.id)} style={{
               display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "10px 10px",
@@ -5304,6 +5306,7 @@ export default function CRM() {
           </nav>
         </header>
         {page === "dashboard" && <Dashboard data={data} onNavigate={navigateToPage} />}
+        {page === "email-reconciliation" && <NewsletterReconciliation />}
         {page === "members" && <Members data={data} save={save} />}
         {page === "memberships" && <Memberships data={data} save={save} />}
         {page === "member-finance" && <MemberFinance data={data} />}
