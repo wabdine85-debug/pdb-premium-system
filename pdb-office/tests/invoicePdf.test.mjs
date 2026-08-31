@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
-import { buildInvoicePdf, createInvoicePdfDownload } from "../modules/invoices/invoicePdf.js";
+import { buildInvoicePdf, buildOfferPdf, createInvoicePdfDownload, createOfferPdfDownload } from "../modules/invoices/invoicePdf.js";
 
 test("buildInvoicePdf creates a valid PDF document", () => {
   const invoice = {
@@ -81,4 +81,32 @@ test("embeds the configured PDB logo in a medical invoice PDF", () => {
   const pdf = buildInvoicePdf(invoice, profile);
   assert.ok(pdf.getImageProperties(profile.pdfLogoDataUrl).width > 0);
   assert.ok(pdf.output("arraybuffer").byteLength > 20_000);
+});
+
+test("creates a valid offer PDF with offer-specific metadata and filename", () => {
+  const offer = {
+    number: "MED-AN-1001",
+    memberName: "Yvonne Beispiel",
+    customerAddress: "Rheinstraße 1\n65185 Wiesbaden",
+    date: "2026-08-31",
+    validUntil: "2026-09-14",
+    status: "entwurf",
+    items: [{ desc: "Geplante Behandlung", qty: 1, price: 250, treatmentDate: "2026-09-20" }],
+    net: 250,
+    tax: 0,
+    total: 250,
+  };
+  const profile = { id: "medical-doctor", companyName: "Ärztliche Praxis", defaultTaxRate: 0, pdfDesignVariant: "medical-clean" };
+  const pdf = buildOfferPdf(offer, profile);
+  const bytes = new Uint8Array(pdf.output("arraybuffer"));
+  const pageCommands = pdf.internal.pages.flat().join("\n");
+  const download = createOfferPdfDownload(offer, profile);
+
+  assert.equal(new TextDecoder().decode(bytes.slice(0, 4)), "%PDF");
+  assert.ok(bytes.length > 1_000);
+  assert.match(pageCommands, /ANGEBOT/);
+  assert.match(pageCommands, /Angebotsnr\./);
+  assert.match(pageCommands, /Gültig bis/);
+  assert.doesNotMatch(pageCommands, /Fällig:/);
+  assert.equal(download.fileName, "Yvonne-Beispiel_MED-AN-1001.pdf");
 });

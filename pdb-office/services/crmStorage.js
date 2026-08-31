@@ -13,6 +13,7 @@ const REMOVED_MEMBERSHIP_IDS = new Set(["4znpbozb", "kat3nvr9"]);
 const defaultData = {
   members: [],
   invoices: [],
+  offers: [],
   memberships: [],
   reminders: [],
   bankTransactions: [],
@@ -91,6 +92,10 @@ export function migrateData(rawData) {
       ...invoice,
       invoiceProfileId: invoice.invoiceProfileId || DEFAULT_INVOICE_PROFILE_ID,
     })),
+    offers: (merged.offers || []).map(offer => ({
+      ...offer,
+      invoiceProfileId: offer.invoiceProfileId || DEFAULT_INVOICE_PROFILE_ID,
+    })),
   };
 }
 
@@ -106,6 +111,7 @@ function hasMeaningfulData(data) {
   return (data.members || []).length > 0
     || (data.memberships || []).length > 0
     || (data.invoices || []).length > 0
+    || (data.offers || []).length > 0
     || (data.revenueEntries || []).length > 0
     || (data.staffMembers || []).length > 0
     || (data.workTimeEntries || []).length > 0
@@ -125,11 +131,13 @@ function preserveInvoiceRecovery(raw) {
   if (!raw) return;
   try {
     const data = JSON.parse(raw);
-    if (!Array.isArray(data?.invoices) || data.invoices.length === 0) return;
+    if ((!Array.isArray(data?.invoices) || data.invoices.length === 0)
+      && (!Array.isArray(data?.offers) || data.offers.length === 0)) return;
     localStorage.setItem(INVOICE_RECOVERY_KEY, JSON.stringify({
       savedAt: new Date().toISOString(),
       storageRevision: getStorageRevision(data),
       invoices: data.invoices,
+      offers: data.offers || [],
       invoiceProfiles: data.invoiceProfiles || [],
     }));
   } catch {}

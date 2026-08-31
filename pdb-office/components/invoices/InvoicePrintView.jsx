@@ -1,8 +1,9 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { fmt, fmtDate } from "../../utils/formatters.js";
 import { getInvoiceDueLabel, getInvoicePositionDateLabel, isMedicalInvoiceProfile } from "../../modules/invoices/invoiceProfiles.js";
-import { createInvoicePdfDownload } from "../../modules/invoices/invoicePdf.js";
+import { createInvoicePdfDownload, createOfferPdfDownload } from "../../modules/invoices/invoicePdf.js";
 import { getInvoiceBranding } from "../../modules/invoices/invoiceBranding.js";
+import { getOfferValidityLabel } from "../../modules/invoices/offerUtils.js";
 
 function loadLogoDataUrl(url, onReady, onError) {
   if (!url) {
@@ -34,8 +35,10 @@ function loadLogoDataUrl(url, onReady, onError) {
   return () => { active = false; };
 }
 
-export default function InvoicePrintView({ inv, profile, onClose, Button }) {
+export default function InvoicePrintView({ inv, profile, onClose, Button, documentType = "invoice" }) {
   const [downloadState, setDownloadState] = useState("idle");
+  const isOffer = documentType === "offer";
+  const documentLabel = isOffer ? "Angebot" : "Rechnung";
   const branding = useMemo(() => getInvoiceBranding(profile), [profile]);
   const [logoState, setLogoState] = useState({ status: "loading", dataUrl: "" });
 
@@ -49,7 +52,10 @@ export default function InvoicePrintView({ inv, profile, onClose, Button }) {
   }, [branding.logoUrl]);
 
   const pdfProfile = useMemo(() => ({ ...profile, pdfLogoDataUrl: logoState.dataUrl }), [profile, logoState.dataUrl]);
-  const pdfDownload = useMemo(() => createInvoicePdfDownload(inv, pdfProfile), [inv, pdfProfile]);
+  const pdfDownload = useMemo(
+    () => isOffer ? createOfferPdfDownload(inv, pdfProfile) : createInvoicePdfDownload(inv, pdfProfile),
+    [inv, isOffer, pdfProfile],
+  );
   const taxRate = inv.taxRate ?? profile.defaultTaxRate ?? 0;
   const design = {
     "pdb-premium": { accent: "#1e40af", header: "#1e40af", logoBg: "#fff" },
@@ -82,7 +88,7 @@ export default function InvoicePrintView({ inv, profile, onClose, Button }) {
           </div>
         </div>
         <div className="invoice-preview-status" role="status" aria-live="polite" style={{ padding: "8px 24px", borderBottom: "1px solid #f1f5f9", fontSize: 11, color: "#64748b" }}>
-          {downloadState === "done" ? "Der PDF-Download wurde gestartet." : logoState.status === "error" ? "Das Logo konnte nicht geladen werden. Die PDF wird mit Textkopf erstellt." : "Die Rechnung wird direkt als PDF-Datei heruntergeladen."}
+          {downloadState === "done" ? "Der PDF-Download wurde gestartet." : logoState.status === "error" ? "Das Logo konnte nicht geladen werden. Die PDF wird mit Textkopf erstellt." : `Das ${documentLabel} wird direkt als PDF-Datei heruntergeladen.`}
         </div>
         <div className="invoice-preview-scroll">
           <div className="invoice-print-page" style={{ position: "relative", width: 680, minHeight: 960, boxSizing: "border-box", padding: "22px 34px 112px 46px", fontSize: 11, lineHeight: 1.38, background: "#fff", color: "#1e293b", fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" }}>
@@ -98,8 +104,12 @@ export default function InvoicePrintView({ inv, profile, onClose, Button }) {
               </div>
             </div>
             <div className="invoice-print-meta" style={{ textAlign: "right" }}>
-              <div className="invoice-print-title" style={{ fontSize: 24, fontWeight: 800, color: design.accent }}>RECHNUNG</div>
-              <div style={{ fontSize: 10, color: "#64748b", marginTop: 8, lineHeight: 1.45 }}>Rechnungsnr.: <strong>{inv.number}</strong><br />Datum: {fmtDate(inv.date)}<br />Fällig: {getInvoiceDueLabel(inv)}{inv.status === "bezahlt" && <><br />Bezahlt: {fmtDate(inv.paidDate || inv.date)}{inv.paymentMethod ? ` · ${inv.paymentMethod}` : ""}</>}</div>
+              <div className="invoice-print-title" style={{ fontSize: 24, fontWeight: 800, color: design.accent }}>{isOffer ? "ANGEBOT" : "RECHNUNG"}</div>
+              <div style={{ fontSize: 10, color: "#64748b", marginTop: 8, lineHeight: 1.45 }}>
+                {isOffer ? "Angebotsnr." : "Rechnungsnr."}: <strong>{inv.number}</strong><br />
+                Datum: {fmtDate(inv.date)}<br />
+                {isOffer ? <>Gültig bis: {getOfferValidityLabel(inv)}</> : <>Fällig: {getInvoiceDueLabel(inv)}{inv.status === "bezahlt" && <><br />Bezahlt: {fmtDate(inv.paidDate || inv.date)}{inv.paymentMethod ? ` · ${inv.paymentMethod}` : ""}</>}</>}
+              </div>
             </div>
           </div>
           <div className="invoice-print-recipient" style={{ background: "#fff", borderRadius: 0, padding: "0", marginBottom: 24, width: 430, minHeight: 96 }}>
@@ -136,11 +146,11 @@ export default function InvoicePrintView({ inv, profile, onClose, Button }) {
             <div className="invoice-print-totals" style={{ width: 230 }}>
               <div style={{ display: "flex", justifyContent: "space-between", padding: "3px 0", color: "#64748b" }}><span>Netto</span><span>{fmt(inv.net)}</span></div>
               <div style={{ display: "flex", justifyContent: "space-between", padding: "3px 0", color: "#64748b" }}><span>MwSt. {taxRate}%</span><span>{fmt(inv.tax)}</span></div>
-              <div style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", fontWeight: 800, fontSize: 15, borderTop: `2px solid ${design.accent}`, marginTop: 4 }}><span>Gesamt brutto</span><span>{fmt(inv.total)}</span></div>
+              <div style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", fontWeight: 800, fontSize: 15, borderTop: `2px solid ${design.accent}`, marginTop: 4 }}><span>{isOffer ? "Angebotssumme brutto" : "Gesamt brutto"}</span><span>{fmt(inv.total)}</span></div>
             </div>
           </div>
-          {!isMedicalInvoiceProfile(profile) && inv.invoiceNote && (
-            <div style={{ marginTop: 18, padding: "8px 10px", borderRadius: 4, background: "#fbfaf8", border: "1px solid #e8e1d6", color: "#475569", fontSize: 9, lineHeight: 1.45, whiteSpace: "pre-line" }}>{inv.invoiceNote}</div>
+          {!isMedicalInvoiceProfile(profile) && (isOffer ? inv.offerNote : inv.invoiceNote) && (
+            <div style={{ marginTop: 18, padding: "8px 10px", borderRadius: 4, background: "#fbfaf8", border: "1px solid #e8e1d6", color: "#475569", fontSize: 9, lineHeight: 1.45, whiteSpace: "pre-line" }}>{isOffer ? inv.offerNote : inv.invoiceNote}</div>
           )}
           {(profile.taxNumber || profile.vatId || profile.iban || profile.bic || profile.bankName) && (
             <div className="invoice-print-footer" style={{ position: "absolute", left: 46, right: 34, bottom: 24, display: "flex", justifyContent: "space-between", gap: 24, paddingTop: 8, borderTop: "1px solid #e2e8f0", fontSize: 8, color: "#64748b", lineHeight: 1.35 }}>

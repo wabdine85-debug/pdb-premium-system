@@ -1,6 +1,7 @@
 import { jsPDF } from "jspdf";
 import { getInvoiceDueLabel, getInvoicePositionDateLabel, isMedicalInvoiceProfile } from "./invoiceProfiles.js";
 import { getInvoiceBranding } from "./invoiceBranding.js";
+import { getOfferValidityLabel } from "./offerUtils.js";
 
 const PAGE_WIDTH = 210;
 const PAGE_HEIGHT = 297;
@@ -33,12 +34,21 @@ function getBrandName(profile) {
 }
 
 export function getInvoicePdfFileName(invoice) {
-  const customer = safeText(invoice?.memberName, "Kunde")
+  return getDocumentPdfFileName(invoice, "invoice");
+}
+
+export function getOfferPdfFileName(offer) {
+  return getDocumentPdfFileName(offer, "offer");
+}
+
+function getDocumentPdfFileName(document, documentType) {
+  const customer = safeText(document?.memberName, "Kunde")
     .normalize("NFKD")
     .replace(/[^\p{L}\p{N}]+/gu, "-")
     .replace(/^-|-$/g, "");
-  const number = safeText(invoice?.number, "Rechnung").replace(/[^\p{L}\p{N}-]+/gu, "-");
-  return `${customer || "Kunde"}_${number || "Rechnung"}.pdf`;
+  const fallback = documentType === "offer" ? "Angebot" : "Rechnung";
+  const number = safeText(document?.number, fallback).replace(/[^\p{L}\p{N}-]+/gu, "-");
+  return `${customer || "Kunde"}_${number || fallback}.pdf`;
 }
 
 function addProfileLogo(doc, profile) {
@@ -52,7 +62,7 @@ function addProfileLogo(doc, profile) {
   }
 }
 
-function writePageHeader(doc, invoice, profile, accent) {
+function writePageHeader(doc, invoice, profile, accent, documentType = "invoice") {
   const branding = getInvoiceBranding(profile);
   const hasLogo = addProfileLogo(doc, profile);
   const brandX = hasLogo ? 44 : MARGIN;
@@ -76,17 +86,24 @@ function writePageHeader(doc, invoice, profile, accent) {
   doc.setFont("helvetica", "bold");
   doc.setFontSize(21);
   doc.setTextColor(...accent);
-  doc.text("RECHNUNG", PAGE_WIDTH - MARGIN, 19, { align: "right" });
+  const isOffer = documentType === "offer";
+  doc.text(isOffer ? "ANGEBOT" : "RECHNUNG", PAGE_WIDTH - MARGIN, 19, { align: "right" });
 
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8.5);
   doc.setTextColor(71, 85, 105);
-  const metadata = [
-    `Rechnungsnr.: ${safeText(invoice?.number, "—")}`,
-    `Datum: ${formatDate(invoice?.date)}`,
-    `Fällig: ${safeText(getInvoiceDueLabel(invoice), "—")}`,
-  ];
-  if (invoice?.status === "bezahlt") {
+  const metadata = isOffer
+    ? [
+      `Angebotsnr.: ${safeText(invoice?.number, "—")}`,
+      `Datum: ${formatDate(invoice?.date)}`,
+      `Gültig bis: ${safeText(getOfferValidityLabel(invoice), "—")}`,
+    ]
+    : [
+      `Rechnungsnr.: ${safeText(invoice?.number, "—")}`,
+      `Datum: ${formatDate(invoice?.date)}`,
+      `Fällig: ${safeText(getInvoiceDueLabel(invoice), "—")}`,
+    ];
+  if (!isOffer && invoice?.status === "bezahlt") {
     const paymentMethod = safeText(invoice?.paymentMethod).trim();
     metadata.push(`Bezahlt: ${formatDate(invoice.paidDate || invoice.date)}${paymentMethod ? ` · ${paymentMethod}` : ""}`);
   }
@@ -131,26 +148,28 @@ function writeTableHeader(doc, y, invoice, profile, accent) {
   return y + 8;
 }
 
-function addContinuationPage(doc, invoice, profile, accent) {
+function addContinuationPage(doc, invoice, profile, accent, documentType) {
   writeFooter(doc, profile);
   doc.addPage();
-  writePageHeader(doc, invoice, profile, accent);
+  writePageHeader(doc, invoice, profile, accent, documentType);
   return writeTableHeader(doc, 54, invoice, profile, accent);
 }
 
-export function buildInvoicePdf(invoice, profile) {
+function buildDocumentPdf(invoice, profile, documentType) {
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4", compress: true });
   const accent = getAccent(profile);
   const taxRate = Number(invoice?.taxRate ?? profile?.defaultTaxRate ?? 0) || 0;
   const items = Array.isArray(invoice?.items) ? invoice.items : [];
 
+  const isOffer = documentType === "offer";
+  const documentLabel = isOffer ? "Angebot" : "Rechnung";
   doc.setProperties({
-    title: `Rechnung ${safeText(invoice?.number)}`,
-    subject: `Rechnung für ${safeText(invoice?.memberName)}`,
+    title: `${documentLabel} ${safeText(invoice?.number)}`,
+    subject: `${documentLabel} für ${safeText(invoice?.memberName)}`,
     author: getBrandName(profile),
     creator: "PDB Office",
   });
-  writePageHeader(doc, invoice, profile, accent);
+  writePageHeader(doc, invoice, profile, accent, documentType);
 
   const branding = getInvoiceBranding(profile);
   doc.setFont("helvetica", "normal");
@@ -193,7 +212,7 @@ export function buildInvoicePdf(invoice, profile) {
   items.forEach(item => {
     const descriptionLines = doc.splitTextToSize(safeText(item?.desc, "Leistung"), 67);
     const rowHeight = Math.max(10, descriptionLines.length * 4 + 4);
-    if (y + rowHeight > 262) y = addContinuationPage(doc, invoice, profile, accent);
+    if (y + rowHeight > 262) y = addContinuationPage(doc, invoice, profile, accent, documentType);
 
     doc.setFont("helvetica", "normal");
     doc.setFontSize(8);
@@ -210,9 +229,9 @@ export function buildInvoicePdf(invoice, profile) {
     y += rowHeight;
   });
 
-  if (y + 49 > 262) y = addContinuationPage(doc, invoice, profile, accent);
+  if (y + 49 > 262) y = addContinuationPage(doc, invoice, profile, accent, documentType);
   y += 8;
-  const totalsX = 132;
+  const totalsX = isOffer ? 118 : 132;
   const amountX = PAGE_WIDTH - MARGIN;
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
@@ -227,17 +246,18 @@ export function buildInvoicePdf(invoice, profile) {
   doc.setFont("helvetica", "bold");
   doc.setFontSize(12);
   doc.setTextColor(30, 41, 59);
-  doc.text("Gesamt brutto", totalsX, y + 18);
+  doc.text(isOffer ? "Angebotssumme brutto" : "Gesamt brutto", totalsX, y + 18);
   doc.text(formatCurrency(invoice?.total), amountX, y + 18, { align: "right" });
   y += 28;
 
-  if (!isMedicalInvoiceProfile(profile) && invoice?.invoiceNote) {
-    const noteLines = doc.splitTextToSize(safeText(invoice.invoiceNote), CONTENT_WIDTH - 8);
+  const documentNote = isOffer ? invoice?.offerNote : invoice?.invoiceNote;
+  if (!isMedicalInvoiceProfile(profile) && documentNote) {
+    const noteLines = doc.splitTextToSize(safeText(documentNote), CONTENT_WIDTH - 8);
     const noteHeight = Math.max(13, noteLines.length * 4 + 8);
     if (y + noteHeight > 268) {
       writeFooter(doc, profile);
       doc.addPage();
-      writePageHeader(doc, invoice, profile, accent);
+      writePageHeader(doc, invoice, profile, accent, documentType);
       y = 55;
     }
     doc.setFillColor(251, 250, 248);
@@ -253,6 +273,14 @@ export function buildInvoicePdf(invoice, profile) {
   return doc;
 }
 
+export function buildInvoicePdf(invoice, profile) {
+  return buildDocumentPdf(invoice, profile, "invoice");
+}
+
+export function buildOfferPdf(offer, profile) {
+  return buildDocumentPdf(offer, profile, "offer");
+}
+
 export function downloadInvoicePdf(invoice, profile) {
   const doc = buildInvoicePdf(invoice, profile);
   doc.save(getInvoicePdfFileName(invoice));
@@ -263,6 +291,15 @@ export function createInvoicePdfDownload(invoice, profile) {
   const dataUri = doc.output("datauristring");
   return {
     fileName: getInvoicePdfFileName(invoice),
+    base64: dataUri.slice(dataUri.indexOf(",") + 1),
+  };
+}
+
+export function createOfferPdfDownload(offer, profile) {
+  const doc = buildOfferPdf(offer, profile);
+  const dataUri = doc.output("datauristring");
+  return {
+    fileName: getOfferPdfFileName(offer),
     base64: dataUri.slice(dataUri.indexOf(",") + 1),
   };
 }

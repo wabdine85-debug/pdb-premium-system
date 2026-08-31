@@ -34,6 +34,8 @@ export const defaultInvoiceProfiles = [
     logoPlaceholder: "PDB",
     invoicePrefix: "PDB-RE",
     nextInvoiceNumber: 1001,
+    offerPrefix: "PDB-AN-",
+    nextOfferNumber: 1001,
     defaultTaxRate: 19,
     pdfDesignVariant: "pdb-premium",
   },
@@ -52,6 +54,8 @@ export const defaultInvoiceProfiles = [
     logoPlaceholder: "MED",
     invoicePrefix: "MED-RE",
     nextInvoiceNumber: 1001,
+    offerPrefix: "MED-AN-",
+    nextOfferNumber: 1001,
     defaultTaxRate: 0,
     pdfDesignVariant: "medical-clean",
   },
@@ -63,6 +67,11 @@ export function getInvoiceProfile(data, id) {
 
 export function buildInvoiceNumber(profile) {
   return `${profile.invoicePrefix || "RE"}${profile.nextInvoiceNumber || 1001}`;
+}
+
+export function buildOfferNumber(profile) {
+  const fallbackPrefix = isMedicalInvoiceProfile(profile) ? "MED-AN-" : "PDB-AN-";
+  return `${profile.offerPrefix || fallbackPrefix}${profile.nextOfferNumber || 1001}`;
 }
 
 export function calculateInvoiceTotals(items, taxRate) {

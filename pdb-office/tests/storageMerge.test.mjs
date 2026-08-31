@@ -34,3 +34,28 @@ test("applies only the locally edited record to the current collection", () => {
     { id: "b", status: "gemahnt" },
   ]);
 });
+
+test("rebases a moved invoice and new offer without replacing unrelated business data", () => {
+  const previous = {
+    invoices: [{ id: "invoice-yvonne", number: "MED-RE1001" }],
+    offers: [],
+    revenueEntries: [{ id: "revenue", amount: 100 }],
+    workTimeEntries: [{ id: "time", hours: 4 }],
+  };
+  const next = {
+    ...previous,
+    invoices: [],
+    offers: [{ id: "offer-yvonne", number: "MED-AN-1001" }],
+  };
+  const current = {
+    ...previous,
+    revenueEntries: [{ id: "revenue", amount: 250 }],
+    workTimeEntries: [{ id: "time", hours: 7 }],
+  };
+
+  const rebased = rebaseDataChange(previous, next, current);
+  assert.deepEqual(rebased.invoices, []);
+  assert.deepEqual(rebased.offers, next.offers);
+  assert.deepEqual(rebased.revenueEntries, current.revenueEntries);
+  assert.deepEqual(rebased.workTimeEntries, current.workTimeEntries);
+});

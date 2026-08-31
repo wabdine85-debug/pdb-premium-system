@@ -2,11 +2,17 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import {
+  buildOfferNumber,
   calculateInvoiceDueDate,
   getInvoiceCategoryLabel,
   getInvoiceDueLabel,
   getInvoicePositionDateLabel,
 } from "../modules/invoices/invoiceProfiles.js";
+
+test("uses separate offer number sequences for PDB and medical profiles", () => {
+  assert.equal(buildOfferNumber({ id: "pdb-aesthetic-room", offerPrefix: "PDB-AN-", nextOfferNumber: 1007 }), "PDB-AN-1007");
+  assert.equal(buildOfferNumber({ id: "medical-doctor", nextOfferNumber: 1004 }), "MED-AN-1004");
+});
 
 test("uses a neutral date label for PDB invoices and treatment for medical invoices", () => {
   assert.equal(getInvoicePositionDateLabel({ id: "pdb-aesthetic-room" }), "Leistungs-/Lieferdatum");

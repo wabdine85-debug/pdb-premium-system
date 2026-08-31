@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo, useDeferredValue } from "react";
 import InvoicePrintView from "./components/invoices/InvoicePrintView.jsx";
+import OffersWorkspace from "./components/invoices/OffersWorkspace.jsx";
 import RevenueWorkspace from "./components/revenue/RevenueWorkspace.jsx";
 import WorkTimeWorkspace from "./components/work-time/WorkTimeWorkspace.jsx";
 import PremiumAdministration from "./components/memberships/PremiumAdministration.jsx";
@@ -11,7 +12,8 @@ import { createReactivationSepaTask, extendDateByDays, getLatestPause, getPauseD
 import { createMembershipTimeline, getMembershipNextAction } from "./modules/memberships/membershipPresentation.js";
 import { findSafeIdentityMatch } from "./modules/memberships/identityMatching.js";
 import { useStorage, migrateData } from "./services/crmStorage.js";
-import { DEFAULT_INVOICE_PROFILE_ID, INVOICE_PAYMENT_TERMS, PDB_INVOICE_CATEGORIES, buildInvoiceNumber, calculateInvoiceDueDate, calculateInvoiceTotals, defaultInvoiceProfiles, getInvoiceCategoryLabel, getInvoiceDueLabel, getInvoicePositionDateLabel, getInvoiceProfile, isMedicalInvoiceProfile } from "./modules/invoices/invoiceProfiles.js";
+import { DEFAULT_INVOICE_PROFILE_ID, INVOICE_PAYMENT_TERMS, PDB_INVOICE_CATEGORIES, buildInvoiceNumber, buildOfferNumber, calculateInvoiceDueDate, calculateInvoiceTotals, defaultInvoiceProfiles, getInvoiceCategoryLabel, getInvoiceDueLabel, getInvoicePositionDateLabel, getInvoiceProfile, isMedicalInvoiceProfile } from "./modules/invoices/invoiceProfiles.js";
+import { createOfferFromInvoice } from "./modules/invoices/offerUtils.js";
 import { buildDiagnosisSuggestion } from "./modules/invoices/diagnosisSuggestions.js";
 import { normalizePriceInput, parseLocalizedNumber, toPriceInput } from "./modules/invoices/invoiceInputs.js";
 import { monthSummary } from "./modules/revenue/revenueUtils.js";
@@ -21,6 +23,7 @@ import "./crm-system.css";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const uid = () => Math.random().toString(36).slice(2, 10);
+const canConvertInvoiceToOffer = invoice => !invoice?.status || ["ausstehend", "entwurf"].includes(invoice.status);
 
 const STATUS_COLORS = {
   aktiv: { bg: "#d1fae5", color: "#065f46" },
@@ -1032,6 +1035,35 @@ function Invoices({ data, save }) {
     });
   };
 
+  const convertInvoiceToOffer = (invoice) => {
+    const profile = getInvoiceProfile(data, invoice.invoiceProfileId);
+    const offerNumber = buildOfferNumber(profile);
+    setConfirm({
+      message: "Rechnung in Angebot umwandeln?",
+      detail: `${invoice.number} für ${invoice.memberName} wird aus den Rechnungen entfernt und als ${offerNumber} gespeichert. Umsatz, Arbeitszeiten und alle anderen Datensätze bleiben unverändert.`,
+      onConfirm: () => {
+        save(current => {
+          const currentProfile = getInvoiceProfile(current, invoice.invoiceProfileId);
+          const offer = createOfferFromInvoice(invoice, currentProfile, {
+            id: uid(),
+            number: buildOfferNumber(currentProfile),
+          });
+          return {
+            ...current,
+            invoices: current.invoices.filter(existing => existing.id !== invoice.id),
+            offers: [...(current.offers || []), offer],
+            invoiceProfiles: (current.invoiceProfiles || defaultInvoiceProfiles).map(candidate => candidate.id === currentProfile.id
+              ? { ...candidate, nextOfferNumber: (Number(candidate.nextOfferNumber) || 1001) + 1 }
+              : candidate),
+          };
+        });
+        setViewing(null);
+        setPrinting(null);
+        setConfirm(null);
+      },
+    });
+  };
+
   const appendInvoiceNote = (text) => setForm(current => ({
     ...current,
     invoiceNote: [current.invoiceNote?.trim(), text].filter(Boolean).join("\n").slice(0, 400),
@@ -1119,6 +1151,7 @@ function Invoices({ data, save }) {
           {inv.status !== "bezahlt" && <Btn variant="success" onClick={() => { updateStatus(inv.id, "bezahlt"); setViewing(v => ({ ...v, status: "bezahlt" })); }}>✓ Als bezahlt markieren</Btn>}
           <Btn variant="ghost" onClick={() => openEditInvoice(inv)}>Bearbeiten</Btn>
           <Btn variant="ghost" onClick={() => { setPrinting(inv); setViewing(null); }}>🖨️ Drucken / PDF</Btn>
+          {canConvertInvoiceToOffer(inv) && <Btn variant="ghost" onClick={() => convertInvoiceToOffer(inv)}>Als Angebot</Btn>}
           <Btn variant="danger" onClick={() => deleteInvoice(inv.id)}>🗑️ Löschen</Btn>
         </div>
         <div style={{ marginTop: 24, paddingTop: 14, borderTop: "1px solid #e2e8f0", fontSize: 12, color: "#64748b", lineHeight: 1.6 }}>
@@ -1173,6 +1206,7 @@ function Invoices({ data, save }) {
                   <td style={{ padding: "14px 16px" }} onClick={e => e.stopPropagation()}>
                     <div style={{ display: "flex", gap: 6 }}>
                       <Btn small variant="ghost" onClick={() => openEditInvoice(inv)}>Bearbeiten</Btn>
+                      {canConvertInvoiceToOffer(inv) && <Btn small variant="ghost" onClick={() => convertInvoiceToOffer(inv)}>Als Angebot</Btn>}
                       {inv.status !== "bezahlt" && <Btn small variant="success" aria-label={`${inv.number} als bezahlt markieren`} onClick={() => updateStatus(inv.id, "bezahlt")}>✓</Btn>}
                       <Btn small variant="danger" aria-label={`Rechnung ${inv.number} löschen`} onClick={() => deleteInvoice(inv.id)}>🗑️</Btn>
                     </div>
@@ -1198,6 +1232,7 @@ function Invoices({ data, save }) {
             </button>
             <div className="invoice-mobile-card__actions">
               <Btn small variant="ghost" onClick={() => openEditInvoice(inv)}>Bearbeiten</Btn>
+              {canConvertInvoiceToOffer(inv) && <Btn small variant="ghost" onClick={() => convertInvoiceToOffer(inv)}>Als Angebot</Btn>}
               {inv.status !== "bezahlt" && <Btn small variant="success" onClick={() => updateStatus(inv.id, "bezahlt")}>Als bezahlt</Btn>}
               <Btn small variant="danger" aria-label={`Rechnung ${inv.number} löschen`} onClick={() => deleteInvoice(inv.id)}>Löschen</Btn>
             </div>
@@ -1765,6 +1800,8 @@ function Settings({ data, save }) {
         logoPlaceholder: "LOGO",
         invoicePrefix: "RE",
         nextInvoiceNumber: 1001,
+        offerPrefix: "AN-",
+        nextOfferNumber: 1001,
       },
     ]);
   };
@@ -1800,7 +1837,7 @@ function Settings({ data, save }) {
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
           <div>
             <h3 style={{ margin: "0 0 4px", fontSize: 16, fontWeight: 700, color: "#1e293b" }}>Rechnungsprofile</h3>
-            <p style={{ margin: 0, fontSize: 13, color: "#64748b" }}>Jede Rechnung verwendet künftig ein eigenes Profil mit Nummernkreis, Bankdaten und PDF-Design.</p>
+            <p style={{ margin: 0, fontSize: 13, color: "#64748b" }}>Rechnungen und Angebote verwenden das Profil mit getrennten Nummernkreisen, Bankdaten und PDF-Design.</p>
           </div>
           <Btn variant="outline" onClick={addProfile}>+ Profil</Btn>
         </div>
@@ -1827,6 +1864,8 @@ function Settings({ data, save }) {
               <Field label="BIC"><input style={inp} value={profile.bic || ""} onChange={e => updateProfile(profile.id, { bic: e.target.value })} /></Field>
               <Field label="Rechnungspräfix"><input style={inp} value={profile.invoicePrefix || ""} onChange={e => updateProfile(profile.id, { invoicePrefix: e.target.value })} /></Field>
               <Field label="Nächste Rechnungsnummer"><input style={inp} type="number" value={profile.nextInvoiceNumber || 1001} onChange={e => updateProfile(profile.id, { nextInvoiceNumber: parseInt(e.target.value) || 1001 })} /></Field>
+              <Field label="Angebotspräfix"><input style={inp} value={profile.offerPrefix || ""} onChange={e => updateProfile(profile.id, { offerPrefix: e.target.value })} /></Field>
+              <Field label="Nächste Angebotsnummer"><input style={inp} type="number" value={profile.nextOfferNumber || 1001} onChange={e => updateProfile(profile.id, { nextOfferNumber: parseInt(e.target.value) || 1001 })} /></Field>
               <Field label="Standard-MwSt. (%)"><input style={inp} type="number" value={profile.defaultTaxRate ?? 0} onChange={e => updateProfile(profile.id, { defaultTaxRate: parseFloat(e.target.value) || 0 })} /></Field>
               <Field label="PDF-Design">
                 <select style={sel} value={profile.pdfDesignVariant || "pdb-premium"} onChange={e => updateProfile(profile.id, { pdfDesignVariant: e.target.value })}>
@@ -5173,6 +5212,7 @@ const NAV = [
   { id: "work-time", label: "Arbeitszeiten", icon: "🕒" },
   { id: "revenue", label: "Umsätze", icon: "◉" },
   { id: "invoices", label: "Rechnungen", icon: "📄" },
+  { id: "offers", label: "Angebote", icon: "◇" },
   { id: "reminders", label: "Mahnwesen", icon: "⚠️" },
   { id: "bank", label: "Kontoauszüge", icon: "🏦" },
   { id: "settings", label: "Einstellungen", icon: "⚙️" },
@@ -5314,6 +5354,7 @@ export default function CRM() {
         {page === "work-time" && <WorkTimeWorkspace data={data} save={save} />}
         {page === "revenue" && <RevenueWorkspace data={data} save={save} />}
         {page === "invoices" && <Invoices data={data} save={save} />}
+        {page === "offers" && <OffersWorkspace data={data} save={save} />}
         {page === "reminders" && <Reminders data={data} save={save} />}
         {page === "bank" && <BankUpload data={data} save={save} />}
         {page === "settings" && <Settings data={data} save={save} />}
