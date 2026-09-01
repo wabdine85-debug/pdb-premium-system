@@ -9,7 +9,7 @@ import NewsletterReconciliation from "./components/customers/NewsletterReconcili
 import { createMembershipExportRows, downloadMembershipCsv, downloadMembershipPdf } from "./modules/memberships/membershipExports.js";
 import { getNextMandateReference } from "./modules/memberships/mandateReferences.js";
 import { createReactivationSepaTask, extendDateByDays, getLatestPause, getPauseDays, resumeMembership, scheduleMembershipResume, startMembershipPause } from "./modules/memberships/membershipPauses.js";
-import { createMembershipTimeline, getMembershipNextAction } from "./modules/memberships/membershipPresentation.js";
+import { createMembershipTimeline, getMembershipNextAction, isMembershipIncludedInPlannedRevenue } from "./modules/memberships/membershipPresentation.js";
 import { findSafeIdentityMatch } from "./modules/memberships/identityMatching.js";
 import { useStorage, migrateData } from "./services/crmStorage.js";
 import { DEFAULT_INVOICE_PROFILE_ID, INVOICE_PAYMENT_TERMS, PDB_INVOICE_CATEGORIES, buildInvoiceNumber, buildOfferNumber, calculateInvoiceDueDate, calculateInvoiceTotals, defaultInvoiceProfiles, getInvoiceCategoryLabel, getInvoiceDueLabel, getInvoicePositionDateLabel, getInvoiceProfile, isMedicalInvoiceProfile } from "./modules/invoices/invoiceProfiles.js";
@@ -2617,16 +2617,14 @@ function Memberships({ data, save }) {
     m.status === "aktiv"
     || (m.status === "gekündigt" && m.endDate && m.endDate >= today())
   ));
-  const plannedRevenueMemberships = memberships.filter(m => (
-    ["aktiv", "vorbereitung"].includes(m.status || "aktiv")
-    || (m.status === "gekündigt" && m.endDate && m.endDate >= today())
-  ));
+  const plannedRevenueMemberships = memberships.filter(m => isMembershipIncludedInPlannedRevenue(m, today()));
   const monthlyRevenue = currentRevenueMemberships.reduce((sum, m) => sum + (Number(m.monthlyAmount) || 0), 0);
   const plannedMonthlyRevenue = plannedRevenueMemberships.reduce((sum, m) => sum + getScheduledAmount(m), 0);
   const plannedRevenueDelta = plannedMonthlyRevenue - monthlyRevenue;
   const scheduledChanges = memberships.filter(m => (
     m.scheduledPlan
     || m.status === "vorbereitung"
+    || (m.status === "pausiert" && m.scheduledReactivationAt)
     || (m.status === "gekündigt" && m.endDate && m.endDate >= today())
   )).length;
   useEffect(() => {
