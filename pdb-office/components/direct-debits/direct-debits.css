@@ -120,6 +120,9 @@
 .ddb-pill--kontaktiert,
 .ddb-pill--ueberweisung,
 .ddb-pill--neuer-einzug,
+.ddb-pill--eingefroren,
+.ddb-pill--vorgemerkt,
+.ddb-pill--geplant,
 .ddb-pill--eingereicht { color: #7a5b2b; background: #f7eddb; }
 .ddb-pill--bezahlt,
 .ddb-pill--ausgeglichen,
@@ -145,6 +148,14 @@
 .ddb-run-detail { min-width: 0; }
 .ddb-run-actions { align-items: center; flex-wrap: wrap; justify-content: flex-end; }
 .ddb-muted { padding: 12px 18px; color: var(--ddb-muted); font-size: 12px; }
+.ddb-bank-summary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; margin: 14px 20px 18px; border: 1px solid var(--ddb-line); border-radius: 12px; overflow: hidden; background: var(--ddb-line); }
+.ddb-bank-summary--detail { grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 0 20px 18px; }
+.ddb-bank-summary > div { min-height: 68px; padding: 12px 14px; background: #fbfaf8; }
+.ddb-bank-summary span { display: block; margin-bottom: 6px; color: var(--ddb-muted); font-size: 9px; font-weight: 850; letter-spacing: .07em; text-transform: uppercase; }
+.ddb-bank-summary strong { color: var(--ddb-ink); font-size: 15px; }
+.ddb-bank-summary small { display: block; margin-top: 4px; color: var(--ddb-muted); font-size: 10px; }
+.ddb-subsection { margin-top: 18px; border-top: 1px solid var(--ddb-line); }
+.ddb-inline-actions { display: flex; gap: 7px; flex-wrap: wrap; }
 
 .ddb-modal-backdrop { position: fixed; inset: 0; z-index: 2500; display: grid; place-items: center; padding: 18px; overflow: auto; background: rgba(16, 20, 21, .62); backdrop-filter: blur(4px); }
 .ddb-modal { width: min(500px, 100%); max-height: calc(100vh - 36px); overflow: auto; padding: 24px; border-radius: 18px; background: #fff; box-shadow: 0 28px 90px rgba(0, 0, 0, .25); }
@@ -170,6 +181,7 @@
 @media (max-width: 980px) {
   .ddb-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .ddb-runs-layout { grid-template-columns: 1fr; }
+  .ddb-bank-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 @media (max-width: 700px) {
@@ -188,6 +200,8 @@
   .ddb-tabs button { flex: 1; justify-content: center; padding-inline: 8px; }
   .ddb-form-grid { grid-template-columns: 1fr; }
   .ddb-form-grid__wide { grid-column: auto; }
+  .ddb-bank-summary,
+  .ddb-bank-summary--detail { grid-template-columns: 1fr; }
   .ddb-history div { grid-template-columns: 1fr; gap: 3px; }
 }
 

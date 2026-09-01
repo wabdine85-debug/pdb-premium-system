@@ -5,10 +5,12 @@ import {
   createDirectDebitRunFromSepaXml,
   createReturnCase,
   decodeBankCsv,
+  getDirectDebitChangesSinceRun,
   getReturnCaseSummary,
   isMembershipDueInMonth,
   maskIban,
   parseNaspaReturnCsv,
+  parseNaspaMemberPaymentsCsv,
   returnTransactionFingerprint,
   suggestDirectDebitItem,
   updateReturnCase,
@@ -24,6 +26,9 @@ test("membership month eligibility respects start and end dates", () => {
   assert.equal(isMembershipDueInMonth({ status: "aktiv", startDate: "2026-09-01" }, "2026-08"), false);
   assert.equal(isMembershipDueInMonth({ status: "gekündigt", endDate: "2026-07-31" }, "2026-08"), false);
   assert.equal(isMembershipDueInMonth({ status: "pausiert" }, "2026-08"), false);
+  assert.equal(isMembershipDueInMonth({ status: "pausiert", scheduledReactivationAt: "2026-10-01" }, "2026-09"), false);
+  assert.equal(isMembershipDueInMonth({ status: "pausiert", scheduledReactivationAt: "2026-10-01" }, "2026-10"), true);
+  assert.equal(isMembershipDueInMonth({ status: "pausiert", scheduledReactivationAt: "2026-10-01", endDate: "2026-09-15" }, "2026-10"), true);
 });
 
 test("run creation freezes member payment data", () => {
@@ -55,6 +60,8 @@ test("SEPA XML creates the exact historical debit run", () => {
   assert.equal(result.run.dueDate, "2026-07-01");
   assert.equal(result.run.itemCount, 2);
   assert.equal(result.run.totalAmount, 328);
+  assert.equal(result.run.status, "eingefroren");
+  assert.equal(result.items[0].status, "eingefroren");
   assert.equal(result.items[0].memberName, "Anna Beispiel");
   assert.equal(result.items[0].mandateReference, "PDB-1");
 });
@@ -118,6 +125,43 @@ test("Naspa style CSV returns only return debit rows", () => {
   assert.equal(result[0].reason, "Keine ausreichende Deckung");
   assert.equal(result[0].mandateReference, "PDB-2026-001");
   assert.equal(result[0].sourceFingerprint, returnTransactionFingerprint(result[0]));
+});
+
+test("Naspa CSV separates the booked batch from member adjustments", () => {
+  const csv = [
+    "Buchungstag;Valutadatum;Buchungstext;Verwendungszweck;Glaeubiger ID;Mandatsreferenz;Sammlerreferenz;Beguenstigter/Zahlungspflichtiger;Kontonummer/IBAN;Betrag;Info",
+    "01.09.26;01.09.26;SAMMEL-LS-EINZUG;DATUM 28.08.2026 ANZAHL 80;;;RUN-1;;DE000;13269,00;Umsatz gebucht",
+    "01.09.26;01.09.26;EINZELLASTSCHRIFTEINZUG;Premiumbeitrag 129,00 EUR + 70,00 EUR September -Beyond-;DE73ZZZ00002018874;PDB-M-1;EXTRA-1;Mariana Beispiel;DE111;70,00;Umsatz gebucht",
+    "01.09.26;02.09.26;EINZELLASTSCHRIFTEINZUG;Einrichtungsgebühr 39,00 EUR einmalig;DE73ZZZ00002018874;PDB-M-2;EXTRA-2;Julia Beispiel;DE222;39,00;Umsatz vorgemerkt",
+  ].join("\n");
+  const result = parseNaspaMemberPaymentsCsv(csv, { idFactory: ids() });
+  assert.equal(result.batches.length, 1);
+  assert.equal(result.batches[0].amount, 13269);
+  assert.equal(result.batches[0].itemCount, 80);
+  assert.equal(result.adjustments.length, 2);
+  assert.equal(result.adjustments[0].type, "upgrade");
+  assert.equal(result.adjustments[0].serviceMonth, "2026-09");
+  assert.equal(result.adjustments[1].type, "setup-fee");
+  assert.equal(result.adjustments[1].status, "vorgemerkt");
+});
+
+test("frozen run changes identify later members and upgrade differences", () => {
+  const run = { id: "run-1", month: "2026-09" };
+  const changes = getDirectDebitChangesSinceRun({
+    run,
+    items: [{ runId: "run-1", membershipId: "m1", amount: 149 }],
+    data: {
+      members: [{ id: "p1", name: "Anna" }, { id: "p2", name: "Julia" }],
+      memberships: [
+        { id: "m1", memberId: "p1", status: "aktiv", paymentMethod: "SEPA", monthlyAmount: 199 },
+        { id: "m2", memberId: "p2", status: "aktiv", paymentMethod: "SEPA", monthlyAmount: 149 },
+      ],
+    },
+  });
+  assert.deepEqual(changes.map(change => ({ type: change.type, amount: change.amount })), [
+    { type: "upgrade", amount: 50 },
+    { type: "new-membership", amount: 149 },
+  ]);
 });
 
 test("Naspa CAMT V8 uses original amount, derives fees and ignores invoice receipts", () => {

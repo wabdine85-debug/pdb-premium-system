@@ -147,7 +147,7 @@ export function mergeMemberFinanceMonth(current = {}, imported) {
     generatedAt: new Date().toISOString(),
     sourceLabel: 'Direkt aus den unter „Lastschriften“ importierten SEPA-XML-Dateien',
     sourceFolder: current.sourceFolder || 'PDB Office',
-    monthRule: 'Pro Monat gilt der zuletzt bestätigte SEPA-XML-Import. Ein erneuter Import ersetzt nur diesen Monatslauf.',
+    monthRule: 'Pro Monat gilt der vor der Naspa-Einreichung eingefrorene SEPA-XML-Snapshot. Spätere Änderungen werden getrennt als Nachträge geführt.',
     fileCount: new Set(fileSummaries.map(summary => summary.file)).size,
     usedFileCount: new Set(transactions.map(item => item.financeMonth)).size,
     ignoredFileCount: ignoredFiles.length,

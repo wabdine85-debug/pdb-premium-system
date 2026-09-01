@@ -1,5 +1,6 @@
 import React, { useMemo, useRef, useState } from "react";
 import {
+  DIRECT_DEBIT_ADJUSTMENT_TYPES,
   RETURN_CASE_STATUSES,
   RETURN_REASON_LABELS,
   createDirectDebitRun,
@@ -7,8 +8,10 @@ import {
   createReturnCase,
   decodeBankCsv,
   getReturnCaseSummary,
+  getDirectDebitChangesSinceRun,
   maskIban,
   parseNaspaReturnCsv,
+  parseNaspaMemberPaymentsCsv,
   returnTransactionFingerprint,
   suggestDirectDebitItem,
   updateReturnCase,
@@ -21,11 +24,17 @@ const currentMonth = () => isoToday().slice(0, 7);
 const money = value => new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR" }).format(Number(value) || 0);
 const dateLabel = value => value ? new Date(`${value}T12:00:00`).toLocaleDateString("de-DE") : "—";
 const monthLabel = value => value ? new Date(`${value}-01T12:00:00`).toLocaleDateString("de-DE", { month: "long", year: "numeric" }) : "—";
+const nextMonth = value => {
+  const [year, month] = value.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month, 1));
+  return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}`;
+};
 const isClosed = status => ["bezahlt", "storniert"].includes(status);
 
 function StatusPill({ status }) {
   const labels = {
     entwurf: "Entwurf",
+    eingefroren: "Eingefroren",
     eingereicht: "Bei Naspa eingereicht",
     gebucht: "Gebucht",
     rueckgaben: "Rückgaben vorhanden",
@@ -39,6 +48,8 @@ function StatusPill({ status }) {
     vorbereitet: "Vorbereitet",
     zurueckgegeben: "Zurückgegeben",
     ausgeglichen: "Ausgeglichen",
+    vorgemerkt: "Vorgemerkt",
+    geplant: "Geplant",
   };
   return <span className={`ddb-pill ddb-pill--${status}`}>{labels[status] || status}</span>;
 }
@@ -77,6 +88,7 @@ export default function DirectDebitWorkspace({ data, save }) {
   const [caseFilter, setCaseFilter] = useState("offen");
   const [search, setSearch] = useState("");
   const [importRows, setImportRows] = useState(null);
+  const [bankImport, setBankImport] = useState(null);
   const [importMessage, setImportMessage] = useState("");
   const [xmlMessage, setXmlMessage] = useState("");
   const fileRef = useRef(null);
@@ -84,10 +96,13 @@ export default function DirectDebitWorkspace({ data, save }) {
 
   const runs = useMemo(() => [...(data.directDebitRuns || [])].sort((a, b) => (b.month || "").localeCompare(a.month || "")), [data.directDebitRuns]);
   const items = data.directDebitItems || [];
+  const adjustments = data.directDebitAdjustments || [];
   const cases = data.returnDebitCases || [];
   const summary = getReturnCaseSummary(cases);
   const selectedRun = runs.find(run => run.id === selectedRunId) || runs[0] || null;
   const selectedRunItems = selectedRun ? items.filter(item => item.runId === selectedRun.id) : [];
+  const selectedRunAdjustments = selectedRun ? adjustments.filter(item => item.serviceMonth === selectedRun.month || item.collectionMonth === selectedRun.month) : [];
+  const selectedRunChanges = useMemo(() => getDirectDebitChangesSinceRun({ data, run: selectedRun, items }), [data, selectedRun, items]);
   const selectedCase = cases.find(item => item.id === selectedCaseId) || null;
   const eligibleImportItems = items.filter(item => !cases.some(returnCase => returnCase.itemId === item.id));
 
@@ -125,11 +140,12 @@ export default function DirectDebitWorkspace({ data, save }) {
       directDebitRuns: (current.directDebitRuns || []).map(item => item.id === run.id ? {
         ...item,
         status,
+        frozenAt: status === "eingefroren" ? (item.frozenAt || timestamp) : item.frozenAt,
         submittedAt: status === "eingereicht" ? (item.submittedAt || timestamp) : item.submittedAt,
         updatedAt: timestamp,
       } : item),
-      directDebitItems: (current.directDebitItems || []).map(item => item.runId === run.id && item.status === "vorbereitet" && status === "eingereicht"
-        ? { ...item, status: "eingereicht", updatedAt: timestamp }
+      directDebitItems: (current.directDebitItems || []).map(item => item.runId === run.id && ["vorbereitet", "eingefroren"].includes(item.status) && ["eingefroren", "eingereicht"].includes(status)
+        ? { ...item, status, updatedAt: timestamp }
         : item),
     }));
   };
@@ -233,9 +249,19 @@ export default function DirectDebitWorkspace({ data, save }) {
     if (!file) return;
     setImportMessage("");
     try {
+      const text = decodeBankCsv(await file.arrayBuffer());
       const knownFingerprints = new Set((data.bankTransactions || []).map(transaction => transaction.sourceFingerprint).filter(Boolean));
-      const transactions = parseNaspaReturnCsv(decodeBankCsv(await file.arrayBuffer()), { idFactory: uid })
+      const transactions = parseNaspaReturnCsv(text, { idFactory: uid })
         .filter(transaction => !knownFingerprints.has(transaction.sourceFingerprint));
+      const payments = parseNaspaMemberPaymentsCsv(text, { idFactory: uid });
+      const newestFinanceMonth = payments.batches.map(batch => batch.financeMonth).sort().at(-1) || "";
+      const paymentPreview = {
+        sourceFile: file.name,
+        batches: payments.batches.filter(batch => !newestFinanceMonth || batch.financeMonth === newestFinanceMonth),
+        adjustments: payments.adjustments
+          .filter(adjustment => !newestFinanceMonth || adjustment.collectionMonth === newestFinanceMonth)
+          .filter(adjustment => !knownFingerprints.has(adjustment.sourceFingerprint)),
+      };
       const rows = transactions.map(transaction => {
         const suggestion = suggestDirectDebitItem(transaction, eligibleImportItems);
         return {
@@ -246,13 +272,132 @@ export default function DirectDebitWorkspace({ data, save }) {
         };
       });
       setImportRows(rows);
-      setImportMessage(rows.length ? `${rows.length} neue Rücklastschrift${rows.length === 1 ? "" : "en"} erkannt.` : "Keine neuen Rücklastschriften erkannt. Bereits importierte Buchungen werden nicht doppelt übernommen.");
+      setBankImport(paymentPreview.batches.length || paymentPreview.adjustments.length ? paymentPreview : null);
+      const parts = [];
+      if (paymentPreview.batches.length) parts.push(`${paymentPreview.batches.length} Sammellauf erkannt`);
+      if (paymentPreview.adjustments.length) parts.push(`${paymentPreview.adjustments.length} PDB-Nachträge erkannt`);
+      if (rows.length) parts.push(`${rows.length} neue Rücklastschrift${rows.length === 1 ? "" : "en"}`);
+      setImportMessage(parts.length ? `${parts.join(" · ")}.` : "Keine neuen PDB-Buchungen erkannt. Bereits importierte Buchungen werden nicht doppelt übernommen.");
     } catch {
       setImportRows([]);
+      setBankImport(null);
       setImportMessage("Die Datei konnte nicht gelesen werden. Bitte einen CSV-CAMT-Export der Naspa verwenden.");
     } finally {
       if (fileRef.current) fileRef.current.value = "";
     }
+  };
+
+  const applyBankImport = () => {
+    if (!bankImport) return;
+    const batchByRun = new Map();
+    bankImport.batches.forEach(batch => {
+      const run = runs.find(entry => entry.month === batch.financeMonth);
+      if (run) batchByRun.set(run.id, batch);
+    });
+    if (bankImport.batches.length && !batchByRun.size) {
+      setImportMessage("Bitte zuerst die zugehörige SEPA-XML als eingefrorenen Monatslauf importieren.");
+      return;
+    }
+    const timestamp = new Date().toISOString();
+    save(current => {
+      const known = new Set((current.bankTransactions || []).map(entry => entry.sourceFingerprint).filter(Boolean));
+      const existingAdjustments = current.directDebitAdjustments || [];
+      const adjustmentMatch = incoming => existingAdjustments.find(existing => (
+        existing.sourceFingerprint === incoming.sourceFingerprint
+        || (existing.status === "geplant"
+          && existing.collectionMonth === incoming.collectionMonth
+          && Math.abs(Number(existing.amount) - Number(incoming.amount)) < 0.01
+          && ((existing.mandateReference && existing.mandateReference === incoming.mandateReference)
+            || existing.memberName === incoming.memberName))
+      ));
+      const matchedAdjustmentIds = new Map(bankImport.adjustments.map(incoming => [incoming.sourceFingerprint, adjustmentMatch(incoming)?.id]).filter(([, id]) => id));
+      const newAdjustments = bankImport.adjustments.filter(entry => !adjustmentMatch(entry));
+      const newBankAdjustments = bankImport.adjustments.filter(entry => !known.has(entry.sourceFingerprint));
+      const mergedAdjustments = existingAdjustments.map(existing => {
+        const incoming = bankImport.adjustments.find(entry => matchedAdjustmentIds.get(entry.sourceFingerprint) === existing.id);
+        if (!incoming) return existing;
+        return {
+          ...existing,
+          bookingDate: incoming.bookingDate,
+          valueDate: incoming.valueDate,
+          status: incoming.status,
+          purpose: incoming.purpose,
+          sourceFingerprint: incoming.sourceFingerprint,
+          updatedAt: timestamp,
+        };
+      });
+      const bankTransactions = [
+        ...(current.bankTransactions || []),
+        ...bankImport.batches.filter(entry => !known.has(entry.sourceFingerprint)).map(entry => ({
+          id: entry.id, date: entry.bookingDate, amount: entry.amount, purpose: entry.purpose,
+          type: "member-batch", matched: true, sourceFingerprint: entry.sourceFingerprint,
+        })),
+        ...newBankAdjustments.map(entry => ({
+          id: entry.id, date: entry.bookingDate, name: entry.memberName, amount: entry.amount,
+          purpose: entry.purpose, type: "member-adjustment", matched: true, sourceFingerprint: entry.sourceFingerprint,
+        })),
+      ];
+      return {
+        ...current,
+        bankTransactions,
+        directDebitAdjustments: [...mergedAdjustments, ...newAdjustments],
+        directDebitRuns: (current.directDebitRuns || []).map(run => {
+          const batch = batchByRun.get(run.id);
+          if (!batch) return run;
+          const monthAdjustments = bankImport.adjustments.filter(entry => entry.serviceMonth === run.month && entry.type !== "setup-fee");
+          const reconciledAmount = Math.round((batch.amount + monthAdjustments.reduce((sum, entry) => sum + entry.amount, 0)) * 100) / 100;
+          return {
+            ...run,
+            status: batch.status === "gebucht" ? "gebucht" : "eingereicht",
+            submittedAt: run.submittedAt || batch.bookingDate,
+            bookedAt: batch.status === "gebucht" ? batch.bookingDate : run.bookedAt,
+            bankAmount: batch.amount,
+            bankItemCount: batch.itemCount,
+            bankReference: batch.reference,
+            bankStatus: batch.status,
+            bankSourceFile: bankImport.sourceFile,
+            reconciledAmount,
+            reconciliationStatus: Math.abs(reconciledAmount - Number(run.totalAmount || 0)) < 0.01 ? "stimmt" : "abweichung",
+            updatedAt: timestamp,
+          };
+        }),
+      };
+    });
+    setImportMessage("Naspa-Sammler und PDB-Nachträge wurden übernommen. Vorgemerkte Buchungen bleiben bis zur endgültigen Buchung entsprechend markiert.");
+    setBankImport(null);
+  };
+
+  const updateBankAdjustment = (index, patch) => {
+    setBankImport(current => ({
+      ...current,
+      adjustments: current.adjustments.map((entry, entryIndex) => entryIndex === index ? { ...entry, ...patch } : entry),
+    }));
+  };
+
+  const queueChange = (change, collectionMonth) => {
+    if (!selectedRun || change.amount <= 0) return;
+    const sourceChangeKey = `${selectedRun.id}:${change.key}:${collectionMonth}`;
+    if (adjustments.some(entry => entry.sourceChangeKey === sourceChangeKey)) return;
+    const timestamp = new Date().toISOString();
+    save(current => ({
+      ...current,
+      directDebitAdjustments: [...(current.directDebitAdjustments || []), {
+        id: uid(),
+        runId: selectedRun.id,
+        membershipId: change.membershipId,
+        memberId: change.memberId,
+        memberName: change.memberName,
+        mandateReference: change.mandateReference,
+        amount: change.amount,
+        type: change.type,
+        status: "geplant",
+        serviceMonth: selectedRun.month,
+        collectionMonth,
+        sourceChangeKey,
+        createdAt: timestamp,
+        purpose: change.type === "upgrade" ? `Upgrade-Differenz für ${monthLabel(selectedRun.month)}` : `Nachlauf für ${monthLabel(selectedRun.month)}`,
+      }],
+    }));
   };
 
   const importSepaXml = async file => {
@@ -262,6 +407,9 @@ export default function DirectDebitWorkspace({ data, save }) {
       const xml = await file.text();
       const created = createDirectDebitRunFromSepaXml({ data, text: xml, sourceFile: file.name, idFactory: uid });
       const existingRun = runs.find(run => run.month === created.run.month);
+      if (existingRun && existingRun.status !== "entwurf") {
+        throw new Error(`Der Lauf für ${monthLabel(created.run.month)} ist bereits ${existingRun.status} und bleibt unverändert. Neue Änderungen bitte als Nachtrag erfassen.`);
+      }
       if (existingRun && cases.some(returnCase => returnCase.runId === existingRun.id)) {
         throw new Error(`Der Lauf für ${monthLabel(created.run.month)} enthält bereits Rücklastschriftfälle und kann nicht ersetzt werden.`);
       }
@@ -282,7 +430,7 @@ export default function DirectDebitWorkspace({ data, save }) {
       setSelectedRunId(created.run.id);
       setImportRows(null);
       setTab("runs");
-      setXmlMessage(`${created.run.itemCount} Lastschriften über ${money(created.run.totalAmount)} aus ${file.name} übernommen. Member Finanzen wurde für ${monthLabel(created.run.month)} aktualisiert.`);
+      setXmlMessage(`${created.run.itemCount} Lastschriften über ${money(created.run.totalAmount)} aus ${file.name} eingefroren. Dieser Monatslauf wird durch spätere Vertragsänderungen nicht mehr überschrieben.`);
     } catch (error) {
       setXmlMessage(error.message || "Die SEPA-XML konnte nicht gelesen werden.");
     } finally {
@@ -382,6 +530,38 @@ export default function DirectDebitWorkspace({ data, save }) {
 
       {xmlMessage && <div className="ddb-import-message" role="status">{xmlMessage}</div>}
 
+      {bankImport && (
+        <section className="ddb-import" aria-live="polite">
+          <div className="ddb-section-heading">
+            <div><span className="ddb-eyebrow">Bankabgleich</span><h3>Naspa-Buchungen übernehmen</h3><p>{importMessage} Leistungsmonat und Buchungsart können vor der Übernahme korrigiert werden.</p></div>
+            <div className="ddb-import-actions">
+              <button className="ddb-button ddb-button--small" type="button" onClick={applyBankImport}>Bankabgleich übernehmen</button>
+              <button className="ddb-text-button" type="button" onClick={() => setBankImport(null)}>Schließen</button>
+            </div>
+          </div>
+          {bankImport.batches.map(batch => (
+            <div className="ddb-bank-summary" key={batch.sourceFingerprint}>
+              <div><span>Sammler</span><strong>{money(batch.amount)}</strong></div>
+              <div><span>Positionen</span><strong>{batch.itemCount || "—"}</strong></div>
+              <div><span>Buchung</span><strong>{dateLabel(batch.bookingDate)}</strong></div>
+              <div><span>Status</span><StatusPill status={batch.status} /></div>
+            </div>
+          ))}
+          {bankImport.adjustments.length > 0 && <div className="ddb-table-wrap"><table className="ddb-table">
+            <thead><tr><th>Member</th><th>Betrag</th><th>Leistungsmonat</th><th>Art</th><th>Status</th></tr></thead>
+            <tbody>{bankImport.adjustments.map((entry, index) => (
+              <tr key={entry.sourceFingerprint}>
+                <td><strong>{entry.memberName}</strong><small>{entry.purpose}</small></td>
+                <td><strong>{money(entry.amount)}</strong></td>
+                <td><input aria-label={`Leistungsmonat für ${entry.memberName}`} type="month" value={entry.serviceMonth} onChange={event => updateBankAdjustment(index, { serviceMonth: event.target.value })} /></td>
+                <td><select aria-label={`Buchungsart für ${entry.memberName}`} value={entry.type} onChange={event => updateBankAdjustment(index, { type: event.target.value })}>{DIRECT_DEBIT_ADJUSTMENT_TYPES.map(type => <option key={type.value} value={type.value}>{type.label}</option>)}</select></td>
+                <td><StatusPill status={entry.status} /></td>
+              </tr>
+            ))}</tbody>
+          </table></div>}
+        </section>
+      )}
+
       <section className="ddb-metrics" aria-label="Rücklastschrift-Kennzahlen">
         <Metric label="Offene Fälle" value={summary.openCount} hint="benötigen eine Klärung" tone={summary.openCount ? "alert" : "positive"} />
         <Metric label="Offener Gesamtbetrag" value={money(summary.openAmount)} hint="inklusive erfasster Bankkosten" tone={summary.openAmount ? "alert" : "neutral"} />
@@ -394,7 +574,7 @@ export default function DirectDebitWorkspace({ data, save }) {
         <button type="button" className={tab === "runs" ? "is-active" : ""} onClick={() => setTab("runs")}>Lastschriftläufe</button>
       </nav>
 
-      {importRows && (
+      {importRows && importRows.length > 0 && (
         <section className="ddb-import" aria-live="polite">
           <div className="ddb-section-heading">
             <div><span className="ddb-eyebrow">Importvorschau</span><h3>Naspa-Rückgaben abgleichen</h3><p>{importMessage} Bitte jede Zuordnung vor der Übernahme prüfen.</p></div>
@@ -472,11 +652,17 @@ export default function DirectDebitWorkspace({ data, save }) {
                 <div><span className="ddb-eyebrow">Fällig {dateLabel(selectedRun.dueDate)}</span><h3>{selectedRun.title}</h3><p>{selectedRun.itemCount} Einzüge · {money(selectedRun.totalAmount)}</p></div>
                 <div className="ddb-run-actions">
                   <StatusPill status={selectedRun.status} />
-                  {selectedRun.status === "entwurf" && <button className="ddb-button ddb-button--secondary" type="button" onClick={() => setRunStatus(selectedRun, "eingereicht")}>Als eingereicht markieren</button>}
+                  {selectedRun.status === "entwurf" && <button className="ddb-button ddb-button--secondary" type="button" onClick={() => setRunStatus(selectedRun, "eingefroren")}>Lauf einfrieren</button>}
+                  {selectedRun.status === "eingefroren" && <button className="ddb-button ddb-button--secondary" type="button" onClick={() => setRunStatus(selectedRun, "eingereicht")}>Als eingereicht markieren</button>}
                   {selectedRun.status === "eingereicht" && <button className="ddb-button ddb-button--secondary" type="button" onClick={() => setRunStatus(selectedRun, "gebucht")}>Als gebucht markieren</button>}
                   {["gebucht", "rueckgaben"].includes(selectedRun.status) && <button className="ddb-button ddb-button--secondary" type="button" onClick={() => setRunStatus(selectedRun, "abgeschlossen")}>Lauf abschließen</button>}
                 </div>
               </div>
+              {(selectedRun.bankAmount != null || selectedRun.frozenAt) && <div className="ddb-bank-summary ddb-bank-summary--detail">
+                <div><span>Eingefrorenes Soll</span><strong>{money(selectedRun.totalAmount)}</strong><small>{selectedRun.itemCount} Positionen</small></div>
+                <div><span>Naspa-Sammler</span><strong>{selectedRun.bankAmount != null ? money(selectedRun.bankAmount) : "Noch nicht abgeglichen"}</strong><small>{selectedRun.bankItemCount ? `${selectedRun.bankItemCount} Positionen` : "CSV nach Buchung importieren"}</small></div>
+                <div><span>Mit Nachträgen</span><strong>{selectedRun.reconciledAmount != null ? money(selectedRun.reconciledAmount) : "—"}</strong><small>{selectedRun.reconciliationStatus === "stimmt" ? "✓ stimmt mit Soll überein" : selectedRun.reconciliationStatus === "abweichung" ? "Abweichung prüfen" : "noch offen"}</small></div>
+              </div>}
               <div className="ddb-table-wrap"><table className="ddb-table">
                 <thead><tr><th>Member</th><th>Mandat</th><th>IBAN</th><th>Betrag</th><th>Status</th><th></th></tr></thead>
                 <tbody>{selectedRunItems.map(item => (
@@ -490,6 +676,41 @@ export default function DirectDebitWorkspace({ data, save }) {
                   </tr>
                 ))}</tbody>
               </table></div>
+              {selectedRunChanges.length > 0 && <div className="ddb-subsection">
+                <div className="ddb-section-heading"><div><span className="ddb-eyebrow">Nach dem Einfrieren</span><h3>Neue Änderungen</h3><p>Diese Positionen verändern den eingereichten Lauf nicht. Entscheide, wann sie zusätzlich eingezogen werden.</p></div></div>
+                <div className="ddb-table-wrap"><table className="ddb-table">
+                  <thead><tr><th>Member</th><th>Änderung</th><th>Betrag</th><th>Einzug planen</th></tr></thead>
+                  <tbody>{selectedRunChanges.map(change => {
+                    const currentKey = `${selectedRun.id}:${change.key}:${selectedRun.month}`;
+                    const nextKey = `${selectedRun.id}:${change.key}:${nextMonth(selectedRun.month)}`;
+                    const currentQueued = adjustments.some(entry => entry.sourceChangeKey === currentKey);
+                    const nextQueued = adjustments.some(entry => entry.sourceChangeKey === nextKey);
+                    return <tr key={change.key}>
+                      <td><strong>{change.memberName}</strong></td>
+                      <td>{change.type === "upgrade" ? `${money(change.previousAmount)} → ${money(change.currentAmount)}` : "Neuer Vertrag nach Monatsabschluss"}</td>
+                      <td><strong>{change.amount > 0 ? "+" : ""}{money(change.amount)}</strong></td>
+                      <td><div className="ddb-inline-actions">
+                        <button className="ddb-button ddb-button--small ddb-button--secondary" disabled={change.amount <= 0 || currentQueued} type="button" onClick={() => queueChange(change, selectedRun.month)}>{currentQueued ? "Nachlauf geplant" : "Diesen Monat"}</button>
+                        <button className="ddb-button ddb-button--small ddb-button--secondary" disabled={change.amount <= 0 || nextQueued} type="button" onClick={() => queueChange(change, nextMonth(selectedRun.month))}>{nextQueued ? "Vorgemerkt" : `${monthLabel(nextMonth(selectedRun.month))}`}</button>
+                      </div></td>
+                    </tr>;
+                  })}</tbody>
+                </table></div>
+              </div>}
+              {selectedRunAdjustments.length > 0 && <div className="ddb-subsection">
+                <div className="ddb-section-heading"><div><span className="ddb-eyebrow">Sonderbuchungen</span><h3>Nachträge und Gebühren</h3><p>Leistungsmonat und tatsächlicher Einzugsmonat bleiben getrennt nachvollziehbar.</p></div></div>
+                <div className="ddb-table-wrap"><table className="ddb-table">
+                  <thead><tr><th>Member</th><th>Art</th><th>Leistungsmonat</th><th>Einzugsmonat</th><th>Betrag</th><th>Status</th></tr></thead>
+                  <tbody>{selectedRunAdjustments.map(entry => <tr key={entry.id}>
+                    <td><strong>{entry.memberName}</strong></td>
+                    <td>{DIRECT_DEBIT_ADJUSTMENT_TYPES.find(type => type.value === entry.type)?.label || entry.type}</td>
+                    <td>{monthLabel(entry.serviceMonth)}</td>
+                    <td>{monthLabel(entry.collectionMonth)}</td>
+                    <td><strong>{money(entry.amount)}</strong></td>
+                    <td><StatusPill status={entry.status} /></td>
+                  </tr>)}</tbody>
+                </table></div>
+              </div>}
             </>}
           </div>
         </section>

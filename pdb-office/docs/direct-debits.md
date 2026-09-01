@@ -20,9 +20,12 @@ Die drei Listen liegen im vorhandenen CRM-Dokument und werden durch
 
 ## Arbeitsablauf
 
-1. Die bei Naspa verwendete `pain.008`-XML über **SEPA-XML importieren** einlesen. Dadurch werden der Monatslauf und **Member Finanzen** gemeinsam aktualisiert.
-2. Nach Einreichung beziehungsweise Buchung den Laufstatus aktualisieren.
-3. Naspa-CSV-CAMT exportieren und über **Naspa-CSV prüfen** einlesen.
+1. Die unmittelbar vor der Naspa-Einreichung erzeugte `pain.008`-XML über
+   **SEPA-XML importieren** einlesen. Der Monatslauf wird damit als unveränderlicher
+   Snapshot eingefroren und **Member Finanzen** erhält den Soll-Stand.
+2. Genau diese Datei bei Naspa einreichen und den Lauf als **eingereicht** markieren.
+3. Nach der Buchung den Naspa-CSV-CAMT-Export über **Naspa-CSV prüfen** einlesen.
+   Der Import erkennt den Sammelbetrag, einzelne PDB-Nachträge und Rücklastschriften.
 4. Vorgeschlagene Zuordnung kontrollieren. Nur bestätigte Zeilen werden
    übernommen; unsichere oder mehrdeutige Treffer bleiben offen.
 5. Rücklastschrift bearbeiten, nächste Aktion und Verlauf dokumentieren.
@@ -31,10 +34,19 @@ Die drei Listen liegen im vorhandenen CRM-Dokument und werden durch
 Wiederholte Dateiimporte erzeugen anhand eines stabilen
 Transaktionsfingerprints keine doppelten Rücklastschriftbuchungen.
 
-Ein erneuter SEPA-XML-Import ersetzt ausschließlich den Monatslauf mit demselben
-Fälligkeitsmonat. Ältere Finanzmonate bleiben unverändert. Enthält der bestehende
-Monatslauf bereits Rücklastschriftfälle, wird ein Ersetzen aus Sicherheitsgründen
-abgelehnt.
+Ein eingefrorener, eingereichter oder gebuchter Monatslauf wird durch einen späteren
+XML-Export niemals ersetzt. Neue Verträge und Beitragsänderungen erscheinen als
+Nachträge. Sie können für einen separaten Nachlauf im aktuellen Monat oder für den
+Folgemonat vorgemerkt werden. Jeder Nachtrag speichert getrennt:
+
+- Leistungsmonat,
+- tatsächlichen Einzugsmonat,
+- Buchungsart (Upgrade, neuer Vertrag, Einrichtungsgebühr oder Nachberechnung),
+- Bankstatus (geplant, vorgemerkt oder gebucht).
+
+Geplante Reaktivierungen werden in dem Monat berücksichtigt, in dem das hinterlegte
+Reaktivierungsdatum liegt. Eine Reaktivierung zum 1. Oktober erscheint somit bereits
+im Oktober-Entwurf, auch wenn der Member im September noch pausiert ist.
 
 ## Matching
 

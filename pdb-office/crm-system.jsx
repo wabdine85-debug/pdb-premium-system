@@ -17,7 +17,7 @@ import { createOfferFromInvoice } from "./modules/invoices/offerUtils.js";
 import { buildDiagnosisSuggestion } from "./modules/invoices/diagnosisSuggestions.js";
 import { normalizePriceInput, parseLocalizedNumber, toPriceInput } from "./modules/invoices/invoiceInputs.js";
 import { monthSummary } from "./modules/revenue/revenueUtils.js";
-import { getReturnCaseSummary } from "./modules/direct-debits/directDebitUtils.js";
+import { DIRECT_DEBIT_ADJUSTMENT_TYPES, getReturnCaseSummary } from "./modules/direct-debits/directDebitUtils.js";
 import { addDays, fmt, fmtDate, today } from "./utils/formatters.js";
 import "./crm-system.css";
 
@@ -4963,6 +4963,14 @@ function MemberFinance({ data }) {
 
   const months = financeData.months || [];
   const currentMonth = months.find(month => month.month === selectedMonth) || months.at(-1) || { month: selectedMonth, amount: 0, count: 0 };
+  const financeRun = (data.directDebitRuns || []).find(run => run.month === currentMonth.month) || null;
+  const financeAdjustments = (data.directDebitAdjustments || []).filter(entry => entry.serviceMonth === currentMonth.month);
+  const recurringAdjustments = financeAdjustments.filter(entry => entry.type !== "setup-fee");
+  const bookedAdjustments = recurringAdjustments.filter(entry => entry.status === "gebucht").reduce((sum, entry) => sum + Number(entry.amount || 0), 0);
+  const pendingAdjustments = recurringAdjustments.filter(entry => ["vorgemerkt", "geplant"].includes(entry.status)).reduce((sum, entry) => sum + Number(entry.amount || 0), 0);
+  const setupFees = financeAdjustments.filter(entry => entry.type === "setup-fee").reduce((sum, entry) => sum + Number(entry.amount || 0), 0);
+  const bankBookedAmount = financeRun?.bankAmount != null ? Number(financeRun.bankAmount) + bookedAdjustments : null;
+  const bankExpectedAmount = bankBookedAmount != null ? bankBookedAmount + pendingAdjustments : null;
   const previousCalendarMonthValue = (() => {
     if (!currentMonth.month) return "";
     const [year, monthNumber] = currentMonth.month.split("-").map(Number);
@@ -5065,10 +5073,13 @@ function MemberFinance({ data }) {
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 14, marginBottom: 22 }}>
         {[
-          ["Member Umsatz", fmt(currentMonth.amount), revenueDelta >= 0 ? "#047857" : "#b91c1c", revenueDelta ? `${revenueDelta > 0 ? "+" : ""}${fmt(revenueDelta)} zum Vormonat` : "kein Vergleich"],
+          ["Soll Member-Umsatz", fmt(currentMonth.amount), revenueDelta >= 0 ? "#047857" : "#b91c1c", revenueDelta ? `${revenueDelta > 0 ? "+" : ""}${fmt(revenueDelta)} zum Vormonat` : "laut eingefrorenem Plan"],
+          ["Bank gebucht", bankBookedAmount == null ? "Noch offen" : fmt(bankBookedAmount), bankBookedAmount == null ? "#b45309" : "#047857", bankExpectedAmount != null && pendingAdjustments ? `${fmt(pendingAdjustments)} zusätzlich vorgemerkt` : "ohne Einrichtungsgebühren"],
+          ["Nach Abgleich erwartet", bankExpectedAmount == null ? "Noch offen" : fmt(bankExpectedAmount), bankExpectedAmount != null && Math.abs(bankExpectedAmount - Number(currentMonth.amount || 0)) < 0.01 ? "#047857" : "#b45309", bankExpectedAmount != null && Math.abs(bankExpectedAmount - Number(currentMonth.amount || 0)) < 0.01 ? "✓ Bank und Soll stimmen" : "Abweichung prüfen"],
+          ["Einrichtungsgebühren", fmt(setupFees), "#7c3aed", "separat vom Monatsbeitrag"],
           ["Abbuchungen", currentMonth.count, "#1e40af", `${matchedCount} CRM-Matches`],
           ["CRM Trefferquote", `${matchedRate}%`, unresolvedCount ? "#b45309" : "#047857", `${unresolvedCount} ungeklärt`],
-          ["XML-Dateien", currentMonth.files?.length || 0, "#475569", `${financeData.fileCount} Dateien gesamt`],
+          ["XML-Snapshot", currentMonth.files?.length || 0, "#475569", financeRun?.frozenAt ? `eingefroren am ${fmtDate(financeRun.frozenAt.slice(0, 10))}` : `${financeData.fileCount} Dateien gesamt`],
         ].map(([label, value, color, hint]) => (
           <div key={label} style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 12, padding: 16 }}>
             <div style={{ fontSize: 22, fontWeight: 900, color }}>{value}</div>
@@ -5077,6 +5088,18 @@ function MemberFinance({ data }) {
           </div>
         ))}
       </div>
+
+      {financeAdjustments.length > 0 && <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 14, padding: 18, marginBottom: 22 }}>
+        <h3 style={{ margin: "0 0 6px", fontSize: 16, color: "#1e293b" }}>Nachträge und Sonderbuchungen</h3>
+        <p style={{ margin: "0 0 14px", color: "#64748b", fontSize: 12 }}>Der Leistungsmonat bleibt unabhängig vom tatsächlichen Buchungsdatum erhalten.</p>
+        <div style={{ display: "grid", gap: 8 }}>
+          {financeAdjustments.map(entry => <div key={entry.id} style={{ display: "grid", gridTemplateColumns: "minmax(160px, 1fr) auto auto", gap: 12, padding: "10px 12px", borderRadius: 10, background: "#f8fafc", alignItems: "center" }}>
+            <div><strong style={{ display: "block", fontSize: 13, color: "#1e293b" }}>{entry.memberName}</strong><span style={{ fontSize: 11, color: "#64748b" }}>{DIRECT_DEBIT_ADJUSTMENT_TYPES.find(type => type.value === entry.type)?.label || entry.type} · Einzug {monthLabel(entry.collectionMonth)}</span></div>
+            <strong style={{ color: "#1e293b" }}>{fmt(entry.amount)}</strong>
+            <span style={{ fontSize: 11, fontWeight: 800, color: entry.status === "gebucht" ? "#047857" : "#b45309" }}>{entry.status}</span>
+          </div>)}
+        </div>
+      </div>}
 
       <div className="member-finance-chart-grid">
         <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 14, padding: 18 }}>

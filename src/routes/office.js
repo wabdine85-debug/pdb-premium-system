@@ -117,6 +117,18 @@ router.post('/member-finance/import-sepa', requireAdminAccess, jsonParser, async
   try {
     const imported = parseMemberFinanceSepaXml(xml, sourceFile);
     await client.query('BEGIN');
+    const crmResult = await client.query(
+      `SELECT payload FROM pdb_office.documents
+       WHERE document_key = 'crm' FOR UPDATE`
+    );
+    const existingRun = (crmResult.rows[0]?.payload?.directDebitRuns || []).find(run => (
+      run.month === imported.financeMonth && run.status !== 'entwurf'
+    ));
+    if (existingRun) {
+      await client.query('ROLLBACK');
+      noStore(res);
+      return res.status(409).json({ ok: false, error: 'DIRECT_DEBIT_MONTH_FROZEN' });
+    }
     const currentResult = await client.query(
       `SELECT payload, revision FROM pdb_office.documents
        WHERE document_key = 'member_finance' FOR UPDATE`

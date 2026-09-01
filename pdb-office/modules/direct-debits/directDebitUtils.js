@@ -1,5 +1,13 @@
 const ACTIVE_MEMBERSHIP_STATUSES = new Set(["aktiv", "vorbereitung", "gekündigt", "abgelaufen"]);
 
+export const DIRECT_DEBIT_ADJUSTMENT_TYPES = [
+  { value: "upgrade", label: "Upgrade-Differenz" },
+  { value: "new-membership", label: "Neuer Vertrag / Nachlauf" },
+  { value: "setup-fee", label: "Einrichtungsgebühr" },
+  { value: "arrears", label: "Nachberechnung Vormonat" },
+  { value: "other", label: "Sonstige Korrektur" },
+];
+
 export const RETURN_CASE_STATUSES = [
   { value: "offen", label: "Kontakt erforderlich" },
   { value: "kontaktiert", label: "Kunde kontaktiert" },
@@ -53,12 +61,17 @@ export function returnTransactionFingerprint(transaction = {}) {
 
 export function isMembershipDueInMonth(membership, month) {
   if (!membership || !/^\d{4}-\d{2}$/.test(month || "")) return false;
-  if (!ACTIVE_MEMBERSHIP_STATUSES.has(membership.status || "aktiv")) return false;
   const start = `${month}-01`;
   const [year, monthNumber] = month.split("-").map(Number);
   const end = new Date(Date.UTC(year, monthNumber, 0)).toISOString().slice(0, 10);
+  const scheduledPausedMembership = membership.status === "pausiert" && Boolean(membership.scheduledReactivationAt);
+  if (membership.status === "pausiert") {
+    if (!membership.scheduledReactivationAt || membership.scheduledReactivationAt > end) return false;
+  } else if (!ACTIVE_MEMBERSHIP_STATUSES.has(membership.status || "aktiv")) {
+    return false;
+  }
   if (membership.startDate && membership.startDate > end) return false;
-  if (membership.endDate && membership.endDate < start) return false;
+  if (membership.endDate && membership.endDate < start && !scheduledPausedMembership) return false;
   if (["gekündigt", "abgelaufen"].includes(membership.status) && !membership.endDate) return false;
   return true;
 }
@@ -176,7 +189,7 @@ export function createDirectDebitRunFromSepaXml({ data, text, sourceFile = "", i
       mandateReference,
       iban,
       dueDate,
-      status: "gebucht",
+      status: "eingefroren",
       createdAt: now,
     };
   });
@@ -189,11 +202,12 @@ export function createDirectDebitRunFromSepaXml({ data, text, sourceFile = "", i
       month,
       title: `Memberships ${label}`,
       dueDate,
-      status: "gebucht",
+      status: "eingefroren",
       itemCount: items.length,
       totalAmount: Math.round(items.reduce((sum, item) => sum + item.amount, 0) * 100) / 100,
       sourceFile,
       sourceType: "sepa-xml",
+      frozenAt: now,
       createdAt: now,
       updatedAt: now,
     },
@@ -281,6 +295,138 @@ export function decodeBankCsv(buffer) {
   } catch {
     return new TextDecoder("windows-1252").decode(bytes);
   }
+}
+
+function inferAdjustmentType(purpose = "") {
+  const normalized = normalizeText(purpose);
+  if (normalized.includes("einrichtungsgebuhr")) return "setup-fee";
+  if (normalized.includes("upgrade") || /\+\s*\d+[,.]\d{2}/.test(purpose)) return "upgrade";
+  if (normalized.includes("nachberechnung") || normalized.includes("vormonat")) return "arrears";
+  if (normalized.includes("premiumbeitrag")) return "new-membership";
+  return "other";
+}
+
+function inferServiceMonth(purpose, bookingDate) {
+  const monthNames = {
+    januar: "01", februar: "02", marz: "03", april: "04", mai: "05", juni: "06",
+    juli: "07", august: "08", september: "09", oktober: "10", november: "11", dezember: "12",
+  };
+  const normalized = normalizeText(purpose);
+  const year = bookingDate?.slice(0, 4) || new Date().getFullYear().toString();
+  const namedMonth = Object.entries(monthNames).find(([name]) => normalized.includes(name));
+  return namedMonth ? `${year}-${namedMonth[1]}` : bookingDate?.slice(0, 7) || "";
+}
+
+export function parseNaspaMemberPaymentsCsv(text, { idFactory } = {}) {
+  const cleanText = String(text || "").replace(/^\uFEFF/, "");
+  const delimiter = detectDelimiter(cleanText.split(/\r?\n/, 1)[0]);
+  const rows = parseRows(cleanText, delimiter);
+  if (rows.length < 2) return { batches: [], adjustments: [] };
+  const headers = rows[0].map(normalizeText);
+  const dateIndex = findColumn(headers, ["buchungstag", "buchungsdatum", "datum"]);
+  const valueDateIndex = findColumn(headers, ["valutadatum", "wertstellung"]);
+  const amountIndex = headers.findIndex(header => header === "betrag" || header === "umsatz");
+  const bookingTextIndex = headers.findIndex(header => header === "buchungstext" || header === "umsatzart");
+  const purposeIndex = headers.findIndex(header => header === "verwendungszweck");
+  const nameIndex = findColumn(headers, ["zahlungspflichtiger", "begunstigter", "name gegenkonto", "empfanger"]);
+  const ibanIndex = findColumn(headers, ["iban gegenkonto", "gegenkonto iban", "iban"]);
+  const mandateIndex = findColumn(headers, ["mandatsreferenz"]);
+  const referenceIndex = findColumn(headers, ["sammlerreferenz"]);
+  const infoIndex = headers.findIndex(header => header === "info" || header === "status");
+  const creditorIndex = findColumn(headers, ["glaubiger id"]);
+  const makeId = typeof idFactory === "function" ? idFactory : () => crypto.randomUUID();
+  const batches = [];
+  const adjustments = [];
+
+  rows.slice(1).forEach(columns => {
+    const bookingText = String(columns[bookingTextIndex] || "");
+    const purpose = String(columns[purposeIndex] || "");
+    const normalizedBooking = normalizeText(bookingText);
+    const normalizedPurpose = normalizeText(purpose);
+    const amount = Math.abs(parseGermanAmount(columns[amountIndex]));
+    const bookingDate = parseDate(columns[dateIndex]);
+    const valueDate = parseDate(columns[valueDateIndex]);
+    const bankStatus = normalizeText(columns[infoIndex]).includes("vorgemerkt") ? "vorgemerkt" : "gebucht";
+    const sourceFingerprint = [bookingDate, amount.toFixed(2), columns[referenceIndex] || "", columns[mandateIndex] || "", normalizedPurpose].join("|");
+    if (normalizedBooking === "sammel ls einzug" && amount > 0) {
+      batches.push({
+        id: makeId(),
+        bookingDate,
+        valueDate,
+        financeMonth: bookingDate.slice(0, 7),
+        amount,
+        itemCount: Number(purpose.match(/ANZAHL\s+(\d+)/i)?.[1]) || 0,
+        reference: String(columns[referenceIndex] || ""),
+        status: bankStatus,
+        purpose,
+        sourceFingerprint,
+      });
+      return;
+    }
+    const isPdbPayment = normalizedBooking === "einzellastschrifteinzug"
+      && (String(columns[creditorIndex] || "").startsWith("DE73ZZZ")
+        || normalizedPurpose.includes("premiumbeitrag")
+        || normalizedPurpose.includes("einrichtungsgebuhr"));
+    if (!isPdbPayment || !amount) return;
+    const adjustmentType = inferAdjustmentType(purpose);
+    adjustments.push({
+      id: makeId(),
+      bookingDate,
+      valueDate,
+      serviceMonth: inferServiceMonth(purpose, bookingDate),
+      collectionMonth: bookingDate.slice(0, 7),
+      memberName: String(columns[nameIndex] || "Unbekannter Member"),
+      iban: normalizeIban(columns[ibanIndex] || ""),
+      mandateReference: String(columns[mandateIndex] || ""),
+      amount,
+      type: adjustmentType,
+      status: bankStatus,
+      purpose,
+      sourceFingerprint,
+    });
+  });
+  return { batches, adjustments };
+}
+
+export function getDirectDebitChangesSinceRun({ data, run, items = [] }) {
+  if (!run) return [];
+  const runItems = items.filter(item => item.runId === run.id);
+  const members = new Map((data.members || []).map(member => [member.id, member]));
+  const currentMemberships = (data.memberships || []).filter(membership => (
+    isMembershipDueInMonth(membership, run.month)
+    && String(membership.paymentMethod || "SEPA").toUpperCase() === "SEPA"
+  ));
+  const itemByMembership = new Map(runItems.filter(item => item.membershipId).map(item => [item.membershipId, item]));
+  return currentMemberships.flatMap(membership => {
+    const existing = itemByMembership.get(membership.id);
+    const member = members.get(membership.memberId) || {};
+    const memberName = membership.memberName || member.name || "Unbekannter Member";
+    const currentAmount = Number(membership.monthlyAmount) || 0;
+    if (!existing) return [{
+      key: `new:${membership.id}`,
+      type: "new-membership",
+      membershipId: membership.id,
+      memberId: membership.memberId || member.id || "",
+      memberName,
+      amount: currentAmount,
+      previousAmount: 0,
+      currentAmount,
+      mandateReference: membership.mandateReference || "",
+    }];
+    const delta = Math.round((currentAmount - Number(existing.amount || 0)) * 100) / 100;
+    if (!delta) return [];
+    return [{
+      key: `amount:${membership.id}`,
+      type: delta > 0 ? "upgrade" : "other",
+      membershipId: membership.id,
+      memberId: membership.memberId || member.id || "",
+      memberName,
+      amount: delta,
+      previousAmount: Number(existing.amount || 0),
+      currentAmount,
+      mandateReference: membership.mandateReference || existing.mandateReference || "",
+    }];
+  });
 }
 
 export function parseNaspaReturnCsv(text, { idFactory } = {}) {
