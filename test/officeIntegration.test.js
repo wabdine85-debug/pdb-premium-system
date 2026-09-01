@@ -3,12 +3,13 @@ import fs from 'node:fs/promises';
 import test from 'node:test';
 
 test('PDB Office production client uses protected same-origin endpoints', async () => {
-  const [storage, premiumAdmin, premiumView, crm, revenue] = await Promise.all([
+  const [storage, premiumAdmin, premiumView, crm, revenue, directDebits] = await Promise.all([
     fs.readFile(new URL('../pdb-office/services/crmStorage.js', import.meta.url), 'utf8'),
     fs.readFile(new URL('../pdb-office/services/premiumAdmin.js', import.meta.url), 'utf8'),
     fs.readFile(new URL('../pdb-office/components/memberships/PremiumAdministration.jsx', import.meta.url), 'utf8'),
     fs.readFile(new URL('../pdb-office/crm-system.jsx', import.meta.url), 'utf8'),
-    fs.readFile(new URL('../pdb-office/modules/revenue/revenueUtils.js', import.meta.url), 'utf8')
+    fs.readFile(new URL('../pdb-office/modules/revenue/revenueUtils.js', import.meta.url), 'utf8'),
+    fs.readFile(new URL('../pdb-office/components/direct-debits/DirectDebitWorkspace.jsx', import.meta.url), 'utf8')
   ]);
 
   assert.match(storage, /\/api\/office\/crm-data/);
@@ -31,6 +32,7 @@ test('PDB Office production client uses protected same-origin endpoints', async 
   assert.match(crm, /Abmelden/);
   assert.match(crm, /Seitenleiste ausklappen/);
   assert.match(revenue, /cashBusiness/);
+  assert.match(directDebits, /\/api\/office\/member-finance\/import-sepa/);
   assert.doesNotMatch(crm, /Alle Daten werden lokal in deinem Browser gespeichert/);
   assert.doesNotMatch(premiumAdmin, /ADMIN_API_TOKEN|localStorage|sessionStorage/);
 });

@@ -4,6 +4,7 @@ import { requireAdminAccess, requireAdminSession } from '../middleware/adminAuth
 import { sendTransactionalHtml } from '../services/mail.service.js';
 import { reserveNextMandateReference } from '../services/mandateReference.service.js';
 import { classifyStorageWrite, getStorageRevision } from '../../pdb-office/services/storageRevision.js';
+import { mergeMemberFinanceMonth, parseMemberFinanceSepaXml } from '../services/memberFinanceImport.service.js';
 
 const router = express.Router();
 const jsonParser = express.json({ limit: '8mb' });
@@ -101,6 +102,46 @@ router.get('/member-finance', requireAdminAccess, async (_req, res) => {
   noStore(res);
   if (!document) return res.status(503).json({ ok: false, error: 'MEMBER_FINANCE_NOT_INITIALIZED' });
   return res.json(document.payload);
+});
+
+router.post('/member-finance/import-sepa', requireAdminAccess, jsonParser, async (req, res) => {
+  const sourceFile = String(req.body?.sourceFile || 'SEPA-Import.xml')
+    .replace(/[^a-zA-Z0-9ÄÖÜäöüß._ -]+/g, '-')
+    .slice(0, 180);
+  const xml = String(req.body?.xml || '');
+  if (!xml || xml.length > 7_000_000) {
+    return res.status(400).json({ ok: false, error: 'SEPA_XML_INVALID' });
+  }
+
+  const client = await pool.connect();
+  try {
+    const imported = parseMemberFinanceSepaXml(xml, sourceFile);
+    await client.query('BEGIN');
+    const currentResult = await client.query(
+      `SELECT payload, revision FROM pdb_office.documents
+       WHERE document_key = 'member_finance' FOR UPDATE`
+    );
+    const current = currentResult.rows[0] || { payload: {}, revision: 0 };
+    const payload = mergeMemberFinanceMonth(current.payload, imported);
+    await client.query(
+      `INSERT INTO pdb_office.documents (document_key, payload, revision, updated_at)
+       VALUES ('member_finance', $1::jsonb, $2, NOW())
+       ON CONFLICT (document_key) DO UPDATE
+       SET payload = EXCLUDED.payload, revision = EXCLUDED.revision, updated_at = NOW()`,
+      [JSON.stringify(payload), Number(current.revision || 0) + 1]
+    );
+    await client.query('COMMIT');
+    noStore(res);
+    const month = payload.months.find(item => item.month === imported.financeMonth);
+    return res.json({ ok: true, month, sourceFile });
+  } catch (error) {
+    await client.query('ROLLBACK').catch(() => {});
+    console.error('Member finance SEPA import failed:', error.message);
+    const invalid = ['SEPA_COLLECTION_DATE_MISSING', 'SEPA_MULTIPLE_FINANCE_MONTHS', 'SEPA_TRANSACTIONS_MISSING'].includes(error.message);
+    return res.status(invalid ? 400 : 500).json({ ok: false, error: invalid ? error.message : 'MEMBER_FINANCE_IMPORT_FAILED' });
+  } finally {
+    client.release();
+  }
 });
 
 router.post('/invoice-pdf', requireAdminSession, pdfParser, (req, res) => {

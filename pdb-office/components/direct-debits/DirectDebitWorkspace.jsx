@@ -259,10 +259,20 @@ export default function DirectDebitWorkspace({ data, save }) {
     if (!file) return;
     setXmlMessage("");
     try {
-      const created = createDirectDebitRunFromSepaXml({ data, text: await file.text(), sourceFile: file.name, idFactory: uid });
+      const xml = await file.text();
+      const created = createDirectDebitRunFromSepaXml({ data, text: xml, sourceFile: file.name, idFactory: uid });
       const existingRun = runs.find(run => run.month === created.run.month);
       if (existingRun && cases.some(returnCase => returnCase.runId === existingRun.id)) {
         throw new Error(`Der Lauf für ${monthLabel(created.run.month)} enthält bereits Rücklastschriftfälle und kann nicht ersetzt werden.`);
+      }
+      const financeResponse = await fetch('/api/office/member-finance/import-sepa', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-PDB-Admin': '1' },
+        body: JSON.stringify({ sourceFile: file.name, xml }),
+      });
+      const financeResult = await financeResponse.json().catch(() => ({}));
+      if (!financeResponse.ok || !financeResult.ok) {
+        throw new Error('Member Finanzen konnte nicht aktualisiert werden. Der Lastschriftlauf wurde nicht übernommen.');
       }
       save(current => ({
         ...current,
@@ -272,7 +282,7 @@ export default function DirectDebitWorkspace({ data, save }) {
       setSelectedRunId(created.run.id);
       setImportRows(null);
       setTab("runs");
-      setXmlMessage(`${created.run.itemCount} Lastschriften über ${money(created.run.totalAmount)} aus ${file.name} übernommen.`);
+      setXmlMessage(`${created.run.itemCount} Lastschriften über ${money(created.run.totalAmount)} aus ${file.name} übernommen. Member Finanzen wurde für ${monthLabel(created.run.month)} aktualisiert.`);
     } catch (error) {
       setXmlMessage(error.message || "Die SEPA-XML konnte nicht gelesen werden.");
     } finally {

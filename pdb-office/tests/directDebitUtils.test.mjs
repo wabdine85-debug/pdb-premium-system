@@ -59,6 +59,34 @@ test("SEPA XML creates the exact historical debit run", () => {
   assert.equal(result.items[0].mandateReference, "PDB-1");
 });
 
+test("SEPA XML includes all payment groups from the same month", () => {
+  const xml = `<?xml version="1.0"?><Document>
+    <PmtInf><ReqdColltnDt>2026-09-01</ReqdColltnDt>
+      <DrctDbtTxInf><InstdAmt Ccy="EUR">149.00</InstdAmt><DrctDbtTx><MndtRltdInf><MndtId>RCUR-1</MndtId></MndtRltdInf></DrctDbtTx><Dbtr><Nm>Bestandsmember</Nm></Dbtr></DrctDbtTxInf>
+    </PmtInf>
+    <PmtInf><ReqdColltnDt>2026-09-03</ReqdColltnDt>
+      <DrctDbtTxInf><InstdAmt Ccy="EUR">199.00</InstdAmt><DrctDbtTx><MndtRltdInf><MndtId>FRST-1</MndtId></MndtRltdInf></DrctDbtTx><Dbtr><Nm>Neuer Member</Nm></Dbtr></DrctDbtTxInf>
+    </PmtInf>
+  </Document>`;
+  const result = createDirectDebitRunFromSepaXml({ data: { memberships: [] }, text: xml, idFactory: ids() });
+  assert.equal(result.run.month, "2026-09");
+  assert.equal(result.run.dueDate, "2026-09-01");
+  assert.equal(result.run.itemCount, 2);
+  assert.equal(result.run.totalAmount, 348);
+  assert.deepEqual(result.items.map(item => item.dueDate), ["2026-09-01", "2026-09-03"]);
+});
+
+test("SEPA XML rejects payment groups from different months", () => {
+  const xml = `<Document>
+    <PmtInf><ReqdColltnDt>2026-09-01</ReqdColltnDt><DrctDbtTxInf><InstdAmt>149.00</InstdAmt></DrctDbtTxInf></PmtInf>
+    <PmtInf><ReqdColltnDt>2026-10-01</ReqdColltnDt><DrctDbtTxInf><InstdAmt>149.00</InstdAmt></DrctDbtTxInf></PmtInf>
+  </Document>`;
+  assert.throws(
+    () => createDirectDebitRunFromSepaXml({ data: { memberships: [] }, text: xml, idFactory: ids() }),
+    /mehrere Einzugsmonate/
+  );
+});
+
 test("SEPA XML does not map a shared mandate reference to the first member", () => {
   const xml = `<?xml version="1.0"?><Document><PmtInf><ReqdColltnDt>2026-07-01</ReqdColltnDt>
     <DrctDbtTxInf><InstdAmt Ccy="EUR">129.00</InstdAmt><DrctDbtTx><MndtRltdInf><MndtId>SHARED</MndtId></MndtRltdInf></DrctDbtTx><Dbtr><Nm>Erste Person</Nm></Dbtr><DbtrAcct><Id><IBAN>DE111</IBAN></Id></DbtrAcct></DrctDbtTxInf>

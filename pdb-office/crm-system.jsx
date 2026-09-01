@@ -5016,7 +5016,7 @@ function MemberFinance({ data }) {
       <div style={{ display: "flex", justifyContent: "space-between", gap: 16, alignItems: "flex-start", marginBottom: 22 }}>
         <div>
           <h2 style={{ margin: "0 0 8px", fontSize: 26, fontWeight: 800, color: "#1e293b" }}>Member Finanzen</h2>
-          <p style={{ margin: 0, color: "#64748b", fontSize: 14 }}>Auswertung der SEPA-XMLs aus dem Ordner {financeData.sourceFolder}.</p>
+          <p style={{ margin: 0, color: "#64748b", fontSize: 14 }}>{financeData.sourceLabel || `Auswertung der SEPA-XMLs aus dem Ordner ${financeData.sourceFolder}.`}</p>
           {financeData.monthRule && <p style={{ margin: "6px 0 0", color: "#64748b", fontSize: 12 }}>{financeData.monthRule}</p>}
         </div>
         <select aria-label="Finanzmonat auswählen" style={{ ...sel, width: 220 }} value={selectedMonth} onChange={e => setSelectedMonth(e.target.value)}>

@@ -20,7 +20,7 @@ Die drei Listen liegen im vorhandenen CRM-Dokument und werden durch
 
 ## Arbeitsablauf
 
-1. Monat und Fälligkeit auswählen und einen Lastschriftlauf erstellen.
+1. Die bei Naspa verwendete `pain.008`-XML über **SEPA-XML importieren** einlesen. Dadurch werden der Monatslauf und **Member Finanzen** gemeinsam aktualisiert.
 2. Nach Einreichung beziehungsweise Buchung den Laufstatus aktualisieren.
 3. Naspa-CSV-CAMT exportieren und über **Naspa-CSV prüfen** einlesen.
 4. Vorgeschlagene Zuordnung kontrollieren. Nur bestätigte Zeilen werden
@@ -30,6 +30,11 @@ Die drei Listen liegen im vorhandenen CRM-Dokument und werden durch
 
 Wiederholte Dateiimporte erzeugen anhand eines stabilen
 Transaktionsfingerprints keine doppelten Rücklastschriftbuchungen.
+
+Ein erneuter SEPA-XML-Import ersetzt ausschließlich den Monatslauf mit demselben
+Fälligkeitsmonat. Ältere Finanzmonate bleiben unverändert. Enthält der bestehende
+Monatslauf bereits Rücklastschriftfälle, wird ein Ersetzen aus Sicherheitsgründen
+abgelehnt.
 
 ## Matching
 

@@ -130,11 +130,20 @@ function xmlBlocks(xml, tagName) {
 }
 
 export function createDirectDebitRunFromSepaXml({ data, text, sourceFile = "", idFactory, now = new Date().toISOString() }) {
-  const paymentBlock = xmlBlocks(text, "PmtInf")[0] || text;
-  const dueDate = xmlValues(paymentBlock, "ReqdColltnDt")[0] || "";
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(dueDate)) throw new Error("In der SEPA-XML wurde kein gültiger Einzugstag gefunden.");
-  const transactionBlocks = xmlBlocks(paymentBlock, "DrctDbtTxInf");
-  if (!transactionBlocks.length) throw new Error("Die Datei enthält keine SEPA-Lastschriftpositionen.");
+  const paymentBlocks = xmlBlocks(text, "PmtInf");
+  const groups = (paymentBlocks.length ? paymentBlocks : [text]).map(paymentBlock => ({
+    dueDate: xmlValues(paymentBlock, "ReqdColltnDt")[0] || "",
+    transactionBlocks: xmlBlocks(paymentBlock, "DrctDbtTxInf"),
+  }));
+  if (groups.some(group => !/^\d{4}-\d{2}-\d{2}$/.test(group.dueDate))) {
+    throw new Error("In der SEPA-XML wurde kein gültiger Einzugstag gefunden.");
+  }
+  const months = [...new Set(groups.map(group => group.dueDate.slice(0, 7)))];
+  if (months.length !== 1) throw new Error("Die SEPA-XML enthält mehrere Einzugsmonate. Bitte jeden Monat separat importieren.");
+  const transactionEntries = groups.flatMap(group => (
+    group.transactionBlocks.map(block => ({ block, dueDate: group.dueDate }))
+  ));
+  if (!transactionEntries.length) throw new Error("Die Datei enthält keine SEPA-Lastschriftpositionen.");
 
   const makeId = typeof idFactory === "function" ? idFactory : () => crypto.randomUUID();
   const memberships = data.memberships || [];
@@ -150,7 +159,7 @@ export function createDirectDebitRunFromSepaXml({ data, text, sourceFile = "", i
     || uniqueMembership("mandateReference", mandateReference, normalizeText)
   );
   const runId = makeId();
-  const items = transactionBlocks.map(block => {
+  const items = transactionEntries.map(({ block, dueDate }) => {
     const amount = Math.abs(parseGermanAmount(xmlValues(block, "InstdAmt")[0]));
     const mandateReference = xmlValues(block, "MndtId")[0] || "";
     const iban = normalizeIban(xmlValues(xmlBlocks(block, "DbtrAcct")[0] || block, "IBAN")[0] || "");
@@ -171,7 +180,8 @@ export function createDirectDebitRunFromSepaXml({ data, text, sourceFile = "", i
       createdAt: now,
     };
   });
-  const month = dueDate.slice(0, 7);
+  const month = months[0];
+  const dueDate = groups.map(group => group.dueDate).sort()[0];
   const label = new Date(`${month}-01T12:00:00`).toLocaleDateString("de-DE", { month: "long", year: "numeric" });
   return {
     run: {
