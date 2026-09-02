@@ -5242,7 +5242,7 @@ const NAV = [
 ];
 
 export default function CRM() {
-  const [data, save, syncStatus] = useStorage();
+  const [data, save, syncStatus, secureNow] = useStorage();
   const [page, setPage] = useState(() => {
     const requested = window.location.hash.replace(/^#/, "");
     return NAV.some(item => item.id === requested) ? requested : "dashboard";
@@ -5300,6 +5300,10 @@ export default function CRM() {
   const overdueCount = data.invoices.filter(i => i.status === "überfällig" || i.status?.includes("Mahnung")).length;
   const openReturnDebitCount = (data.returnDebitCases || []).filter(item => !["bezahlt", "storniert"].includes(item.status)).length;
   const activeMemberCount = new Set((data.memberships || []).filter(membership => membership.status === "aktiv").map(membership => membership.memberId)).size;
+  const secureAllData = () => {
+    window.dispatchEvent(new CustomEvent("pdb:commit-pending-edits"));
+    return secureNow();
+  };
 
   return (
     <div className="crm-shell" style={{ display: "flex", height: "100vh", fontFamily: "'DM Sans', system-ui, sans-serif", background: "#f6f3ee", color: "#1e293b" }}>
@@ -5364,6 +5368,9 @@ export default function CRM() {
             </div>
           </div>
           <nav className="crm-appbar__actions" aria-label="Verwaltungsbereiche">
+            <button className={`crm-appbar__save is-${syncStatus}`} type="button" disabled={["loading", "saving"].includes(syncStatus)} onClick={secureAllData}>
+              {syncStatus === "loading" ? "Daten werden geladen …" : syncStatus === "saving" ? "Speichert …" : syncStatus === "saved" ? "✓ Daten gesichert" : "Daten sichern"}
+            </button>
             <a href="/admin/contracts">Vertragsverwaltung</a>
             <button type="button" disabled={loggingOut} onClick={logout}>{loggingOut ? "Abmeldung…" : "Abmelden"}</button>
           </nav>

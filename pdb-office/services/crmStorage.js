@@ -6,6 +6,7 @@ import { getStorageRevision } from "./storageRevision.js";
 import { rebaseDataChange } from "./storageMerge.js";
 
 const STORAGE_KEY = "crm_data_v1";
+const MANUAL_BACKUP_KEY = "crm_manual_backup_v1";
 const INVOICE_RECOVERY_KEY = "crm_invoice_recovery_v1";
 const FILE_STORAGE_ENDPOINT = "/api/office/crm-data";
 const REMOVED_MEMBERSHIP_IDS = new Set(["4znpbozb", "kat3nvr9"]);
@@ -151,7 +152,22 @@ function persistLocal(data) {
     const current = localStorage.getItem(STORAGE_KEY);
     if (current && current !== next) preserveInvoiceRecovery(current);
     localStorage.setItem(STORAGE_KEY, next);
-  } catch {}
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function persistManualBackup(data) {
+  try {
+    localStorage.setItem(MANUAL_BACKUP_KEY, JSON.stringify({
+      savedAt: new Date().toISOString(),
+      data,
+    }));
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 async function persistFile(data) {
@@ -167,6 +183,8 @@ export function useStorage() {
   const [data, setData] = useState(loadData);
   const [syncStatus, setSyncStatus] = useState("loading");
   const dataRef = useRef(data);
+  const syncQueueRef = useRef(Promise.resolve(true));
+  const syncRequestRef = useRef(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -198,44 +216,58 @@ export function useStorage() {
     return () => { cancelled = true; };
   }, []);
 
+  const persistCurrentToServer = useCallback(async (baseData) => {
+    const response = await persistFile(dataRef.current);
+    if (response?.ok) return true;
+    if (response?.status !== 409) return false;
+
+    try {
+      const currentResponse = await fetch(FILE_STORAGE_ENDPOINT, { cache: "no-store" });
+      if (!currentResponse.ok) return false;
+      const fileData = migrateData(await currentResponse.json());
+      const localData = dataRef.current;
+      const rebased = stampData(fileData, rebaseDataChange(baseData, localData, fileData));
+      dataRef.current = rebased;
+      persistLocal(rebased);
+      setData(rebased);
+      const retryResponse = await persistFile(rebased);
+      return Boolean(retryResponse?.ok);
+    } catch {
+      return false;
+    }
+  }, []);
+
+  const enqueueServerSync = useCallback((baseData) => {
+    const requestId = ++syncRequestRef.current;
+    setSyncStatus("saving");
+    const operation = syncQueueRef.current
+      .catch(() => false)
+      .then(() => persistCurrentToServer(baseData));
+    syncQueueRef.current = operation;
+    operation.then(ok => {
+      if (requestId === syncRequestRef.current) setSyncStatus(ok ? "saved" : "error");
+    });
+    return operation;
+  }, [persistCurrentToServer]);
+
   const save = useCallback((updater) => {
     const previous = dataRef.current;
     const updated = typeof updater === "function" ? updater(previous) : updater;
     const next = stampData(previous, updated);
     dataRef.current = next;
-    persistLocal(next);
+    const locallySaved = persistLocal(next);
     setData(next);
-    setSyncStatus("saving");
-    persistFile(next).then(async response => {
-      if (response?.ok) {
-        setSyncStatus("saved");
-        return;
-      }
-      if (response?.status !== 409) {
-        setSyncStatus("error");
-        return;
-      }
-      try {
-        const currentResponse = await fetch(FILE_STORAGE_ENDPOINT, { cache: "no-store" });
-        if (!currentResponse.ok) return;
-        const fileData = migrateData(await currentResponse.json());
-        const localData = dataRef.current;
-        const rebased = stampData(fileData, rebaseDataChange(previous, localData, fileData));
-        dataRef.current = rebased;
-        persistLocal(rebased);
-        setData(rebased);
-        const retryResponse = await persistFile(rebased);
-        if (retryResponse?.ok) {
-          setSyncStatus("saved");
-          return;
-        }
-        setSyncStatus("error");
-        window.alert("Die Änderung bleibt lokal erhalten, konnte aber noch nicht mit dem Server abgeglichen werden. Bitte die Seite geöffnet lassen und den Vorgang prüfen.");
-      } catch {
-        setSyncStatus("error");
-      }
-    });
-  }, []);
+    if (!locallySaved) setSyncStatus("error");
+    enqueueServerSync(previous);
+  }, [enqueueServerSync]);
 
-  return [data, save, syncStatus];
+  const secureNow = useCallback(async () => {
+    const snapshot = dataRef.current;
+    const initialBackupSaved = persistManualBackup(snapshot);
+    const serverSaved = await enqueueServerSync(snapshot);
+    const finalBackupSaved = persistManualBackup(dataRef.current);
+    return initialBackupSaved && finalBackupSaved && serverSaved;
+  }, [enqueueServerSync]);
+
+  return [data, save, syncStatus, secureNow];
 }

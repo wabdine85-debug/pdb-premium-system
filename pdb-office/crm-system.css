@@ -135,6 +135,24 @@ textarea:focus-visible,
   opacity: .6;
 }
 
+.crm-appbar__actions .crm-appbar__save {
+  border-color: #d8c9b4;
+  background: #1f1f1d;
+  color: #fff;
+}
+
+.crm-appbar__actions .crm-appbar__save.is-saved {
+  border-color: #cdded3;
+  background: #e6efe9;
+  color: #315c46;
+}
+
+.crm-appbar__actions .crm-appbar__save.is-error {
+  border-color: #e7bbb4;
+  background: #fff1ef;
+  color: #933c32;
+}
+
 .crm-modal { overscroll-behavior: contain; }
 
 .invoice-modal {
@@ -817,6 +835,7 @@ textarea:focus-visible,
   .crm-appbar__actions { display: grid; grid-template-columns: 1fr 1fr; }
   .crm-appbar__actions a,
   .crm-appbar__actions button { text-align: center; }
+  .crm-appbar__actions .crm-appbar__save { grid-column: 1 / -1; }
 
   .crm-dashboard-cards { grid-template-columns: 1fr !important; }
 

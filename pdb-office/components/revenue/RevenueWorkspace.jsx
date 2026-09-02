@@ -179,6 +179,12 @@ export default function RevenueWorkspace({ data, save }) {
     window.setTimeout(() => setNotice(""), 2200);
   };
 
+  useEffect(() => {
+    const commitPendingDay = () => saveDay();
+    window.addEventListener("pdb:commit-pending-edits", commitPendingDay);
+    return () => window.removeEventListener("pdb:commit-pending-edits", commitPendingDay);
+  }, [hasDraftChanges, draft, savedDay]);
+
   const discardDayChanges = () => {
     setDraft(savedDay ? { ...savedDay } : emptyEntry(draft.date));
     setNotice("Nicht gespeicherte Änderungen verworfen");
