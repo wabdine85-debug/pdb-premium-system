@@ -25,6 +25,8 @@ test("membership month eligibility respects start and end dates", () => {
   assert.equal(isMembershipDueInMonth({ status: "aktiv", startDate: "2026-08-05" }, "2026-08"), true);
   assert.equal(isMembershipDueInMonth({ status: "aktiv", startDate: "2026-09-01" }, "2026-08"), false);
   assert.equal(isMembershipDueInMonth({ status: "gekündigt", endDate: "2026-07-31" }, "2026-08"), false);
+  assert.equal(isMembershipDueInMonth({ status: "gekündigt", endDate: "2027-03-01" }, "2027-02"), true);
+  assert.equal(isMembershipDueInMonth({ status: "gekündigt", endDate: "2027-03-01" }, "2027-03"), false);
   assert.equal(isMembershipDueInMonth({ status: "pausiert" }, "2026-08"), false);
   assert.equal(isMembershipDueInMonth({ status: "pausiert", scheduledReactivationAt: "2026-10-01" }, "2026-09"), false);
   assert.equal(isMembershipDueInMonth({ status: "pausiert", scheduledReactivationAt: "2026-10-01" }, "2026-10"), true);

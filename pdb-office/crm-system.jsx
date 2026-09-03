@@ -10,6 +10,7 @@ import { createMembershipExportRows, downloadMembershipCsv, downloadMembershipPd
 import { getNextMandateReference } from "./modules/memberships/mandateReferences.js";
 import { createReactivationSepaTask, extendDateByDays, getLatestPause, getPauseDays, resumeMembership, scheduleMembershipResume, startMembershipPause } from "./modules/memberships/membershipPauses.js";
 import { createMembershipTimeline, getMembershipNextAction } from "./modules/memberships/membershipPresentation.js";
+import { isMembershipActiveOnDate } from "./modules/memberships/membershipLifecycle.js";
 import { findSafeIdentityMatch } from "./modules/memberships/identityMatching.js";
 import { useStorage, migrateData } from "./services/crmStorage.js";
 import { DEFAULT_INVOICE_PROFILE_ID, INVOICE_PAYMENT_TERMS, PDB_INVOICE_CATEGORIES, buildInvoiceNumber, buildOfferNumber, calculateInvoiceDueDate, calculateInvoiceTotals, defaultInvoiceProfiles, getInvoiceCategoryLabel, getInvoiceDueLabel, getInvoicePositionDateLabel, getInvoiceProfile, isMedicalInvoiceProfile } from "./modules/invoices/invoiceProfiles.js";
@@ -174,7 +175,7 @@ function Dashboard({ data, onNavigate }) {
   const memberships = data.memberships || [];
   const memberById = new Map(members.map(member => [member.id, member]));
   const activeMemberIds = new Set(
-    memberships.filter(membership => membership.status === "aktiv").map(membership => membership.memberId)
+    memberships.filter(membership => isMembershipActiveOnDate(membership, today())).map(membership => membership.memberId)
   );
   const aktiv = activeMemberIds.size;
   const openReceivables = (data.revenueReceivables || []).filter(item => item.status === "offen");
@@ -2611,15 +2612,11 @@ function Memberships({ data, save }) {
     membershipPlanFilter === "alle" ? "Alle-Pakete" : membershipPlanFilter,
     membershipStatusFilter === "alle" ? "Alle-Status" : membershipStatusFilter,
   ].join("-");
-  const activeMemberships = memberships.filter(m => m.status === "aktiv");
+  const activeMemberships = memberships.filter(m => isMembershipActiveOnDate(m, today()));
   const activeMemberCount = new Set(activeMemberships.map(membership => membership.memberId)).size;
-  const currentRevenueMemberships = memberships.filter(m => (
-    m.status === "aktiv"
-    || (m.status === "gekündigt" && m.endDate && m.endDate >= today())
-  ));
+  const currentRevenueMemberships = memberships.filter(m => isMembershipActiveOnDate(m, today()));
   const plannedRevenueMemberships = memberships.filter(m => (
-    ["aktiv", "vorbereitung"].includes(m.status || "aktiv")
-    || (m.status === "gekündigt" && m.endDate && m.endDate >= today())
+    m.status === "vorbereitung" || isMembershipActiveOnDate(m, today())
   ));
   const monthlyRevenue = currentRevenueMemberships.reduce((sum, m) => sum + (Number(m.monthlyAmount) || 0), 0);
   const plannedMonthlyRevenue = plannedRevenueMemberships.reduce((sum, m) => sum + getScheduledAmount(m), 0);
@@ -2627,12 +2624,12 @@ function Memberships({ data, save }) {
   const scheduledChanges = memberships.filter(m => (
     m.scheduledPlan
     || m.status === "vorbereitung"
-    || (m.status === "gekündigt" && m.endDate && m.endDate >= today())
+    || (m.status === "gekündigt" && m.endDate && m.endDate > today())
   )).length;
   useEffect(() => {
     const dueChanges = (data.memberships || []).filter(m => m.scheduledPlan && m.scheduledStartDate && m.scheduledStartDate <= today());
     const dueStartingMemberships = (data.memberships || []).filter(m => m.status === "vorbereitung" && m.startDate && m.startDate <= today());
-    const expiredCancellations = (data.memberships || []).filter(m => m.status === "gekündigt" && m.endDate && m.endDate < today());
+    const expiredCancellations = (data.memberships || []).filter(m => m.status === "gekündigt" && m.endDate && m.endDate <= today());
     const dueReactivations = (data.memberships || []).filter(m => m.status === "pausiert" && m.scheduledReactivationAt && m.scheduledReactivationAt <= today());
     const missingReactivationSepaTasks = (data.memberships || []).filter(m => (
       m.status === "pausiert"
@@ -2921,7 +2918,7 @@ function Memberships({ data, save }) {
   const soon = memberships.filter(m => m.status === "aktiv" && m.endDate && new Date(m.endDate) <= new Date(addDays(today(), 45))).length;
   const sortByRecentActivity = (a, b) => (b.sortDate || b.date).localeCompare(a.sortDate || a.date) || b.date.localeCompare(a.date);
   const cancellationAlerts = memberships
-    .filter(m => m.status === "gekündigt" && (!m.endDate || m.endDate >= today()))
+    .filter(m => m.status === "gekündigt" && (!m.endDate || m.endDate > today()))
     .map(membership => ({ type: "cancellation", date: membership.endDate || "9999-12-31", sortDate: getMembershipActivityDate(membership), membership }));
   const pausedAlerts = memberships
     .filter(m => m.status === "pausiert")
@@ -3603,6 +3600,8 @@ function Memberships({ data, save }) {
     setCustomerEdit({ ...customer });
     setCustomerEditMembershipId(membership.id);
     setMembershipDetailEdit({
+      status: membership.status || "aktiv",
+      cancellationReceivedAt: membership.cancellationReceivedAt || "",
       plan: membership.plan || "",
       contractSignedAt: membership.contractSignedAt || "",
       startDate: membership.startDate || "",
@@ -3622,6 +3621,11 @@ function Memberships({ data, save }) {
       setMaintenanceStatus({ type: "error", message: "Bitte einen Namen für den Member eintragen." });
       return;
     }
+    if (membershipDetailEdit?.status === "gekündigt" && !membershipDetailEdit.endDate) {
+      setMaintenanceStatus({ type: "error", message: "Bitte vor dem Speichern das Austrittsdatum eintragen." });
+      return;
+    }
+    const membershipWasCancelled = membershipDetailEdit?.status === "gekündigt" && customerEditMembership?.status !== "gekündigt";
     save(d => ({
       ...d,
       members: d.members.map(member => member.id === customerEdit.id ? {
@@ -3632,6 +3636,10 @@ function Memberships({ data, save }) {
       } : member),
       memberships: (d.memberships || []).map(membership => membership.id === customerEditMembershipId ? {
         ...membership,
+        status: membershipDetailEdit?.status || membership.status || "aktiv",
+        cancellationReceivedAt: membershipDetailEdit?.status === "gekündigt"
+          ? (membershipDetailEdit.cancellationReceivedAt || membership.cancellationReceivedAt || "")
+          : membership.cancellationReceivedAt || "",
         memberId: customerEdit.id,
         memberName: trimmedName,
         memberEmail: customerEdit.email || "",
@@ -3649,7 +3657,12 @@ function Memberships({ data, save }) {
         updatedAt: today(),
       } : membership),
     }));
-    setMaintenanceStatus({ type: "success", message: `${trimmedName}: Personendaten wurden aktualisiert.` });
+    setMaintenanceStatus({
+      type: "success",
+      message: membershipWasCancelled
+        ? `${trimmedName}: Kündigung wurde gespeichert und ist jetzt oben unter den Hinweisen sichtbar.`
+        : `${trimmedName}: Personendaten und Membership wurden aktualisiert.`,
+    });
     setCustomerEdit(null);
     setCustomerEditMembershipId(null);
     setMembershipDetailEdit(null);
@@ -4374,12 +4387,19 @@ function Memberships({ data, save }) {
                 {MEMBERSHIP_TIERS.map(tier => <option key={tier} value={tier}>{tier}</option>)}
               </select>
             </Field>
-            <Field label="Status">
-              <select style={sel} value={customerEdit.status || "aktiv"} onChange={e => setCustomerEdit(c => ({ ...c, status: e.target.value }))}>
+            <Field label="Membership-Status">
+              <select style={sel} value={membershipDetailEdit?.status || "aktiv"} onChange={e => {
+                const status = e.target.value;
+                setMembershipDetailEdit(current => ({
+                  ...current,
+                  status,
+                  cancellationReceivedAt: status === "gekündigt" ? (current?.cancellationReceivedAt || today()) : current?.cancellationReceivedAt || "",
+                }));
+              }}>
                 <option value="aktiv">Aktiv</option>
-                <option value="inaktiv">Inaktiv</option>
+                <option value="vorbereitung">Vorbereitung</option>
                 <option value="gekündigt">Gekündigt</option>
-                <option value="ausstehend">Ausstehend</option>
+                <option value="abgelaufen">Abgelaufen</option>
               </select>
             </Field>
           </div>
@@ -4406,7 +4426,7 @@ function Memberships({ data, save }) {
                     {customerEditMembership.packageLabel || "Vertrag"} · {customerEditMembership.plan}
                   </div>
                 </div>
-                <Badge status={customerEditMembership.status || "aktiv"} />
+                <Badge status={membershipDetailEdit.status || customerEditMembership.status || "aktiv"} />
               </div>
               <div className="crm-detail-grid">
                 <Field label="Paket">
@@ -4424,6 +4444,11 @@ function Memberships({ data, save }) {
                 <Field label="Vertragsende">
                   <input style={inp} type="date" min={membershipDetailEdit.startDate || undefined} value={membershipDetailEdit.endDate} onChange={e => setMembershipDetailEdit(current => ({ ...current, endDate: e.target.value }))} />
                 </Field>
+                {membershipDetailEdit.status === "gekündigt" && (
+                  <Field label="Kündigung eingegangen">
+                    <input style={inp} type="date" value={membershipDetailEdit.cancellationReceivedAt || ""} onChange={e => setMembershipDetailEdit(current => ({ ...current, cancellationReceivedAt: e.target.value }))} />
+                  </Field>
+                )}
               </div>
               <div className="crm-detail-divider" />
               <div className="crm-detail-grid">
@@ -4993,7 +5018,7 @@ function MemberFinance({ data }) {
     const status = membership.status || "aktiv";
     if (!["aktiv", "vorbereitung", "gekündigt", "abgelaufen"].includes(status)) return false;
     if (membership.startDate && membership.startDate > currentMonthEnd) return false;
-    if (membership.endDate && membership.endDate < currentMonthStart) return false;
+    if (membership.endDate && membership.endDate <= currentMonthStart) return false;
     if (["gekündigt", "abgelaufen"].includes(status) && !membership.endDate) return false;
     return true;
   };
@@ -5299,7 +5324,7 @@ export default function CRM() {
 
   const overdueCount = data.invoices.filter(i => i.status === "überfällig" || i.status?.includes("Mahnung")).length;
   const openReturnDebitCount = (data.returnDebitCases || []).filter(item => !["bezahlt", "storniert"].includes(item.status)).length;
-  const activeMemberCount = new Set((data.memberships || []).filter(membership => membership.status === "aktiv").map(membership => membership.memberId)).size;
+  const activeMemberCount = new Set((data.memberships || []).filter(membership => isMembershipActiveOnDate(membership, today())).map(membership => membership.memberId)).size;
   const secureAllData = () => {
     window.dispatchEvent(new CustomEvent("pdb:commit-pending-edits"));
     return secureNow();

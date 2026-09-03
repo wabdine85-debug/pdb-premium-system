@@ -71,7 +71,8 @@ export function isMembershipDueInMonth(membership, month) {
     return false;
   }
   if (membership.startDate && membership.startDate > end) return false;
-  if (membership.endDate && membership.endDate < start && !scheduledPausedMembership) return false;
+  // endDate is the first day without membership entitlement or a debit.
+  if (membership.endDate && membership.endDate <= start && !scheduledPausedMembership) return false;
   if (["gekündigt", "abgelaufen"].includes(membership.status) && !membership.endDate) return false;
   return true;
 }
