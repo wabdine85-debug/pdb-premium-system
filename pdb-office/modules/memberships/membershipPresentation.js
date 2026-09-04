@@ -36,7 +36,7 @@ export function isMembershipIncludedInPlannedRevenue(membership, today) {
   const status = membership?.status || "aktiv";
   return ["aktiv", "vorbereitung"].includes(status)
     || (status === "pausiert" && Boolean(membership.scheduledReactivationAt))
-    || (status === "gekündigt" && Boolean(membership.endDate) && membership.endDate >= today);
+    || (status === "gekündigt" && Boolean(membership.endDate) && membership.endDate > today);
 }
 
 export function createMembershipTimeline(membership) {
