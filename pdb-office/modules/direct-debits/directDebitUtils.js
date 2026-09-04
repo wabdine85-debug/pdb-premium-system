@@ -4,6 +4,8 @@ export const DIRECT_DEBIT_ADJUSTMENT_TYPES = [
   { value: "upgrade", label: "Upgrade-Differenz" },
   { value: "new-membership", label: "Neuer Vertrag / Nachlauf" },
   { value: "setup-fee", label: "Einrichtungsgebühr" },
+  { value: "overpayment", label: "Doppelabbuchung / Guthaben" },
+  { value: "refund", label: "Erstattung" },
   { value: "arrears", label: "Nachberechnung Vormonat" },
   { value: "other", label: "Sonstige Korrektur" },
 ];

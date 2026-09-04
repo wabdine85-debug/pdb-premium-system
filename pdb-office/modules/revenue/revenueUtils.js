@@ -17,6 +17,20 @@ export function roundMoney(value) {
   return Math.round((Number(value) || 0) * 100) / 100;
 }
 
+const NON_REVENUE_ADJUSTMENT_TYPES = new Set(["setup-fee", "overpayment", "refund"]);
+
+export function bookedMembershipAdjustments(adjustments = [], month = "") {
+  return roundMoney(adjustments
+    .filter(entry => entry.serviceMonth === month)
+    .filter(entry => entry.status === "gebucht")
+    .filter(entry => !NON_REVENUE_ADJUSTMENT_TYPES.has(entry.type))
+    .reduce((sum, entry) => sum + (Number(entry.amount) || 0), 0));
+}
+
+export function recognizedMembershipRevenue(baseAmount = 0, adjustments = [], month = "") {
+  return roundMoney(Number(baseAmount || 0) + bookedMembershipAdjustments(adjustments, month));
+}
+
 export function revenueChannelAmount(entry = {}, channelKey) {
   const currentAmount = Number(entry[channelKey]) || 0;
   if (channelKey !== "cash") return currentAmount;

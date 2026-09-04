@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { fmt, today } from "../../utils/formatters.js";
 import {
+  recognizedMembershipRevenue,
   REVENUE_CHANNELS,
   STAFF_MEMBERS,
   dateLabel,
@@ -108,13 +109,16 @@ export default function RevenueWorkspace({ data, save }) {
       .then(response => response.ok ? response.json() : null)
       .then(json => {
         if (!alive) return;
-        const mapped = Object.fromEntries((json?.months || []).map(month => [month.month, Number(month.amount) || 0]));
+        const mapped = Object.fromEntries((json?.months || []).map(month => [
+          month.month,
+          recognizedMembershipRevenue(month.amount, data.directDebitAdjustments, month.month),
+        ]));
         setFinanceMonths(mapped);
         setFinanceReady(true);
       })
       .catch(() => alive && setFinanceReady(true));
     return () => { alive = false; };
-  }, []);
+  }, [data.directDebitAdjustments]);
 
   const premiumForMonth = month => financeMonths[month] ?? premiumFallbacks[month] ?? 0;
   const availableMonths = useMemo(() => {
@@ -345,7 +349,7 @@ export default function RevenueWorkspace({ data, save }) {
       <div className="revenue-grid metrics">
         {[
           { label: "Geschäftsumsatz", value: summary.business, hint: `${fmt(summary.businessWithoutPremium)} Tagesgeschäft`, waitsForFinance: true },
-          { label: "Premium", value: summary.premium, hint: !financeReady ? "Member Finanzen werden geladen" : financeMonths[selectedMonth] != null ? "live aus Member Finanzen" : "Excel-Fallback", waitsForFinance: true },
+          { label: "Premium", value: summary.premium, hint: !financeReady ? "Member Finanzen werden geladen" : financeMonths[selectedMonth] != null ? "SEPA plus gebuchte Nachträge" : "Excel-Fallback", waitsForFinance: true },
           { label: "Bar", value: summary.channelTotals.cash, hint: "Alle Barzahlungen dieses Monats" },
           { label: "Private Zuflüsse", value: summary.channelTotals.paypalPrivate, hint: "PayPal Privat" },
           { label: "Offene Zahlungen", value: openReceivableTotal, hint: `${openReceivables.length} offen` },

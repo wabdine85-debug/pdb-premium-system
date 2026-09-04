@@ -4988,13 +4988,22 @@ function MemberFinance({ data }) {
   const months = financeData.months || [];
   const currentMonth = months.find(month => month.month === selectedMonth) || months.at(-1) || { month: selectedMonth, amount: 0, count: 0 };
   const financeRun = (data.directDebitRuns || []).find(run => run.month === currentMonth.month) || null;
-  const financeAdjustments = (data.directDebitAdjustments || []).filter(entry => entry.serviceMonth === currentMonth.month);
-  const recurringAdjustments = financeAdjustments.filter(entry => entry.type !== "setup-fee");
-  const bookedAdjustments = recurringAdjustments.filter(entry => entry.status === "gebucht").reduce((sum, entry) => sum + Number(entry.amount || 0), 0);
-  const pendingAdjustments = recurringAdjustments.filter(entry => ["vorgemerkt", "geplant"].includes(entry.status)).reduce((sum, entry) => sum + Number(entry.amount || 0), 0);
-  const setupFees = financeAdjustments.filter(entry => entry.type === "setup-fee").reduce((sum, entry) => sum + Number(entry.amount || 0), 0);
+  const allFinanceAdjustments = data.directDebitAdjustments || [];
+  const serviceAdjustments = allFinanceAdjustments.filter(entry => entry.serviceMonth === currentMonth.month);
+  const collectionAdjustments = allFinanceAdjustments.filter(entry => entry.collectionMonth === currentMonth.month);
+  const financeAdjustments = allFinanceAdjustments.filter(entry => (
+    entry.serviceMonth === currentMonth.month || entry.collectionMonth === currentMonth.month
+  ));
+  const cashAdjustments = collectionAdjustments.filter(entry => entry.type !== "setup-fee" && entry.status !== "storniert");
+  const revenueAdjustments = serviceAdjustments.filter(entry => entry.status !== "storniert" && !["setup-fee", "overpayment", "refund"].includes(entry.type));
+  const bookedAdjustments = cashAdjustments.filter(entry => entry.status === "gebucht").reduce((sum, entry) => sum + Number(entry.amount || 0), 0);
+  const bookedRevenueAdjustments = revenueAdjustments.filter(entry => entry.status === "gebucht").reduce((sum, entry) => sum + Number(entry.amount || 0), 0);
+  const pendingAdjustments = cashAdjustments.filter(entry => ["vorgemerkt", "geplant"].includes(entry.status)).reduce((sum, entry) => sum + Number(entry.amount || 0), 0);
+  const overpaymentAmount = cashAdjustments.filter(entry => entry.type === "overpayment" && entry.status === "gebucht").reduce((sum, entry) => sum + Number(entry.amount || 0), 0);
+  const setupFees = collectionAdjustments.filter(entry => entry.type === "setup-fee").reduce((sum, entry) => sum + Number(entry.amount || 0), 0);
   const bankBookedAmount = financeRun?.bankAmount != null ? Number(financeRun.bankAmount) + bookedAdjustments : null;
   const bankExpectedAmount = bankBookedAmount != null ? bankBookedAmount + pendingAdjustments : null;
+  const recognizedMemberRevenue = Number(currentMonth.amount || 0) + bookedRevenueAdjustments;
   const previousCalendarMonthValue = (() => {
     if (!currentMonth.month) return "";
     const [year, monthNumber] = currentMonth.month.split("-").map(Number);
@@ -5097,9 +5106,9 @@ function MemberFinance({ data }) {
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 14, marginBottom: 22 }}>
         {[
-          ["Soll Member-Umsatz", fmt(currentMonth.amount), revenueDelta >= 0 ? "#047857" : "#b91c1c", revenueDelta ? `${revenueDelta > 0 ? "+" : ""}${fmt(revenueDelta)} zum Vormonat` : "laut eingefrorenem Plan"],
-          ["Bank gebucht", bankBookedAmount == null ? "Noch offen" : fmt(bankBookedAmount), bankBookedAmount == null ? "#b45309" : "#047857", bankExpectedAmount != null && pendingAdjustments ? `${fmt(pendingAdjustments)} zusätzlich vorgemerkt` : "ohne Einrichtungsgebühren"],
-          ["Nach Abgleich erwartet", bankExpectedAmount == null ? "Noch offen" : fmt(bankExpectedAmount), bankExpectedAmount != null && Math.abs(bankExpectedAmount - Number(currentMonth.amount || 0)) < 0.01 ? "#047857" : "#b45309", bankExpectedAmount != null && Math.abs(bankExpectedAmount - Number(currentMonth.amount || 0)) < 0.01 ? "✓ Bank und Soll stimmen" : "Abweichung prüfen"],
+          ["SEPA-Sammellauf", fmt(currentMonth.amount), revenueDelta >= 0 ? "#047857" : "#b91c1c", revenueDelta ? `${revenueDelta > 0 ? "+" : ""}${fmt(revenueDelta)} zum Vormonat` : "eingefrorener Monatslauf"],
+          ["Bank gebucht", bankBookedAmount == null ? "Noch offen" : fmt(bankBookedAmount), bankBookedAmount == null ? "#b45309" : "#047857", bankExpectedAmount != null && pendingAdjustments ? `${fmt(pendingAdjustments)} zusätzlich vorgemerkt` : "inklusive gebuchter Nachträge"],
+          ["Member-Umsatz bereinigt", fmt(recognizedMemberRevenue), overpaymentAmount ? "#b45309" : "#047857", overpaymentAmount ? `${fmt(overpaymentAmount)} Doppelabbuchung nicht als Umsatz` : "Sammellauf plus gültige Nachträge"],
           ["Einrichtungsgebühren", fmt(setupFees), "#7c3aed", "separat vom Monatsbeitrag"],
           ["Abbuchungen", currentMonth.count, "#1e40af", `${matchedCount} CRM-Matches`],
           ["CRM Trefferquote", `${matchedRate}%`, unresolvedCount ? "#b45309" : "#047857", `${unresolvedCount} ungeklärt`],
@@ -5118,7 +5127,7 @@ function MemberFinance({ data }) {
         <p style={{ margin: "0 0 14px", color: "#64748b", fontSize: 12 }}>Der Leistungsmonat bleibt unabhängig vom tatsächlichen Buchungsdatum erhalten.</p>
         <div style={{ display: "grid", gap: 8 }}>
           {financeAdjustments.map(entry => <div key={entry.id} style={{ display: "grid", gridTemplateColumns: "minmax(160px, 1fr) auto auto", gap: 12, padding: "10px 12px", borderRadius: 10, background: "#f8fafc", alignItems: "center" }}>
-            <div><strong style={{ display: "block", fontSize: 13, color: "#1e293b" }}>{entry.memberName}</strong><span style={{ fontSize: 11, color: "#64748b" }}>{DIRECT_DEBIT_ADJUSTMENT_TYPES.find(type => type.value === entry.type)?.label || entry.type} · Einzug {monthLabel(entry.collectionMonth)}</span></div>
+            <div><strong style={{ display: "block", fontSize: 13, color: "#1e293b" }}>{entry.memberName}</strong><span style={{ fontSize: 11, color: "#64748b" }}>{DIRECT_DEBIT_ADJUSTMENT_TYPES.find(type => type.value === entry.type)?.label || entry.type} · Leistung {monthLabel(entry.serviceMonth)} · Einzug {monthLabel(entry.collectionMonth)}</span></div>
             <strong style={{ color: "#1e293b" }}>{fmt(entry.amount)}</strong>
             <span style={{ fontSize: 11, fontWeight: 800, color: entry.status === "gebucht" ? "#047857" : "#b45309" }}>{entry.status}</span>
           </div>)}

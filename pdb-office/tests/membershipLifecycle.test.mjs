@@ -15,6 +15,8 @@ test("inactive membership statuses are not counted as active", () => {
   assert.equal(isMembershipActiveOnDate({ status: "vorbereitung", startDate: "2026-10-01" }, "2026-09-03"), false);
 });
 
-test("existing active records keep the previous counting behavior", () => {
-  assert.equal(isMembershipActiveOnDate({ status: "aktiv", startDate: "2026-10-01" }, "2026-09-03"), true);
+test("active memberships start contributing revenue on their contract start date", () => {
+  const membership = { status: "aktiv", startDate: "2026-10-01" };
+  assert.equal(isMembershipActiveOnDate(membership, "2026-09-30"), false);
+  assert.equal(isMembershipActiveOnDate(membership, "2026-10-01"), true);
 });

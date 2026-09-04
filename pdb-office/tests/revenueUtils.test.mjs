@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { existsSync } from "node:fs";
 import fs from "node:fs/promises";
 import test from "node:test";
-import { entryTotals, monthSummary, normalizeRevenueEntry, reportFromMonth, reportToCsv } from "../modules/revenue/revenueUtils.js";
+import { bookedMembershipAdjustments, entryTotals, monthSummary, normalizeRevenueEntry, recognizedMembershipRevenue, reportFromMonth, reportToCsv } from "../modules/revenue/revenueUtils.js";
 
 const privateSeedUrl = new URL("../data/revenue-seed-2026.json", import.meta.url);
 const hasPrivateSeed = existsSync(privateSeedUrl);
@@ -38,6 +38,18 @@ test("private PayPal remains separated while cash is revenue", () => {
     personal: 25,
     total: 100,
   });
+});
+
+test("member revenue includes valid booked adjustments but excludes fees and overpayments", () => {
+  const adjustments = [
+    { serviceMonth: "2026-09", status: "gebucht", type: "upgrade", amount: 70 },
+    { serviceMonth: "2026-09", status: "gebucht", type: "upgrade", amount: 50 },
+    { serviceMonth: "2026-09", status: "gebucht", type: "overpayment", amount: 100 },
+    { serviceMonth: "2026-09", status: "gebucht", type: "setup-fee", amount: 39 },
+    { serviceMonth: "2026-09", status: "storniert", type: "upgrade", amount: 50 },
+  ];
+  assert.equal(bookedMembershipAdjustments(adjustments, "2026-09"), 120);
+  assert.equal(recognizedMembershipRevenue(13269, adjustments, "2026-09"), 13389);
 });
 
 test("January import reconciles with the live member-finance premium", { skip: !hasPrivateSeed }, () => {
