@@ -47,9 +47,11 @@ test("member revenue includes valid booked adjustments but excludes fees and ove
     { serviceMonth: "2026-09", status: "gebucht", type: "overpayment", amount: 100 },
     { serviceMonth: "2026-09", status: "gebucht", type: "setup-fee", amount: 39 },
     { serviceMonth: "2026-09", status: "storniert", type: "upgrade", amount: 50 },
+    { serviceMonth: "2026-08", collectionMonth: "2026-09", status: "gebucht", type: "arrears", amount: 100 },
   ];
   assert.equal(bookedMembershipAdjustments(adjustments, "2026-09"), 120);
   assert.equal(recognizedMembershipRevenue(13269, adjustments, "2026-09"), 13389);
+  assert.equal(recognizedMembershipRevenue(12233, adjustments, "2026-08"), 12333);
 });
 
 test("January import reconciles with the live member-finance premium", { skip: !hasPrivateSeed }, () => {

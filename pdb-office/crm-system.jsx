@@ -17,7 +17,7 @@ import { DEFAULT_INVOICE_PROFILE_ID, INVOICE_PAYMENT_TERMS, PDB_INVOICE_CATEGORI
 import { createOfferFromInvoice } from "./modules/invoices/offerUtils.js";
 import { buildDiagnosisSuggestion } from "./modules/invoices/diagnosisSuggestions.js";
 import { normalizePriceInput, parseLocalizedNumber, toPriceInput } from "./modules/invoices/invoiceInputs.js";
-import { monthSummary } from "./modules/revenue/revenueUtils.js";
+import { monthSummary, recognizedMembershipRevenue } from "./modules/revenue/revenueUtils.js";
 import { DIRECT_DEBIT_ADJUSTMENT_TYPES, getReturnCaseSummary } from "./modules/direct-debits/directDebitUtils.js";
 import { addDays, fmt, fmtDate, today } from "./utils/formatters.js";
 import "./crm-system.css";
@@ -4985,25 +4985,29 @@ function MemberFinance({ data }) {
     );
   }
 
-  const months = financeData.months || [];
+  const months = (financeData.months || []).map(month => ({
+    ...month,
+    sepaAmount: Number(month.amount) || 0,
+    amount: recognizedMembershipRevenue(month.amount, data.directDebitAdjustments, month.month),
+  }));
   const currentMonth = months.find(month => month.month === selectedMonth) || months.at(-1) || { month: selectedMonth, amount: 0, count: 0 };
   const financeRun = (data.directDebitRuns || []).find(run => run.month === currentMonth.month) || null;
   const allFinanceAdjustments = data.directDebitAdjustments || [];
-  const serviceAdjustments = allFinanceAdjustments.filter(entry => entry.serviceMonth === currentMonth.month);
   const collectionAdjustments = allFinanceAdjustments.filter(entry => entry.collectionMonth === currentMonth.month);
   const financeAdjustments = allFinanceAdjustments.filter(entry => (
     entry.serviceMonth === currentMonth.month || entry.collectionMonth === currentMonth.month
   ));
   const cashAdjustments = collectionAdjustments.filter(entry => entry.type !== "setup-fee" && entry.status !== "storniert");
-  const revenueAdjustments = serviceAdjustments.filter(entry => entry.status !== "storniert" && !["setup-fee", "overpayment", "refund"].includes(entry.type));
   const bookedAdjustments = cashAdjustments.filter(entry => entry.status === "gebucht").reduce((sum, entry) => sum + Number(entry.amount || 0), 0);
-  const bookedRevenueAdjustments = revenueAdjustments.filter(entry => entry.status === "gebucht").reduce((sum, entry) => sum + Number(entry.amount || 0), 0);
   const pendingAdjustments = cashAdjustments.filter(entry => ["vorgemerkt", "geplant"].includes(entry.status)).reduce((sum, entry) => sum + Number(entry.amount || 0), 0);
-  const overpaymentAmount = cashAdjustments.filter(entry => entry.type === "overpayment" && entry.status === "gebucht").reduce((sum, entry) => sum + Number(entry.amount || 0), 0);
   const setupFees = collectionAdjustments.filter(entry => entry.type === "setup-fee").reduce((sum, entry) => sum + Number(entry.amount || 0), 0);
   const bankBookedAmount = financeRun?.bankAmount != null ? Number(financeRun.bankAmount) + bookedAdjustments : null;
   const bankExpectedAmount = bankBookedAmount != null ? bankBookedAmount + pendingAdjustments : null;
-  const recognizedMemberRevenue = Number(currentMonth.amount || 0) + bookedRevenueAdjustments;
+  const recognizedMemberRevenue = Number(currentMonth.amount || 0);
+  const sepaAmount = Number(currentMonth.sepaAmount ?? currentMonth.amount) || 0;
+  const priorPeriodCollections = collectionAdjustments
+    .filter(entry => entry.status === "gebucht" && entry.type !== "setup-fee" && entry.serviceMonth !== currentMonth.month)
+    .reduce((sum, entry) => sum + Number(entry.amount || 0), 0);
   const previousCalendarMonthValue = (() => {
     if (!currentMonth.month) return "";
     const [year, monthNumber] = currentMonth.month.split("-").map(Number);
@@ -5106,9 +5110,9 @@ function MemberFinance({ data }) {
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 14, marginBottom: 22 }}>
         {[
-          ["SEPA-Sammellauf", fmt(currentMonth.amount), revenueDelta >= 0 ? "#047857" : "#b91c1c", revenueDelta ? `${revenueDelta > 0 ? "+" : ""}${fmt(revenueDelta)} zum Vormonat` : "eingefrorener Monatslauf"],
-          ["Bank gebucht", bankBookedAmount == null ? "Noch offen" : fmt(bankBookedAmount), bankBookedAmount == null ? "#b45309" : "#047857", bankExpectedAmount != null && pendingAdjustments ? `${fmt(pendingAdjustments)} zusätzlich vorgemerkt` : "inklusive gebuchter Nachträge"],
-          ["Member-Umsatz bereinigt", fmt(recognizedMemberRevenue), overpaymentAmount ? "#b45309" : "#047857", overpaymentAmount ? `${fmt(overpaymentAmount)} Doppelabbuchung nicht als Umsatz` : "Sammellauf plus gültige Nachträge"],
+          ["Member-Umsatz", fmt(recognizedMemberRevenue), "#047857", revenueDelta ? `${revenueDelta > 0 ? "+" : ""}${fmt(revenueDelta)} zum Vormonat` : "Sammellauf plus gültige Nachträge"],
+          ["SEPA-Sammellauf", fmt(sepaAmount), "#1e40af", "tatsächlich eingereichte Monatsdatei"],
+          ["Bank gebucht", bankBookedAmount == null ? "Noch offen" : fmt(bankBookedAmount), bankBookedAmount == null ? "#b45309" : "#047857", priorPeriodCollections ? `${fmt(priorPeriodCollections)} davon für frühere Leistungsmonate` : bankExpectedAmount != null && pendingAdjustments ? `${fmt(pendingAdjustments)} zusätzlich vorgemerkt` : "inklusive gebuchter Nachträge"],
           ["Einrichtungsgebühren", fmt(setupFees), "#7c3aed", "separat vom Monatsbeitrag"],
           ["Abbuchungen", currentMonth.count, "#1e40af", `${matchedCount} CRM-Matches`],
           ["CRM Trefferquote", `${matchedRate}%`, unresolvedCount ? "#b45309" : "#047857", `${unresolvedCount} ungeklärt`],
@@ -5142,7 +5146,7 @@ function MemberFinance({ data }) {
               <button className="member-finance-month-button" key={month.month} onClick={() => setSelectedMonth(month.month)} style={{ border: 0, background: month.month === currentMonth.month ? "#eff6ff" : "transparent", borderRadius: 8, padding: 8, cursor: "pointer", textAlign: "left" }}>
                 <div className="member-finance-month-row" style={{ fontSize: 13, fontWeight: 800, color: "#1e293b", marginBottom: 5 }}>
                   <span>{monthLabel(month.month)}</span>
-                  <span>{fmt(month.amount)} · {month.count} Einzüge</span>
+                  <span>{fmt(month.amount)} · {month.count} SEPA-Einzüge{month.amount !== month.sepaAmount ? ` · ${fmt(month.amount - month.sepaAmount)} Nachträge` : ""}</span>
                 </div>
                 <div style={{ height: 10, background: "#f1f5f9", borderRadius: 20, overflow: "hidden" }}>
                   <div style={{ width: `${Math.max(4, Math.round((month.amount / maxMonthAmount) * 100))}%`, height: "100%", background: "#1e40af", borderRadius: 20 }} />
@@ -5153,7 +5157,8 @@ function MemberFinance({ data }) {
         </div>
 
         <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 14, padding: 18 }}>
-          <h3 style={{ margin: "0 0 14px", fontSize: 16, color: "#1e293b" }}>Pakete im Monat</h3>
+          <h3 style={{ margin: "0 0 6px", fontSize: 16, color: "#1e293b" }}>Pakete im SEPA-Sammellauf</h3>
+          <p style={{ margin: "0 0 14px", color: "#64748b", fontSize: 12 }}>Nachträge werden oben separat dem richtigen Leistungsmonat zugeordnet.</p>
           <div style={{ display: "grid", gap: 12 }}>
             {byPlan.map(plan => (
               <div key={plan.plan}>
