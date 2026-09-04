@@ -4937,19 +4937,24 @@ function MemberFinance({ data }) {
   const matchedTransactions = useMemo(() => {
     if (!financeData) return [];
     const memberships = data.memberships || [];
-    const byIban = new Map(memberships.filter(m => m.sepaIban).map(m => [normalizeIban(m.sepaIban), m]));
+    const byIban = memberships.filter(m => m.sepaIban).reduce((groups, membership) => {
+      const iban = normalizeIban(membership.sepaIban);
+      groups.set(iban, [...(groups.get(iban) || []), membership]);
+      return groups;
+    }, new Map());
 
     return (financeData.transactions || []).map(tx => {
-      const ibanMatch = byIban.get(normalizeIban(tx.iban));
+      const ibanMatches = byIban.get(normalizeIban(tx.iban)) || [];
       const txName = normalizeMemberName(tx.name);
-      const nameMatch = !ibanMatch && txName
+      const nameMatch = !ibanMatches.length && txName
         ? memberships.find(membership => {
             const crmName = normalizeMemberName(displayNameForMembership(membership));
             if (!crmName) return false;
             return crmName === txName || crmName.includes(txName) || txName.includes(crmName);
-          })
+        })
         : null;
-      const membership = ibanMatch || nameMatch || null;
+      const membership = ibanMatches[0] || nameMatch || null;
+      const sharedAccount = ibanMatches.length > 1;
       const matchStatus = membership?.status === "gekündigt"
         ? "gekündigt"
         : membership?.status === "abgelaufen"
@@ -4957,11 +4962,15 @@ function MemberFinance({ data }) {
           : membership
             ? "gematcht"
             : "ungeklärt";
+      const matchedName = sharedAccount
+        ? ibanMatches.map(displayNameForMembership).sort((left, right) => left.localeCompare(right, "de")).join(" & ")
+        : membership ? displayNameForMembership(membership) : "";
       return {
         ...tx,
         match: membership,
-        matchStatus,
-        matchedName: membership ? displayNameForMembership(membership) : "",
+        matchedMemberships: ibanMatches,
+        matchStatus: sharedAccount ? `gemeinsames Konto (${ibanMatches.length} Memberships)` : matchStatus,
+        matchedName,
         resolvedPlan: membership?.plan || tx.plan || "Individuell",
       };
     });
@@ -5049,8 +5058,14 @@ function MemberFinance({ data }) {
   }).filter(plan => plan.count || plan.amount);
   const maxPlanAmount = Math.max(...byPlan.map(plan => plan.amount), 1);
 
-  const currentByKey = new Map(currentRows.map(tx => [amountKey(tx), tx]));
-  const previousByKey = new Map(previousRows.map(tx => [amountKey(tx), tx]));
+  const groupTransactionsByKey = rows => rows.reduce((groups, tx) => {
+    const key = amountKey(tx);
+    if (!key) return groups;
+    groups.set(key, [...(groups.get(key) || []), tx]);
+    return groups;
+  }, new Map());
+  const currentByKey = groupTransactionsByKey(currentRows);
+  const previousByKey = groupTransactionsByKey(previousRows);
   const firstSeenMonthByKey = matchedTransactions.reduce((acc, tx) => {
     const key = amountKey(tx);
     const month = txMonth(tx);
@@ -5068,14 +5083,21 @@ function MemberFinance({ data }) {
     .map(tx => ({
       ...tx,
       expectedAbsence: Boolean(tx.match && !isMembershipExpectedInCurrentMonth(tx.match)),
+      expectedAbsenceReason: tx.match?.status === "pausiert"
+        ? `pausiert${tx.match.scheduledReactivationAt ? ` · Reaktivierung am ${fmtDate(tx.match.scheduledReactivationAt)}` : ""}`
+        : `Vertrag beendet${tx.match?.endDate ? ` am ${fmtDate(tx.match.endDate)}` : ""}`,
     }))
     .slice(0, 12);
   const amountChanges = currentRows
+    .filter((tx, index, rows) => rows.findIndex(entry => amountKey(entry) === amountKey(tx)) === index)
     .map(tx => {
-      const prev = previousByKey.get(amountKey(tx));
-      if (isFirstSeenInCurrentMonth(tx)) return null;
-      if (!prev || Number(prev.amount) === Number(tx.amount)) return null;
-      return { tx, previousAmount: Number(prev.amount), delta: Number(tx.amount) - Number(prev.amount) };
+      const currentGroup = currentByKey.get(amountKey(tx)) || [];
+      const previousGroup = previousByKey.get(amountKey(tx)) || [];
+      if (isFirstSeenInCurrentMonth(tx) || !previousGroup.length) return null;
+      const currentAmount = currentGroup.reduce((sum, entry) => sum + Number(entry.amount || 0), 0);
+      const previousAmount = previousGroup.reduce((sum, entry) => sum + Number(entry.amount || 0), 0);
+      if (previousAmount === currentAmount) return null;
+      return { tx, previousAmount, delta: currentAmount - previousAmount, itemCount: currentGroup.length };
     })
     .filter(Boolean)
     .slice(0, 12);
@@ -5179,7 +5201,7 @@ function MemberFinance({ data }) {
         <FinanceList title="Betragsänderungen" items={amountChanges} empty="Keine Betragsänderungen zum Vormonat." render={change => (
           <>
             <strong>{txName(change.tx)}</strong>
-            <span>{fmt(change.previousAmount)} → {fmt(change.tx.amount)} ({change.delta > 0 ? "+" : ""}{fmt(change.delta)})</span>
+            <span>{fmt(change.previousAmount)} → {fmt(change.previousAmount + change.delta)} ({change.delta > 0 ? "+" : ""}{fmt(change.delta)}){change.itemCount > 1 ? ` · ${change.itemCount} Memberships` : ""}</span>
           </>
         )} />
         <FinanceList title="Neu/offen" items={newPayments} empty="Keine neuen ungeklärten Einzüge." render={tx => (
@@ -5200,7 +5222,7 @@ function MemberFinance({ data }) {
             <span>
               vorher {fmt(tx.amount)} · {tx.resolvedPlan}
               {tx.expectedAbsence
-                ? ` · erwartet: Vertrag beendet${tx.match?.endDate ? ` am ${fmtDate(tx.match.endDate)}` : ""}`
+                ? ` · erwartet: ${tx.expectedAbsenceReason}`
                 : " · bitte prüfen"}
             </span>
           </>
