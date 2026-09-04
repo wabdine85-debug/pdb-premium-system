@@ -53,21 +53,29 @@ Die CRM-Dokumente liegen getrennt von den Premium-Tabellen im PostgreSQL-Schema
 `pdb_office`. Änderungen verwenden eine Revisionsprüfung, damit ein älterer
 Browserstand keine neueren Daten überschreibt.
 
-## BEYOND-Abgleich
+## BEYOND-Bestandsabgleich
 
-Die Ansicht **BEYOND-Abgleich** führt aktive BEYOND-Mitgliedschaften aus dem
+Die Ansicht **BEYOND-Bestandsabgleich** führt aktive BEYOND-Mitgliedschaften aus dem
 CRM lesend mit Shopify-Kunden zusammen, die den Tag `premium-beyond` tragen.
 Eine Zuordnung über eine eindeutige E-Mail-Adresse gilt als bestätigt. Eine
 reine Namensübereinstimmung wird nur zur Prüfung angezeigt und niemals
-automatisch übernommen. Der Abgleich legt keine Online-Konten an und verändert
-keine Monatskontingente. Vor der Übernahme historischer Member muss zunächst
-der tatsächliche Verbrauch des laufenden Monats feststehen.
+automatisch übernommen. Die Vorschau legt keine Online-Konten an und verändert
+keine Monatskontingente. Erst das ausdrücklich bestätigte Speichern des
+Bestandsstands legt fehlende Online-Konten an oder aktualisiert sie und übernimmt
+den ausgewählten historischen Monatsverbrauch. Vorher muss der tatsächliche
+Verbrauch des angezeigten Monats feststehen.
 
 Nach der Freigabe speichert die Übernahme den bekannten Altverbrauch getrennt
 von echten Buchungen. Dadurch entstehen keine erfundenen Behandlungstermine.
 Jede Übernahme enthält Bearbeiter, Grund und Monat und kann erneut sicher mit
 dem korrigierten Stand gespeichert werden. Offene Shopify-Zuordnungen bleiben
 unangetastet.
+
+Der Bestandsabgleich ist nicht für laufende Salonized-Termine vorgesehen.
+Solche Termine werden unter **Online-Kontingente** mit Behandlungsdatum,
+Behandlung und Begründung erfasst. Nach Änderungen und beim manuellen
+Aktualisieren wird eine bereits geöffnete Memberansicht erneut vom Server
+geladen.
 
 ## Bewusste Grenzen
 

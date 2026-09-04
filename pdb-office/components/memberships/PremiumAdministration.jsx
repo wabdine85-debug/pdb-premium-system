@@ -29,6 +29,13 @@ function formatDate(value) {
   return new Date(`${String(value).slice(0, 10)}T00:00:00`).toLocaleDateString("de-DE");
 }
 
+function formatMonth(value) {
+  const month = String(value || new Date().toISOString()).slice(0, 7);
+  const date = new Date(`${month}-01T00:00:00`);
+  if (Number.isNaN(date.getTime())) return "aktuellen Monat";
+  return date.toLocaleDateString("de-DE", { month: "long", year: "numeric" });
+}
+
 function formatDateTime(value) {
   if (!value) return "nicht erfasst";
   const date = new Date(value);
@@ -163,7 +170,7 @@ export default function PremiumAdministration({ crmMemberships = [] }) {
     if (!reconciliation && !reconciliationLoading) loadReconciliation();
   };
 
-  const toggleAugustAvailability = crmMemberId => {
+  const toggleMonthAvailability = crmMemberId => {
     const id = String(crmMemberId);
     setAvailableCrmMemberIds(current => current.includes(id)
       ? current.filter(value => value !== id)
@@ -173,12 +180,13 @@ export default function PremiumAdministration({ crmMemberships = [] }) {
   const currentAvailableCrmMemberIds = useMemo(() => (reconciliation?.rows || [])
     .filter(row => ["linked", "ready"].includes(row.state) && Number(row.current_remaining) > 0)
     .map(row => String(row.crm_member_id)), [reconciliation]);
-  const changedAugustMemberCount = useMemo(() => {
+  const changedMonthMemberCount = useMemo(() => {
     const current = new Set(currentAvailableCrmMemberIds);
     const selected = new Set(availableCrmMemberIds);
     return new Set([...current, ...selected]).size
       - [...current].filter(id => selected.has(id)).length;
   }, [availableCrmMemberIds, currentAvailableCrmMemberIds]);
+  const reconciliationMonthLabel = formatMonth(reconciliation?.month);
 
   const saveReconciliation = async () => {
     setReconciliationSaving(true);
@@ -186,9 +194,13 @@ export default function PremiumAdministration({ crmMemberships = [] }) {
     setNotice("");
     try {
       const result = await applyBeyondMonthlyUsage(availableCrmMemberIds);
-      setNotice(`${result.applied.length} BEYOND-Member übernommen: ${result.available} mit 1 frei, ${result.exhausted} mit 0 frei.`);
+      setNotice(`Bestandsstand für ${reconciliationMonthLabel} übernommen: ${result.available} mit 1 frei, ${result.exhausted} mit 0 frei.`);
       setConfirmReconciliation(false);
-      await Promise.all([loadOverview(), loadReconciliation()]);
+      await Promise.all([
+        loadOverview(),
+        loadReconciliation(),
+        selectedId ? openMember(selectedId) : Promise.resolve(),
+      ]);
     } catch (nextError) {
       setReconciliationError(nextError);
       setConfirmReconciliation(false);
@@ -213,6 +225,11 @@ export default function PremiumAdministration({ crmMemberships = [] }) {
       setError(nextError);
     }
   };
+
+  const refreshMemberView = () => Promise.all([
+    loadOverview(),
+    selectedId ? openMember(selectedId) : Promise.resolve(),
+  ]);
 
   const saveManualUsage = async () => {
     setConfirmUsage(false);
@@ -263,12 +280,12 @@ export default function PremiumAdministration({ crmMemberships = [] }) {
           <h3>Online-Kontingente & Verträge</h3>
           <p>Hier erscheinen technische Online-Buchungskonten. Sie entstehen automatisch beim Premium-Zugang oder durch die Annahme eines neuen Vertrags. Die vollständige Memberverwaltung bleibt in der CRM-Liste darunter.</p>
         </div>
-        <button className="premium-admin__refresh" onClick={view === "reconciliation" ? loadReconciliation : loadOverview} disabled={loading || reconciliationLoading || reconciliationSaving}>Aktualisieren</button>
+        <button className="premium-admin__refresh" onClick={view === "reconciliation" ? loadReconciliation : refreshMemberView} disabled={loading || reconciliationLoading || reconciliationSaving}>Aktualisieren</button>
       </div>
 
       <div className="premium-admin__tabs">
         <button className={view === "members" ? "is-active" : ""} onClick={() => setView("members")}>Online-Kontingente <span>{members.length}</span></button>
-        <button className={view === "reconciliation" ? "is-active" : ""} onClick={openReconciliation}>BEYOND-Abgleich <span>{reconciliation?.summary?.crm_members ?? "–"}</span></button>
+        <button className={view === "reconciliation" ? "is-active" : ""} onClick={openReconciliation}>BEYOND-Bestandsabgleich <span>{reconciliation?.summary?.crm_members ?? "–"}</span></button>
         <button className={view === "contracts" ? "is-active" : ""} onClick={() => setView("contracts")}>Verträge <span>{contracts.length}</span></button>
       </div>
 
@@ -370,8 +387,8 @@ export default function PremiumAdministration({ crmMemberships = [] }) {
       {view === "reconciliation" && (
         <div className="premium-admin__reconciliation">
           <div className="premium-admin__safety-note">
-            <strong>Aktueller August-Stand</strong>
-            <span>Die Schalter zeigen den tatsächlich gespeicherten Buchungsstand. „1 frei“ bedeutet: Die Person kann noch einen August-Termin buchen. Änderungen werden erst nach der Bestätigung gespeichert.</span>
+            <strong>Bestandsübernahme für {reconciliationMonthLabel}</strong>
+            <span>Nur für bereits außerhalb des Online-Systems verbrauchte Altfälle: „1 frei“ bedeutet, dass noch ein Termin für diesen Leistungsmonat gebucht werden kann. Laufende Salonized-Termine bitte unter „Online-Kontingente“ mit Datum und Behandlung erfassen.</span>
           </div>
 
           {reconciliationLoading && <div className="premium-admin__state">BEYOND-Member werden mit Shopify abgeglichen…</div>}
@@ -389,7 +406,7 @@ export default function PremiumAdministration({ crmMemberships = [] }) {
 
               <div className="premium-admin__reconciliation-table-wrap">
                 <table className="premium-admin__reconciliation-table">
-                  <thead><tr><th>CRM-Member</th><th>Shopify</th><th>Online-System</th><th>August-Kontingent</th></tr></thead>
+                  <thead><tr><th>CRM-Member</th><th>Shopify</th><th>Online-System</th><th>Kontingent {reconciliationMonthLabel}</th></tr></thead>
                   <tbody>
                     {reconciliation.rows.map(row => {
                       const state = RECONCILIATION_STATES[row.state] || RECONCILIATION_STATES.missing_shopify;
@@ -402,7 +419,7 @@ export default function PremiumAdministration({ crmMemberships = [] }) {
                           <td><strong>{row.online_member_id ? "Vorhanden" : "Noch nicht angelegt"}</strong></td>
                           <td>{eligible ? (
                             <label className="premium-admin__availability-toggle">
-                              <input type="checkbox" checked={available} onChange={() => toggleAugustAvailability(row.crm_member_id)} />
+                              <input type="checkbox" checked={available} onChange={() => toggleMonthAvailability(row.crm_member_id)} />
                               <span>{available ? "1 frei – buchbar" : "0 frei – verbraucht"}</span>
                               {row.current_remaining === null
                                 ? <small>Noch kein Online-Konto</small>
@@ -419,22 +436,33 @@ export default function PremiumAdministration({ crmMemberships = [] }) {
               <div className="premium-admin__reconciliation-action">
                 <div>
                   <strong>{reconciliation.rows.filter(row => ["linked", "ready"].includes(row.state)).length} eindeutig zugeordnete Member</strong>
-                  <span>{availableCrmMemberIds.length} buchbar · {reconciliation.rows.filter(row => ["linked", "ready"].includes(row.state)).length - availableCrmMemberIds.length} verbraucht · {changedAugustMemberCount ? `${changedAugustMemberCount} Änderung${changedAugustMemberCount === 1 ? "" : "en"}` : "keine Änderungen"}</span>
+                  <span>{availableCrmMemberIds.length} buchbar · {reconciliation.rows.filter(row => ["linked", "ready"].includes(row.state)).length - availableCrmMemberIds.length} verbraucht · {changedMonthMemberCount ? `${changedMonthMemberCount} Änderung${changedMonthMemberCount === 1 ? "" : "en"}` : "keine Änderungen"}</span>
                 </div>
-                <button className="premium-admin__primary" disabled={reconciliationSaving || changedAugustMemberCount === 0} onClick={() => setConfirmReconciliation(true)}>Änderungen speichern</button>
+                <button className="premium-admin__primary" disabled={reconciliationSaving || changedMonthMemberCount === 0} onClick={() => setConfirmReconciliation(true)}>Bestandsstand speichern</button>
               </div>
 
               {reconciliation.upcoming?.length > 0 && (
                 <div className="premium-admin__safety-note">
                   <strong>{reconciliation.upcoming.length} geplante BEYOND-Upgrades</strong>
-                  <span>{reconciliation.upcoming.map(row => `${row.name} ab ${formatDate(row.scheduled_start_date)}`).join(" · ")}. Diese Personen werden nicht als fehlende CRM-Zuordnung gewertet und erhalten für August kein neues Kontingent.</span>
+                  <span>{reconciliation.upcoming.map(row => `${row.name} ab ${formatDate(row.scheduled_start_date)}`).join(" · ")}. Diese Personen werden nicht als fehlende CRM-Zuordnung gewertet und erhalten für {reconciliationMonthLabel} kein neues Kontingent.</span>
                 </div>
               )}
 
               {reconciliation.shopify_only?.length > 0 && (
                 <div className="premium-admin__shopify-only">
                   <strong>{reconciliation.shopify_only.length} Shopify-BEYOND-Konten ohne aktive oder geplante CRM-Zuordnung</strong>
-                  <span>Diese werden nicht automatisch übernommen und müssen separat geprüft werden.</span>
+                  <span>Diese werden nicht automatisch übernommen. Prüfe, ob im CRM eine BEYOND-Mitgliedschaft fehlt oder der Shopify-Tag nicht mehr gelten soll.</span>
+                  <ul className="premium-admin__shopify-only-list">
+                    {reconciliation.shopify_only.map(account => (
+                      <li key={account.shopify_customer_id}>
+                        <div>
+                          <strong>{account.name || "Name fehlt"}</strong>
+                          <span>{account.email || `Shopify-ID ${account.shopify_customer_id}`}</span>
+                        </div>
+                        <small>{account.online_member_id ? "Online-Konto vorhanden" : "Kein Online-Konto"}</small>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               )}
             </>
@@ -486,8 +514,8 @@ export default function PremiumAdministration({ crmMemberships = [] }) {
       {confirmReconciliation && (
         <div className="premium-admin__confirm" role="dialog" aria-modal="true" aria-labelledby="reconciliation-confirm-heading">
           <div>
-            <h4 id="reconciliation-confirm-heading">August-Kontingente wirklich ändern?</h4>
-            <p>{changedAugustMemberCount} Kontingent{changedAugustMemberCount === 1 ? " wird" : "e werden"} geändert. Danach können genau {availableCrmMemberIds.length} BEYOND-Member noch einen August-Termin buchen. Offene Zuordnungen bleiben unverändert.</p>
+            <h4 id="reconciliation-confirm-heading">Bestandsstand für {reconciliationMonthLabel} übernehmen?</h4>
+            <p>{changedMonthMemberCount} Kontingent{changedMonthMemberCount === 1 ? " wird" : "e werden"} als historische Bestandsübernahme gespeichert. Danach können genau {availableCrmMemberIds.length} BEYOND-Member noch einen Termin für {reconciliationMonthLabel} buchen. Es wird kein Behandlungstermin erzeugt.</p>
             <div><button onClick={() => setConfirmReconciliation(false)}>Abbrechen</button><button className="premium-admin__primary" disabled={reconciliationSaving} onClick={saveReconciliation}>Jetzt sicher übernehmen</button></div>
           </div>
         </div>

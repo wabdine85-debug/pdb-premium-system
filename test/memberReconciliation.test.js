@@ -50,11 +50,14 @@ test('BEYOND reconciliation is read-only and keeps ambiguous matches under revie
   assert.equal(result.rows.find((row) => row.crm_member_id === 'crm-3').state, 'review');
   assert.equal(result.rows.find((row) => row.crm_member_id === 'crm-4').state, 'missing_shopify');
   assert.equal(result.shopify_only[0].shopify_customer_id, '104');
+  assert.equal(result.shopify_only[0].name, 'Nur Shopify');
+  assert.equal(result.shopify_only[0].email, 'shopify-only@example.com');
+  assert.equal(result.shopify_only[0].online_member_id, null);
 
   const usagePlan = buildBeyondUsagePlan(result, ['crm-2']);
   assert.equal(usagePlan.length, 2);
   assert.equal(usagePlan.find((row) => row.crm_member_id === 'crm-1').imported_used_count, 1);
-  assert.equal(usagePlan.find((row) => row.crm_member_id === 'crm-2').august_remaining, 1);
+  assert.equal(usagePlan.find((row) => row.crm_member_id === 'crm-2').month_remaining, 1);
   assert.throws(
     () => buildBeyondUsagePlan(result, ['crm-4']),
     (error) => error instanceof MemberReconciliationError && error.code === 'AVAILABLE_MEMBER_NOT_ELIGIBLE'

@@ -204,7 +204,7 @@ export function buildBeyondUsagePlan(reconciliation, availableCrmMemberIds = [])
     imported_used_count: availableIds.has(String(row.crm_member_id))
       ? 0
       : Math.max(1, Number(row.online_entitlement_multiplier) || 1),
-    august_remaining: availableIds.has(String(row.crm_member_id)) ? 1 : 0
+    month_remaining: availableIds.has(String(row.crm_member_id)) ? 1 : 0
   }));
 }
 
@@ -264,7 +264,7 @@ export async function applyBeyondUsagePlan({
       crm_member_id: row.crm_member_id,
       member_id: member.id,
       name: row.name,
-      remaining: row.august_remaining
+      remaining: row.month_remaining
     });
   }
 
