@@ -287,9 +287,9 @@ export default function DirectDebitWorkspace({ data, save }) {
     setMailPending(true);
     setMailStatus({ type: "pending", message: `Zahlungserinnerung wird an ${emailPreview.email} gesendet …` });
     try {
-      const response = await fetch("/api/send-return-debit-email", {
+      const response = await fetch("/api/office/send-return-debit-email", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "X-PDB-Admin": "1" },
         body: JSON.stringify({
           caseId: emailPreview.caseId,
           dueDate: emailPreview.dueDate,
