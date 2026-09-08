@@ -15,6 +15,7 @@ import {
   suggestDirectDebitItem,
   updateReturnCase,
 } from "../modules/direct-debits/directDebitUtils.js";
+import { addCalendarDays, buildReturnDebitReminder } from "../modules/direct-debits/returnDebitEmail.js";
 
 function ids() {
   let index = 0;
@@ -262,4 +263,30 @@ test("summary separates open and recovered amounts", () => {
     { status: "storniert", amount: 49, fee: 0 },
   ]);
   assert.deepEqual(summary, { openCount: 2, openAmount: 251, recoveredAmount: 202 });
+});
+
+test("return debit reminder contains an auditable amount breakdown and payment deadline", () => {
+  const reminder = buildReturnDebitReminder({
+    memberName: "Bettina Beispiel",
+    billingMonth: "2026-09",
+    principalAmount: 199,
+    bankFee: 4.96,
+    returnedAt: "2026-09-03",
+    dueDate: "2026-09-15",
+    companyName: "PDB Aesthetic Room",
+    iban: "DE82 5105 0015 0107 1611 92",
+    bic: "NASSDE55XXX",
+  });
+  assert.equal(reminder.totalAmount, 203.96);
+  assert.match(reminder.subject, /September 2026/);
+  assert.match(reminder.body, /Offener Betrag: 203,96\s?€/);
+  assert.match(reminder.body, /199,00\s?€ Membership-Beitrag/);
+  assert.match(reminder.body, /4,96\s?€ von der Bank/);
+  assert.match(reminder.body, /15\.09\.2026/);
+  assert.match(reminder.body, /DE82 5105 0015 0107 1611 92/);
+});
+
+test("return debit reminder dates use calendar days", () => {
+  assert.equal(addCalendarDays("2026-09-08", 7), "2026-09-15");
+  assert.equal(addCalendarDays("2026-12-28", 7), "2027-01-04");
 });

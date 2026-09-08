@@ -16,6 +16,7 @@ import {
   suggestDirectDebitItem,
   updateReturnCase,
 } from "../../modules/direct-debits/directDebitUtils.js";
+import { addCalendarDays, buildReturnDebitReminder } from "../../modules/direct-debits/returnDebitEmail.js";
 import "./direct-debits.css";
 
 const uid = () => Math.random().toString(36).slice(2, 10);
@@ -91,6 +92,9 @@ export default function DirectDebitWorkspace({ data, save }) {
   const [bankImport, setBankImport] = useState(null);
   const [importMessage, setImportMessage] = useState("");
   const [xmlMessage, setXmlMessage] = useState("");
+  const [emailPreview, setEmailPreview] = useState(null);
+  const [mailStatus, setMailStatus] = useState(null);
+  const [mailPending, setMailPending] = useState(false);
   const fileRef = useRef(null);
   const xmlRef = useRef(null);
 
@@ -105,6 +109,22 @@ export default function DirectDebitWorkspace({ data, save }) {
   const selectedRunChanges = useMemo(() => getDirectDebitChangesSinceRun({ data, run: selectedRun, items }), [data, selectedRun, items]);
   const selectedCase = cases.find(item => item.id === selectedCaseId) || null;
   const eligibleImportItems = items.filter(item => !cases.some(returnCase => returnCase.itemId === item.id));
+
+  const contactForCase = returnCase => {
+    const membership = (data.memberships || []).find(entry => entry.id === returnCase?.membershipId);
+    const member = (data.members || []).find(entry => entry.id === returnCase?.memberId)
+      || (data.members || []).find(entry => String(entry.name || "").trim().toLowerCase() === String(returnCase?.memberName || "").trim().toLowerCase());
+    return {
+      member,
+      membership,
+      email: String(member?.email || membership?.memberEmail || "").trim(),
+    };
+  };
+
+  const primaryInvoiceProfile = (data.invoiceProfiles || []).find(profile => profile.id === "pdb-aesthetic-room")
+    || (data.invoiceProfiles || [])[0]
+    || data.settings
+    || {};
 
   const filteredCases = cases
     .filter(item => caseFilter === "alle" || (caseFilter === "offen" ? !isClosed(item.status) : item.status === caseFilter))
@@ -210,6 +230,106 @@ export default function DirectDebitWorkspace({ data, save }) {
   const openCase = returnCase => {
     setSelectedCaseId(returnCase.id);
     setCaseDraft({ ...returnCase, historyNote: "" });
+    setMailStatus(null);
+  };
+
+  const openReturnDebitEmail = returnCase => {
+    const { email } = contactForCase(returnCase);
+    const run = runs.find(entry => entry.id === returnCase.runId);
+    const dueDate = addCalendarDays(isoToday(), 7);
+    const reminder = buildReturnDebitReminder({
+      memberName: returnCase.memberName,
+      billingMonth: run?.month || returnCase.returnedAt?.slice(0, 7),
+      principalAmount: returnCase.amount,
+      bankFee: returnCase.fee,
+      returnedAt: returnCase.returnedAt,
+      dueDate,
+      companyName: primaryInvoiceProfile.companyName || "PDB Aesthetic Room",
+      iban: primaryInvoiceProfile.iban,
+      bic: primaryInvoiceProfile.bic,
+    });
+    setMailStatus(null);
+    setEmailPreview({
+      caseId: returnCase.id,
+      email,
+      memberName: returnCase.memberName,
+      dueDate,
+      subject: reminder.subject,
+      body: reminder.body,
+      totalAmount: reminder.totalAmount,
+    });
+  };
+
+  const changeReminderDueDate = dueDate => {
+    const returnCase = cases.find(entry => entry.id === emailPreview?.caseId);
+    if (!returnCase) return;
+    const run = runs.find(entry => entry.id === returnCase.runId);
+    const reminder = buildReturnDebitReminder({
+      memberName: returnCase.memberName,
+      billingMonth: run?.month || returnCase.returnedAt?.slice(0, 7),
+      principalAmount: returnCase.amount,
+      bankFee: returnCase.fee,
+      returnedAt: returnCase.returnedAt,
+      dueDate,
+      companyName: primaryInvoiceProfile.companyName || "PDB Aesthetic Room",
+      iban: primaryInvoiceProfile.iban,
+      bic: primaryInvoiceProfile.bic,
+    });
+    setEmailPreview(current => ({ ...current, dueDate, subject: reminder.subject, body: reminder.body }));
+  };
+
+  const sendReturnDebitEmail = async () => {
+    if (!emailPreview?.email || !emailPreview?.subject.trim() || !emailPreview?.body.trim() || mailPending) return;
+    if (!primaryInvoiceProfile.iban) {
+      setMailStatus({ type: "error", message: "In den Rechnungseinstellungen fehlt die IBAN für PDB Aesthetic Room." });
+      return;
+    }
+    setMailPending(true);
+    setMailStatus({ type: "pending", message: `Zahlungserinnerung wird an ${emailPreview.email} gesendet …` });
+    try {
+      const response = await fetch("/api/send-return-debit-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          caseId: emailPreview.caseId,
+          dueDate: emailPreview.dueDate,
+        }),
+      });
+      const result = await response.json();
+      if (!response.ok || !result.ok) throw new Error(result.error || "E-Mail konnte nicht gesendet werden.");
+      const sentAt = result.sentAt || new Date().toISOString();
+      const historyText = `Zahlungserinnerung per E-Mail an ${emailPreview.email} gesendet · Zahlungsfrist ${dateLabel(emailPreview.dueDate)}`;
+      save(current => ({
+        ...current,
+        returnDebitCases: (current.returnDebitCases || []).map(returnCase => returnCase.id === emailPreview.caseId ? {
+          ...updateReturnCase(returnCase, {
+            status: "kontaktiert",
+            nextActionAt: emailPreview.dueDate,
+            historyNote: historyText,
+          }, { idFactory: uid, now: sentAt }),
+          lastReminderEmailSentAt: sentAt,
+          lastReminderEmailTo: emailPreview.email,
+          reminderEmailCount: Number(returnCase.reminderEmailCount || 0) + 1,
+        } : returnCase),
+        members: (current.members || []).map(member => member.id === selectedCase?.memberId ? {
+          ...member,
+          timeline: [...(member.timeline || []), {
+            id: uid(),
+            type: "payment",
+            text: `Zahlungserinnerung per E-Mail gesendet · ${money(emailPreview.totalAmount)}`,
+            date: sentAt.slice(0, 10),
+            ts: Date.parse(sentAt),
+          }],
+        } : member),
+      }));
+      setCaseDraft(current => current ? { ...current, status: "kontaktiert", nextActionAt: emailPreview.dueDate } : current);
+      setMailStatus({ type: "success", message: `Zahlungserinnerung wurde an ${emailPreview.email} gesendet und im Verlauf dokumentiert.` });
+      setEmailPreview(null);
+    } catch (error) {
+      setMailStatus({ type: "error", message: error.message || "E-Mail konnte nicht gesendet werden." });
+    } finally {
+      setMailPending(false);
+    }
   };
 
   const saveCase = event => {
@@ -738,6 +858,16 @@ export default function DirectDebitWorkspace({ data, save }) {
       {selectedCase && caseDraft && <div className="ddb-modal-backdrop" role="presentation"><form className="ddb-modal ddb-modal--case" onSubmit={saveCase} role="dialog" aria-modal="true" aria-labelledby="ddb-case-title">
         <div className="ddb-modal__heading"><div><span className="ddb-eyebrow">Rücklastschriftfall</span><h3 id="ddb-case-title">{selectedCase.memberName}</h3></div><button aria-label="Fenster schließen" type="button" onClick={() => { setSelectedCaseId(""); setCaseDraft(null); }}>×</button></div>
         <div className="ddb-case-amount"><span>{caseDraft.status === "bezahlt" ? "Eingegangene Folgezahlung" : "Offener Gesamtbetrag"}</span><strong>{money(caseDraft.status === "bezahlt" && caseDraft.paidAmount ? caseDraft.paidAmount : Number(caseDraft.amount) + Number(caseDraft.fee || 0))}</strong><small>{caseDraft.status === "bezahlt" && caseDraft.paidAt ? `bezahlt am ${dateLabel(caseDraft.paidAt)}` : `${money(caseDraft.amount)} Einzug · ${money(caseDraft.fee)} Kosten`}</small></div>
+        {!isClosed(caseDraft.status) && <div className="ddb-contact-card">
+          <div>
+            <span className="ddb-eyebrow">Direkter Kundenkontakt</span>
+            <strong>Zahlungserinnerung per E-Mail</strong>
+            <small>{contactForCase(selectedCase).email || "Keine E-Mail-Adresse in den Kundendaten hinterlegt"}</small>
+            {selectedCase.lastReminderEmailSentAt && <small>Zuletzt gesendet: {new Date(selectedCase.lastReminderEmailSentAt).toLocaleString("de-DE", { dateStyle: "short", timeStyle: "short" })}</small>}
+          </div>
+          <button className="ddb-button ddb-button--secondary" type="button" disabled={!contactForCase(selectedCase).email} onClick={() => openReturnDebitEmail(selectedCase)}>E-Mail vorbereiten</button>
+        </div>}
+        {mailStatus && <div className={`ddb-mail-status ddb-mail-status--${mailStatus.type}`} role="status">{mailStatus.message}</div>}
         <div className="ddb-form-grid">
           <label>Status<select value={caseDraft.status} onChange={event => setCaseDraft(current => ({ ...current, status: event.target.value }))}>{RETURN_CASE_STATUSES.map(status => <option key={status.value} value={status.value}>{status.label}</option>)}</select></label>
           <label>Nächste Aktion<input type="date" disabled={isClosed(caseDraft.status)} value={caseDraft.nextActionAt || ""} onChange={event => setCaseDraft(current => ({ ...current, nextActionAt: event.target.value }))} /></label>
@@ -748,6 +878,20 @@ export default function DirectDebitWorkspace({ data, save }) {
         <div className="ddb-history"><h4>Verlauf</h4>{[...(selectedCase.history || [])].reverse().map(entry => <div key={entry.id}><time>{new Date(entry.at).toLocaleString("de-DE", { dateStyle: "short", timeStyle: "short" })}</time><span>{entry.text}</span></div>)}</div>
         <div className="ddb-modal__actions"><button className="ddb-button ddb-button--secondary" type="button" onClick={() => { setSelectedCaseId(""); setCaseDraft(null); }}>Abbrechen</button><button className="ddb-button" type="submit">Änderungen speichern</button></div>
       </form></div>}
+
+      {emailPreview && <div className="ddb-modal-backdrop ddb-modal-backdrop--email" role="presentation"><div className="ddb-modal ddb-modal--email" role="dialog" aria-modal="true" aria-labelledby="ddb-email-title">
+        <div className="ddb-modal__heading"><div><span className="ddb-eyebrow">Vor Versand prüfen</span><h3 id="ddb-email-title">Zahlungserinnerung</h3></div><button aria-label="E-Mail-Vorschau schließen" type="button" onClick={() => setEmailPreview(null)}>×</button></div>
+        <div className="ddb-email-note"><strong>Es wird noch nichts automatisch versendet.</strong><span>Prüfe Empfänger, Betrag, Frist und Text. Erst „Jetzt senden“ verschickt die Nachricht.</span></div>
+        <div className="ddb-form-grid">
+          <label>Empfänger<input type="email" value={emailPreview.email} readOnly /></label>
+          <label>Zahlungsfrist<input type="date" min={isoToday()} value={emailPreview.dueDate} onChange={event => changeReminderDueDate(event.target.value)} /></label>
+          <label className="ddb-form-grid__wide">Betreff<input value={emailPreview.subject} readOnly /></label>
+          <label className="ddb-form-grid__wide">E-Mail-Text<textarea rows="16" value={emailPreview.body} readOnly /></label>
+        </div>
+        {!primaryInvoiceProfile.iban && <div className="ddb-form-error">Die PDB-IBAN fehlt in den Rechnungseinstellungen. Versand ist erst nach Ergänzung möglich.</div>}
+        {mailStatus?.type === "error" && <div className="ddb-mail-status ddb-mail-status--error" role="alert">{mailStatus.message}</div>}
+        <div className="ddb-modal__actions"><button className="ddb-button ddb-button--secondary" type="button" disabled={mailPending} onClick={() => setEmailPreview(null)}>Abbrechen</button><button className="ddb-button" type="button" disabled={mailPending || !emailPreview.email || !emailPreview.subject.trim() || !emailPreview.body.trim() || !primaryInvoiceProfile.iban} onClick={sendReturnDebitEmail}>{mailPending ? "Wird gesendet …" : "Jetzt senden"}</button></div>
+      </div></div>}
     </div>
   );
 }

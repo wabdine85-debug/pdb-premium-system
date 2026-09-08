@@ -29,7 +29,9 @@ Die drei Listen liegen im vorhandenen CRM-Dokument und werden durch
 4. Vorgeschlagene Zuordnung kontrollieren. Nur bestätigte Zeilen werden
    übernommen; unsichere oder mehrdeutige Treffer bleiben offen.
 5. Rücklastschrift bearbeiten, nächste Aktion und Verlauf dokumentieren.
-6. Erst bei Zahlungseingang oder bewusstem Storno wird der Fall geschlossen.
+6. Bei Bedarf im Fall **E-Mail vorbereiten** öffnen, Empfänger, Frist und Text
+   prüfen und die Zahlungserinnerung bewusst versenden.
+7. Erst bei Zahlungseingang oder bewusstem Storno wird der Fall geschlossen.
 
 Wiederholte Dateiimporte erzeugen anhand eines stabilen
 Transaktionsfingerprints keine doppelten Rücklastschriftbuchungen.
@@ -67,3 +69,13 @@ keinen Vorschlag ohne Bestätigung durch die bearbeitende Person.
 - Ein erneuter Einzug ist ein eigener operativer Schritt mit neuem
   Fälligkeitstag; das System wiederverwendet keine alte Bankbuchung.
 - Bankkosten werden getrennt vom ursprünglichen Membershipbetrag gespeichert.
+- Eine Zahlungserinnerung wird nie ohne abschließende Bestätigung versendet.
+  Nach erfolgreichem Versand wechselt der Fall auf `kontaktiert`, die Frist
+  wird als nächste Aktion gespeichert und der Versand im Fall- und
+  Kundenverlauf dokumentiert.
+- Der E-Mail-Endpunkt ist an die Office-Anmeldung und den gleichen Ursprung
+  gebunden, auf zehn Versendungen je 15 Minuten begrenzt und erzeugt Empfänger,
+  Betrag und Nachricht ausschließlich aus dem serverseitigen CRM-Fall.
+- Der Versand benötigt die vorhandene SMTP-Konfiguration sowie eine
+  E-Mail-Adresse in den Kundendaten und eine PDB-IBAN im primären
+  Rechnungsprofil.
