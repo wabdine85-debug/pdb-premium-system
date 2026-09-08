@@ -285,7 +285,7 @@ async function handleReturnDebitEmail(req, res) {
     accountHolder: profile.accountHolder || (profile.id === "pdb-aesthetic-room" ? DEFAULT_PDB_ACCOUNT_HOLDER : profile.companyName),
     iban: profile.iban,
     bic: profile.bic,
-    mandateReference: returnCase.mandateReference || item?.mandateReference || membership?.mandateReference,
+    mandateReference: membership?.mandateReference || returnCase.mandateReference || item?.mandateReference,
   });
   const required = ["SMTP_HOST", "SMTP_PORT", "SMTP_USER", "SMTP_PASS", "MAIL_FROM"].filter(key => !process.env[key]);
   if (required.length) return sendJson(res, 503, { ok: false, error: "MAIL_NOT_CONFIGURED" });

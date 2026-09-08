@@ -282,7 +282,7 @@ router.post('/send-return-debit-email', requireAdminAccess, jsonParser, async (r
     accountHolder: profile.accountHolder || (profile.id === 'pdb-aesthetic-room' ? DEFAULT_PDB_ACCOUNT_HOLDER : profile.companyName),
     iban: profile.iban,
     bic: profile.bic,
-    mandateReference: returnCase.mandateReference || item?.mandateReference || membership?.mandateReference
+    mandateReference: membership?.mandateReference || returnCase.mandateReference || item?.mandateReference
   });
   const html = `<p>${escapeHtml(reminder.body).replace(/\n/g, '<br>')}</p>`;
   const delivery = await sendTransactionalHtml({

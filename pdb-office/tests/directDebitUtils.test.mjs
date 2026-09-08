@@ -215,10 +215,10 @@ test("matching prioritizes mandate reference", () => {
   const suggestion = suggestDirectDebitItem({
     name: "Abweichender Kontoinhaber",
     amount: 149,
-    mandateReference: "PDB-2026-001",
+    mandateReference: "PDB-M-2026-0001",
   }, [
-    { id: "a", memberName: "Anna Beispiel", amount: 149, mandateReference: "PDB-2026-001", status: "eingereicht" },
-    { id: "b", memberName: "Andere Person", amount: 149, mandateReference: "PDB-2026-002", status: "eingereicht" },
+    { id: "a", memberName: "Anna Beispiel", amount: 149, mandateReference: "PDB-M-2026-0001", status: "eingereicht" },
+    { id: "b", memberName: "Andere Person", amount: 149, mandateReference: "PDB-M-2026-0002", status: "eingereicht" },
   ]);
   assert.equal(suggestion.item.id, "a");
   assert.equal(suggestion.confidence, "hoch");
@@ -277,7 +277,7 @@ test("return debit reminder contains an auditable amount breakdown and payment d
     accountHolder: "PDB Aesthetik Room, Noureen Hussain",
     iban: "DE82 5105 0015 0107 1611 92",
     bic: "NASSDE55XXX",
-    mandateReference: "PDB-2026-001",
+    mandateReference: "PDB-M-2026-0001",
   });
   assert.equal(reminder.totalAmount, 203.96);
   assert.match(reminder.subject, /September 2026/);
@@ -287,11 +287,23 @@ test("return debit reminder contains an auditable amount breakdown and payment d
   assert.match(reminder.body, /15\.09\.2026/);
   assert.match(reminder.body, /DE82 5105 0015 0107 1611 92/);
   assert.match(reminder.body, /Empfänger: PDB Aesthetik Room, Noureen Hussain/);
-  assert.match(reminder.body, /Verwendungszweck: Mandatsreferenz PDB-2026-001 - September 2026/);
+  assert.match(reminder.body, /Verwendungszweck: Mandatsreferenz PDB-M-2026-0001 - September 2026/);
   assert.match(reminder.body, /kannst du diese E-Mail ignorieren/);
 });
 
 test("return debit reminder dates use calendar days", () => {
   assert.equal(addCalendarDays("2026-09-08", 7), "2026-09-15");
   assert.equal(addCalendarDays("2026-12-28", 7), "2027-01-04");
+});
+
+test("return debit reminder never presents a package label as mandate reference", () => {
+  const reminder = buildReturnDebitReminder({
+    memberName: "Bettina Beispiel",
+    billingMonth: "2026-09",
+    principalAmount: 199,
+    dueDate: "2026-09-15",
+    mandateReference: "Mitgliedschaft Premium Beyond",
+  });
+  assert.doesNotMatch(reminder.body, /Mandatsreferenz Mitgliedschaft/);
+  assert.match(reminder.body, /Verwendungszweck: Membership September 2026 - Bettina Beispiel/);
 });

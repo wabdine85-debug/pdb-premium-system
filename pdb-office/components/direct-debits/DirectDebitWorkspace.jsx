@@ -249,7 +249,7 @@ export default function DirectDebitWorkspace({ data, save }) {
       accountHolder: primaryInvoiceProfile.accountHolder,
       iban: primaryInvoiceProfile.iban,
       bic: primaryInvoiceProfile.bic,
-      mandateReference: returnCase.mandateReference || item?.mandateReference || membership?.mandateReference,
+      mandateReference: membership?.mandateReference || returnCase.mandateReference || item?.mandateReference,
     });
     setMailStatus(null);
     setEmailPreview({
@@ -280,7 +280,7 @@ export default function DirectDebitWorkspace({ data, save }) {
       accountHolder: primaryInvoiceProfile.accountHolder,
       iban: primaryInvoiceProfile.iban,
       bic: primaryInvoiceProfile.bic,
-      mandateReference: returnCase.mandateReference || item?.mandateReference || membership?.mandateReference,
+      mandateReference: membership?.mandateReference || returnCase.mandateReference || item?.mandateReference,
     });
     setEmailPreview(current => ({ ...current, dueDate, subject: reminder.subject, body: reminder.body }));
   };

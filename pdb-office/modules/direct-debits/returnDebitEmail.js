@@ -50,7 +50,10 @@ export function buildReturnDebitReminder({
   const principal = Math.max(0, Number(principalAmount) || 0);
   const fee = Math.max(0, Number(bankFee) || 0);
   const total = principal + fee;
-  const cleanMandateReference = String(mandateReference || "").trim();
+  const rawMandateReference = String(mandateReference || "").trim().toUpperCase();
+  const cleanMandateReference = /^PDB-M-\d{4}-\d{4}$/.test(rawMandateReference)
+    ? rawMandateReference
+    : "";
   const paymentReference = cleanMandateReference
     ? `Mandatsreferenz ${cleanMandateReference} - ${period}`
     : `Membership ${period} - ${cleanName || "Kundin/Kunde"}`;
