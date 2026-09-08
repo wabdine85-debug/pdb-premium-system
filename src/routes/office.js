@@ -5,7 +5,7 @@ import { sendTransactionalHtml } from '../services/mail.service.js';
 import { reserveNextMandateReference } from '../services/mandateReference.service.js';
 import { classifyStorageWrite, getStorageRevision } from '../../pdb-office/services/storageRevision.js';
 import { mergeMemberFinanceMonth, parseMemberFinanceSepaXml } from '../services/memberFinanceImport.service.js';
-import { buildReturnDebitReminder } from '../../pdb-office/modules/direct-debits/returnDebitEmail.js';
+import { DEFAULT_PDB_ACCOUNT_HOLDER, buildReturnDebitReminder } from '../../pdb-office/modules/direct-debits/returnDebitEmail.js';
 
 const router = express.Router();
 const jsonParser = express.json({ limit: '8mb' });
@@ -256,6 +256,7 @@ router.post('/send-return-debit-email', requireAdminAccess, jsonParser, async (r
 
   const membership = (data.memberships || []).find(entry => entry.id === returnCase.membershipId);
   const member = (data.members || []).find(entry => entry.id === returnCase.memberId);
+  const item = (data.directDebitItems || []).find(entry => entry.id === returnCase.itemId);
   const email = String(member?.email || membership?.memberEmail || '').trim();
   if (!email || email.length > 254 || !/^\S+@\S+\.\S+$/.test(email)) {
     return res.status(400).json({ ok: false, error: 'Für diesen Kunden fehlt eine gültige E-Mail-Adresse.' });
@@ -278,8 +279,10 @@ router.post('/send-return-debit-email', requireAdminAccess, jsonParser, async (r
     returnedAt: returnCase.returnedAt,
     dueDate,
     companyName: profile.companyName || 'PDB Aesthetic Room',
+    accountHolder: profile.accountHolder || (profile.id === 'pdb-aesthetic-room' ? DEFAULT_PDB_ACCOUNT_HOLDER : profile.companyName),
     iban: profile.iban,
-    bic: profile.bic
+    bic: profile.bic,
+    mandateReference: returnCase.mandateReference || item?.mandateReference || membership?.mandateReference
   });
   const html = `<p>${escapeHtml(reminder.body).replace(/\n/g, '<br>')}</p>`;
   const delivery = await sendTransactionalHtml({

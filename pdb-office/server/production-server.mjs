@@ -3,7 +3,7 @@ import http from "node:http";
 import path from "node:path";
 import nodemailer from "nodemailer";
 import pg from "pg";
-import { buildReturnDebitReminder } from "../modules/direct-debits/returnDebitEmail.js";
+import { DEFAULT_PDB_ACCOUNT_HOLDER, buildReturnDebitReminder } from "../modules/direct-debits/returnDebitEmail.js";
 import { classifyStorageWrite, getStorageRevision } from "../services/storageRevision.js";
 import { createPremiumAdminProxy } from "./premium-admin-proxy.mjs";
 import {
@@ -268,6 +268,7 @@ async function handleReturnDebitEmail(req, res) {
   if (!returnCase || ["bezahlt", "storniert"].includes(returnCase.status)) return sendJson(res, 404, { ok: false, error: "Der offene Rücklastschriftfall wurde nicht gefunden." });
   const membership = (data.memberships || []).find(entry => entry.id === returnCase.membershipId);
   const member = (data.members || []).find(entry => entry.id === returnCase.memberId);
+  const item = (data.directDebitItems || []).find(entry => entry.id === returnCase.itemId);
   const email = String(member?.email || membership?.memberEmail || "").trim();
   if (!email || email.length > 254 || !/^\S+@\S+\.\S+$/.test(email)) return sendJson(res, 400, { ok: false, error: "Für diesen Kunden fehlt eine gültige E-Mail-Adresse." });
   const run = (data.directDebitRuns || []).find(entry => entry.id === returnCase.runId);
@@ -281,8 +282,10 @@ async function handleReturnDebitEmail(req, res) {
     returnedAt: returnCase.returnedAt,
     dueDate,
     companyName: profile.companyName || "PDB Aesthetic Room",
+    accountHolder: profile.accountHolder || (profile.id === "pdb-aesthetic-room" ? DEFAULT_PDB_ACCOUNT_HOLDER : profile.companyName),
     iban: profile.iban,
     bic: profile.bic,
+    mandateReference: returnCase.mandateReference || item?.mandateReference || membership?.mandateReference,
   });
   const required = ["SMTP_HOST", "SMTP_PORT", "SMTP_USER", "SMTP_PASS", "MAIL_FROM"].filter(key => !process.env[key]);
   if (required.length) return sendJson(res, 503, { ok: false, error: "MAIL_NOT_CONFIGURED" });

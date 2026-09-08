@@ -274,8 +274,10 @@ test("return debit reminder contains an auditable amount breakdown and payment d
     returnedAt: "2026-09-03",
     dueDate: "2026-09-15",
     companyName: "PDB Aesthetic Room",
+    accountHolder: "PDB Aesthetik Room, Noureen Hussain",
     iban: "DE82 5105 0015 0107 1611 92",
     bic: "NASSDE55XXX",
+    mandateReference: "PDB-2026-001",
   });
   assert.equal(reminder.totalAmount, 203.96);
   assert.match(reminder.subject, /September 2026/);
@@ -284,6 +286,9 @@ test("return debit reminder contains an auditable amount breakdown and payment d
   assert.match(reminder.body, /4,96\s?€ von der Bank/);
   assert.match(reminder.body, /15\.09\.2026/);
   assert.match(reminder.body, /DE82 5105 0015 0107 1611 92/);
+  assert.match(reminder.body, /Empfänger: PDB Aesthetik Room, Noureen Hussain/);
+  assert.match(reminder.body, /Verwendungszweck: Mandatsreferenz PDB-2026-001 - September 2026/);
+  assert.match(reminder.body, /kannst du diese E-Mail ignorieren/);
 });
 
 test("return debit reminder dates use calendar days", () => {

@@ -234,8 +234,9 @@ export default function DirectDebitWorkspace({ data, save }) {
   };
 
   const openReturnDebitEmail = returnCase => {
-    const { email } = contactForCase(returnCase);
+    const { email, membership } = contactForCase(returnCase);
     const run = runs.find(entry => entry.id === returnCase.runId);
+    const item = items.find(entry => entry.id === returnCase.itemId);
     const dueDate = addCalendarDays(isoToday(), 7);
     const reminder = buildReturnDebitReminder({
       memberName: returnCase.memberName,
@@ -245,8 +246,10 @@ export default function DirectDebitWorkspace({ data, save }) {
       returnedAt: returnCase.returnedAt,
       dueDate,
       companyName: primaryInvoiceProfile.companyName || "PDB Aesthetic Room",
+      accountHolder: primaryInvoiceProfile.accountHolder,
       iban: primaryInvoiceProfile.iban,
       bic: primaryInvoiceProfile.bic,
+      mandateReference: returnCase.mandateReference || item?.mandateReference || membership?.mandateReference,
     });
     setMailStatus(null);
     setEmailPreview({
@@ -264,6 +267,8 @@ export default function DirectDebitWorkspace({ data, save }) {
     const returnCase = cases.find(entry => entry.id === emailPreview?.caseId);
     if (!returnCase) return;
     const run = runs.find(entry => entry.id === returnCase.runId);
+    const { membership } = contactForCase(returnCase);
+    const item = items.find(entry => entry.id === returnCase.itemId);
     const reminder = buildReturnDebitReminder({
       memberName: returnCase.memberName,
       billingMonth: run?.month || returnCase.returnedAt?.slice(0, 7),
@@ -272,8 +277,10 @@ export default function DirectDebitWorkspace({ data, save }) {
       returnedAt: returnCase.returnedAt,
       dueDate,
       companyName: primaryInvoiceProfile.companyName || "PDB Aesthetic Room",
+      accountHolder: primaryInvoiceProfile.accountHolder,
       iban: primaryInvoiceProfile.iban,
       bic: primaryInvoiceProfile.bic,
+      mandateReference: returnCase.mandateReference || item?.mandateReference || membership?.mandateReference,
     });
     setEmailPreview(current => ({ ...current, dueDate, subject: reminder.subject, body: reminder.body }));
   };

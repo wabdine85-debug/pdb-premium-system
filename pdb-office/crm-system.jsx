@@ -1790,6 +1790,7 @@ function Settings({ data, save }) {
         id,
         name: "Neues Rechnungsprofil",
         companyName: "",
+        accountHolder: "",
         companyAddress: "",
         companyEmail: "",
         taxNumber: "",
@@ -1855,6 +1856,7 @@ function Settings({ data, save }) {
             <div className="crm-settings-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 16px" }}>
               <Field label="Profilname"><input style={inp} value={profile.name || ""} onChange={e => updateProfile(profile.id, { name: e.target.value })} /></Field>
               <Field label="Firmen-/Praxisname"><input style={inp} value={profile.companyName || ""} onChange={e => updateProfile(profile.id, { companyName: e.target.value })} /></Field>
+              <Field label="Kontoinhaber (exakt laut Bank)"><input style={inp} value={profile.accountHolder || ""} onChange={e => updateProfile(profile.id, { accountHolder: e.target.value })} /></Field>
               <Field label="E-Mail"><input style={inp} value={profile.companyEmail || ""} onChange={e => updateProfile(profile.id, { companyEmail: e.target.value })} /></Field>
               <Field label="Logo-Platzhalter"><input style={inp} value={profile.logoPlaceholder || ""} onChange={e => updateProfile(profile.id, { logoPlaceholder: e.target.value })} /></Field>
               <Field label="Logo URL/Pfad"><input style={inp} value={profile.logoUrl || ""} placeholder="/office/pdb-logo.png oder https://…" onChange={e => updateProfile(profile.id, { logoUrl: e.target.value })} /></Field>

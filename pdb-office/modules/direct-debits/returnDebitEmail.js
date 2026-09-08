@@ -3,6 +3,8 @@ const currencyFormatter = new Intl.NumberFormat("de-DE", {
   currency: "EUR",
 });
 
+export const DEFAULT_PDB_ACCOUNT_HOLDER = "PDB Aesthetik Room, Noureen Hussain";
+
 function formatCurrency(value) {
   return currencyFormatter.format(Number(value) || 0);
 }
@@ -38,20 +40,25 @@ export function buildReturnDebitReminder({
   returnedAt,
   dueDate,
   companyName = "PDB Aesthetic Room",
+  accountHolder,
   iban,
   bic,
+  mandateReference,
 }) {
   const cleanName = String(memberName || "").trim();
   const period = formatBillingMonth(billingMonth);
   const principal = Math.max(0, Number(principalAmount) || 0);
   const fee = Math.max(0, Number(bankFee) || 0);
   const total = principal + fee;
-  const paymentReference = `Membership ${period} – ${cleanName || "Kundin/Kunde"}`;
+  const cleanMandateReference = String(mandateReference || "").trim();
+  const paymentReference = cleanMandateReference
+    ? `Mandatsreferenz ${cleanMandateReference} - ${period}`
+    : `Membership ${period} - ${cleanName || "Kundin/Kunde"}`;
   const amountDetails = fee > 0
     ? `Darin enthalten: ${formatCurrency(principal)} Membership-Beitrag und ${formatCurrency(fee)} von der Bank berechnete Rücklastschriftkosten.`
     : `Der Betrag betrifft den offenen Membership-Beitrag von ${formatCurrency(principal)}.`;
   const bankDetails = [
-    `Empfänger: ${companyName}`,
+    `Empfänger: ${String(accountHolder || companyName).trim()}`,
     iban ? `IBAN: ${String(iban).trim()}` : "IBAN: Bitte in den Rechnungseinstellungen ergänzen",
     bic ? `BIC: ${String(bic).trim()}` : "",
     `Verwendungszweck: ${paymentReference}`,
@@ -70,7 +77,7 @@ export function buildReturnDebitReminder({
       `Bitte überweise den offenen Betrag bis zum ${formatDate(dueDate)} auf folgendes Konto:`,
       ...bankDetails,
       "",
-      "Falls du bereits überwiesen hast, antworte bitte kurz mit dem Zahlungsdatum und dem Namen des verwendeten Kontos. Dann können wir die Zahlung schneller zuordnen.",
+      "Falls du den Betrag inzwischen überwiesen hast, kannst du diese E-Mail ignorieren.",
       "",
       "Liebe Grüße",
       "PDB Aesthetic Room",

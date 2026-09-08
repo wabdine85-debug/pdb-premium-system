@@ -1,4 +1,5 @@
 import { parseLocalizedNumber } from "./invoiceInputs.js";
+import { DEFAULT_PDB_ACCOUNT_HOLDER } from "../direct-debits/returnDebitEmail.js";
 
 export const DEFAULT_INVOICE_PROFILE_ID = "pdb-aesthetic-room";
 
@@ -23,6 +24,7 @@ export const defaultInvoiceProfiles = [
     id: DEFAULT_INVOICE_PROFILE_ID,
     name: "PDB Aesthetic Room",
     companyName: "PDB Aesthetic Room",
+    accountHolder: DEFAULT_PDB_ACCOUNT_HOLDER,
     companyAddress: "Adresse ergänzen",
     companyEmail: "info@pdb-aestheticroom.de",
     taxNumber: "Steuernummer ergänzen",
@@ -43,6 +45,7 @@ export const defaultInvoiceProfiles = [
     id: "medical-doctor",
     name: "Ärztin / medizinische Rechnung",
     companyName: "Ärztliche Praxis",
+    accountHolder: "",
     companyAddress: "Praxisadresse ergänzen",
     companyEmail: "praxis@example.de",
     taxNumber: "Steuernummer ergänzen",

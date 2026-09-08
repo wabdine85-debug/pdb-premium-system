@@ -73,6 +73,8 @@ keinen Vorschlag ohne Bestätigung durch die bearbeitende Person.
   Nach erfolgreichem Versand wechselt der Fall auf `kontaktiert`, die Frist
   wird als nächste Aktion gespeichert und der Versand im Fall- und
   Kundenverlauf dokumentiert.
+- Als Empfänger erscheint der separat gepflegte Kontoinhaber exakt laut Bank.
+  Der Verwendungszweck nutzt vorrangig Mandatsreferenz und Abrechnungsmonat.
 - Der E-Mail-Endpunkt `/api/office/send-return-debit-email` ist an die Office-Anmeldung und den gleichen Ursprung
   gebunden, auf zehn Versendungen je 15 Minuten begrenzt und erzeugt Empfänger,
   Betrag und Nachricht ausschließlich aus dem serverseitigen CRM-Fall.
