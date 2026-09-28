@@ -9,7 +9,7 @@ import NewsletterReconciliation from "./components/customers/NewsletterReconcili
 import { createMembershipExportRows, downloadMembershipCsv, downloadMembershipPdf } from "./modules/memberships/membershipExports.js";
 import { getNextMandateReference } from "./modules/memberships/mandateReferences.js";
 import { createReactivationSepaTask, extendDateByDays, getLatestPause, getPauseDays, resumeMembership, scheduleMembershipResume, startMembershipPause } from "./modules/memberships/membershipPauses.js";
-import { createMembershipTimeline, getMembershipNextAction, isMembershipIncludedInPlannedRevenue } from "./modules/memberships/membershipPresentation.js";
+import { createMembershipTimeline, getMembershipNextAction, getMembershipPlannedAmount, isDueWithinNextPlanningMonth, isMembershipIncludedInPlannedRevenue } from "./modules/memberships/membershipPresentation.js";
 import { isMembershipActiveOnDate } from "./modules/memberships/membershipLifecycle.js";
 import { findSafeIdentityMatch } from "./modules/memberships/identityMatching.js";
 import { useStorage, migrateData } from "./services/crmStorage.js";
@@ -2617,7 +2617,11 @@ function Memberships({ data, save }) {
   const currentRevenueMemberships = memberships.filter(m => isMembershipActiveOnDate(m, today()));
   const plannedRevenueMemberships = memberships.filter(m => isMembershipIncludedInPlannedRevenue(m, today()));
   const monthlyRevenue = currentRevenueMemberships.reduce((sum, m) => sum + (Number(m.monthlyAmount) || 0), 0);
-  const plannedMonthlyRevenue = plannedRevenueMemberships.reduce((sum, m) => sum + getScheduledAmount(m), 0);
+  const plannedMonthlyRevenue = plannedRevenueMemberships.reduce((sum, m) => sum + getMembershipPlannedAmount(
+    m,
+    today(),
+    Object.fromEntries(Object.entries(MEMBERSHIP_PLANS).map(([plan, config]) => [plan, config.amount])),
+  ), 0);
   const plannedRevenueDelta = plannedMonthlyRevenue - monthlyRevenue;
   const scheduledChanges = memberships.filter(m => (
     m.scheduledPlan
@@ -2923,7 +2927,7 @@ function Memberships({ data, save }) {
     .filter(m => m.status === "pausiert")
     .map(membership => ({ type: "paused", date: membership.updatedAt || membership.startDate || today(), sortDate: getMembershipActivityDate(membership), membership }));
   const reactivationSepaAlerts = memberships
-    .filter(m => m.reactivationSepaStatus)
+    .filter(m => m.reactivationSepaStatus && isDueWithinNextPlanningMonth(m.reactivationSepaDueAt || m.scheduledReactivationAt, today()))
     .map(membership => ({
       type: "reactivation-sepa",
       date: membership.reactivationSepaDueAt || membership.scheduledReactivationAt || today(),

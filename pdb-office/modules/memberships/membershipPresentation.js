@@ -1,5 +1,8 @@
 export function getMembershipNextAction(membership, today) {
-  if (membership.reactivationSepaStatus === "offen") {
+  if (membership.reactivationSepaStatus === "offen" && isDueWithinNextPlanningMonth(
+    membership.reactivationSepaDueAt || membership.scheduledReactivationAt,
+    today,
+  )) {
     return {
       tone: "warning",
       label: "NASPA-SEPA einrichten",
@@ -32,11 +35,44 @@ export function getMembershipNextAction(membership, today) {
   return { tone: "neutral", label: "Keine offene Aufgabe", date: "" };
 }
 
+function getNextPlanningMonthBounds(today) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(today || "")) return null;
+  const [year, month] = today.split("-").map(Number);
+  const start = new Date(Date.UTC(year, month, 1));
+  const end = new Date(Date.UTC(year, month + 1, 0));
+  return {
+    start: start.toISOString().slice(0, 10),
+    end: end.toISOString().slice(0, 10),
+  };
+}
+
+export function isDueWithinNextPlanningMonth(date, today) {
+  const bounds = getNextPlanningMonthBounds(today);
+  return Boolean(bounds && /^\d{4}-\d{2}-\d{2}$/.test(date || "") && date <= bounds.end);
+}
+
 export function isMembershipIncludedInPlannedRevenue(membership, today) {
+  const bounds = getNextPlanningMonthBounds(today);
+  if (!bounds) return false;
   const status = membership?.status || "aktiv";
-  return ["aktiv", "vorbereitung"].includes(status)
-    || (status === "pausiert" && Boolean(membership.scheduledReactivationAt))
-    || (status === "gekündigt" && Boolean(membership.endDate) && membership.endDate > today);
+  const hasStartedByMonthEnd = !membership.startDate || membership.startDate <= bounds.end;
+  if (!hasStartedByMonthEnd) return false;
+  if (["aktiv", "vorbereitung"].includes(status)) return true;
+  if (status === "pausiert") {
+    return Boolean(membership.scheduledReactivationAt && membership.scheduledReactivationAt <= bounds.end);
+  }
+  return status === "gekündigt" && Boolean(membership.endDate) && membership.endDate > bounds.start;
+}
+
+export function getMembershipPlannedAmount(membership, today, planAmounts = {}) {
+  const bounds = getNextPlanningMonthBounds(today);
+  const currentAmount = Number(membership?.monthlyAmount) || 0;
+  if (!bounds || !membership?.scheduledPlan || !membership.scheduledStartDate || membership.scheduledStartDate > bounds.end) {
+    return currentAmount;
+  }
+  return membership.scheduledPlan === "Individuell"
+    ? Number(membership.scheduledMonthlyAmount || membership.monthlyAmount) || 0
+    : Number(planAmounts[membership.scheduledPlan]) || 0;
 }
 
 export function createMembershipTimeline(membership) {
