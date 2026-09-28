@@ -43,6 +43,8 @@ test('PDB Office production client uses protected same-origin endpoints', async 
   assert.match(revenue, /cashBusiness/);
   assert.match(revenueWorkspace, /pdb:commit-pending-edits/);
   assert.match(directDebits, /\/api\/office\/member-finance\/import-sepa/);
+  assert.match(directDebits, /\/api\/office\/send-return-debit-email/);
+  assert.match(directDebits, /X-PDB-Admin/);
   assert.doesNotMatch(crm, /Alle Daten werden lokal in deinem Browser gespeichert/);
   assert.doesNotMatch(premiumAdmin, /ADMIN_API_TOKEN|localStorage|sessionStorage/);
 });

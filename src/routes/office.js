@@ -5,10 +5,24 @@ import { sendTransactionalHtml } from '../services/mail.service.js';
 import { reserveNextMandateReference } from '../services/mandateReference.service.js';
 import { classifyStorageWrite, getStorageRevision } from '../../pdb-office/services/storageRevision.js';
 import { mergeMemberFinanceMonth, parseMemberFinanceSepaXml } from '../services/memberFinanceImport.service.js';
+import { DEFAULT_PDB_ACCOUNT_HOLDER, buildReturnDebitReminder } from '../../pdb-office/modules/direct-debits/returnDebitEmail.js';
 
 const router = express.Router();
 const jsonParser = express.json({ limit: '8mb' });
 const pdfParser = express.urlencoded({ extended: false, limit: '18mb' });
+const outboundReminderAttempts = new Map();
+
+function reminderMailAllowed(ip) {
+  const now = Date.now();
+  const key = String(ip || 'unknown');
+  const current = outboundReminderAttempts.get(key);
+  if (!current || current.resetAt <= now) {
+    outboundReminderAttempts.set(key, { count: 1, resetAt: now + 15 * 60_000 });
+    return true;
+  }
+  current.count += 1;
+  return current.count <= 10;
+}
 
 function noStore(res) {
   res.set('Cache-Control', 'private, no-store');
@@ -209,6 +223,76 @@ router.post('/send-cancellation-email', requireAdminAccess, jsonParser, async (r
     text
   });
   if (!delivery.sent) return res.status(503).json({ ok: false, error: delivery.reason });
+  noStore(res);
+  return res.json({ ok: true, sentAt: new Date().toISOString() });
+});
+
+router.post('/send-return-debit-email', requireAdminAccess, jsonParser, async (req, res) => {
+  if (!reminderMailAllowed(req.ip)) {
+    return res.status(429).json({ ok: false, error: 'Zu viele E-Mails in kurzer Zeit. Bitte später erneut versuchen.' });
+  }
+
+  const caseId = String(req.body?.caseId || '').trim();
+  const dueDate = String(req.body?.dueDate || '').trim();
+  if (!/^[A-Za-z0-9_-]{1,100}$/.test(caseId)) {
+    return res.status(400).json({ ok: false, error: 'Rücklastschriftfall fehlt oder ist ungültig.' });
+  }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dueDate)) {
+    return res.status(400).json({ ok: false, error: 'Zahlungsfrist fehlt oder ist ungültig.' });
+  }
+
+  const dueTimestamp = Date.parse(`${dueDate}T12:00:00Z`);
+  const todayTimestamp = Date.parse(`${new Date().toISOString().slice(0, 10)}T12:00:00Z`);
+  if (dueTimestamp < todayTimestamp || dueTimestamp > todayTimestamp + 90 * 86_400_000) {
+    return res.status(400).json({ ok: false, error: 'Die Zahlungsfrist muss zwischen heute und 90 Tagen liegen.' });
+  }
+
+  const document = await getDocument('crm');
+  const data = document?.payload || {};
+  const returnCase = (data.returnDebitCases || []).find(entry => entry.id === caseId);
+  if (!returnCase || ['bezahlt', 'storniert'].includes(returnCase.status)) {
+    return res.status(404).json({ ok: false, error: 'Der offene Rücklastschriftfall wurde nicht gefunden.' });
+  }
+
+  const membership = (data.memberships || []).find(entry => entry.id === returnCase.membershipId);
+  const member = (data.members || []).find(entry => entry.id === returnCase.memberId);
+  const item = (data.directDebitItems || []).find(entry => entry.id === returnCase.itemId);
+  const email = String(member?.email || membership?.memberEmail || '').trim();
+  if (!email || email.length > 254 || !/^\S+@\S+\.\S+$/.test(email)) {
+    return res.status(400).json({ ok: false, error: 'Für diesen Kunden fehlt eine gültige E-Mail-Adresse.' });
+  }
+
+  const run = (data.directDebitRuns || []).find(entry => entry.id === returnCase.runId);
+  const profile = (data.invoiceProfiles || []).find(entry => entry.id === 'pdb-aesthetic-room')
+    || (data.invoiceProfiles || [])[0]
+    || data.settings
+    || {};
+  if (!profile.iban) {
+    return res.status(400).json({ ok: false, error: 'In den Rechnungseinstellungen fehlt die PDB-IBAN.' });
+  }
+
+  const reminder = buildReturnDebitReminder({
+    memberName: returnCase.memberName || member?.name,
+    billingMonth: run?.month || returnCase.returnedAt?.slice(0, 7),
+    principalAmount: returnCase.amount,
+    bankFee: returnCase.fee,
+    returnedAt: returnCase.returnedAt,
+    dueDate,
+    companyName: profile.companyName || 'PDB Aesthetic Room',
+    accountHolder: profile.accountHolder || (profile.id === 'pdb-aesthetic-room' ? DEFAULT_PDB_ACCOUNT_HOLDER : profile.companyName),
+    iban: profile.iban,
+    bic: profile.bic,
+    mandateReference: membership?.mandateReference || returnCase.mandateReference || item?.mandateReference
+  });
+  const html = `<p>${escapeHtml(reminder.body).replace(/\n/g, '<br>')}</p>`;
+  const delivery = await sendTransactionalHtml({
+    to: email,
+    subject: reminder.subject,
+    html,
+    text: reminder.body
+  });
+  if (!delivery.sent) return res.status(503).json({ ok: false, error: delivery.reason });
+
   noStore(res);
   return res.json({ ok: true, sentAt: new Date().toISOString() });
 });

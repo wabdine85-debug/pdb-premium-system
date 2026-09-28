@@ -3,6 +3,7 @@ import http from "node:http";
 import path from "node:path";
 import nodemailer from "nodemailer";
 import pg from "pg";
+import { DEFAULT_PDB_ACCOUNT_HOLDER, buildReturnDebitReminder } from "../modules/direct-debits/returnDebitEmail.js";
 import { classifyStorageWrite, getStorageRevision } from "../services/storageRevision.js";
 import { createPremiumAdminProxy } from "./premium-admin-proxy.mjs";
 import {
@@ -33,6 +34,7 @@ const premiumProxy = createPremiumAdminProxy({
   adminToken: process.env.PREMIUM_ADMIN_API_TOKEN,
 });
 const loginAttempts = new Map();
+const outboundMailAttempts = new Map();
 
 function securityHeaders(res) {
   res.setHeader("X-Content-Type-Options", "nosniff");
@@ -87,6 +89,17 @@ function loginAllowed(ip) {
   const current = loginAttempts.get(ip);
   if (!current || current.resetAt <= now) {
     loginAttempts.set(ip, { count: 1, resetAt: now + 15 * 60_000 });
+    return true;
+  }
+  current.count += 1;
+  return current.count <= 10;
+}
+
+function outboundMailAllowed(ip) {
+  const now = Date.now();
+  const current = outboundMailAttempts.get(ip);
+  if (!current || current.resetAt <= now) {
+    outboundMailAttempts.set(ip, { count: 1, resetAt: now + 15 * 60_000 });
     return true;
   }
   current.count += 1;
@@ -232,6 +245,67 @@ async function handleCancellationEmail(req, res) {
   return sendJson(res, 200, { ok: true, sentAt: new Date().toISOString() });
 }
 
+async function handleReturnDebitEmail(req, res) {
+  if (req.method !== "POST") return sendJson(res, 405, { ok: false, error: "METHOD_NOT_ALLOWED" });
+  if (!isAuthenticated(req)) return sendJson(res, 401, { ok: false, error: "AUTH_REQUIRED" });
+  if (!isSameOrigin(req)) return sendJson(res, 403, { ok: false, error: "ORIGIN_NOT_ALLOWED" });
+  const ip = String(req.headers["x-forwarded-for"] || req.socket.remoteAddress || "unknown").split(",")[0].trim();
+  if (!outboundMailAllowed(ip)) return sendJson(res, 429, { ok: false, error: "Zu viele E-Mails in kurzer Zeit. Bitte später erneut versuchen." });
+  const payload = JSON.parse(await readBody(req, 2_000) || "{}");
+  const caseId = String(payload.caseId || "").trim();
+  const dueDate = String(payload.dueDate || "").trim();
+  if (!/^[A-Za-z0-9_-]{1,100}$/.test(caseId)) return sendJson(res, 400, { ok: false, error: "Rücklastschriftfall fehlt oder ist ungültig." });
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dueDate)) return sendJson(res, 400, { ok: false, error: "Zahlungsfrist fehlt oder ist ungültig." });
+  const dueTimestamp = Date.parse(`${dueDate}T12:00:00Z`);
+  const todayTimestamp = Date.parse(`${new Date().toISOString().slice(0, 10)}T12:00:00Z`);
+  if (dueTimestamp < todayTimestamp || dueTimestamp > todayTimestamp + 90 * 86_400_000) {
+    return sendJson(res, 400, { ok: false, error: "Die Zahlungsfrist muss zwischen heute und 90 Tagen liegen." });
+  }
+
+  const document = await getDocument("crm");
+  const data = document?.payload || {};
+  const returnCase = (data.returnDebitCases || []).find(entry => entry.id === caseId);
+  if (!returnCase || ["bezahlt", "storniert"].includes(returnCase.status)) return sendJson(res, 404, { ok: false, error: "Der offene Rücklastschriftfall wurde nicht gefunden." });
+  const membership = (data.memberships || []).find(entry => entry.id === returnCase.membershipId);
+  const member = (data.members || []).find(entry => entry.id === returnCase.memberId);
+  const item = (data.directDebitItems || []).find(entry => entry.id === returnCase.itemId);
+  const email = String(member?.email || membership?.memberEmail || "").trim();
+  if (!email || email.length > 254 || !/^\S+@\S+\.\S+$/.test(email)) return sendJson(res, 400, { ok: false, error: "Für diesen Kunden fehlt eine gültige E-Mail-Adresse." });
+  const run = (data.directDebitRuns || []).find(entry => entry.id === returnCase.runId);
+  const profile = (data.invoiceProfiles || []).find(entry => entry.id === "pdb-aesthetic-room") || (data.invoiceProfiles || [])[0] || data.settings || {};
+  if (!profile.iban) return sendJson(res, 400, { ok: false, error: "In den Rechnungseinstellungen fehlt die PDB-IBAN." });
+  const reminder = buildReturnDebitReminder({
+    memberName: returnCase.memberName || member?.name,
+    billingMonth: run?.month || returnCase.returnedAt?.slice(0, 7),
+    principalAmount: returnCase.amount,
+    bankFee: returnCase.fee,
+    returnedAt: returnCase.returnedAt,
+    dueDate,
+    companyName: profile.companyName || "PDB Aesthetic Room",
+    accountHolder: profile.accountHolder || (profile.id === "pdb-aesthetic-room" ? DEFAULT_PDB_ACCOUNT_HOLDER : profile.companyName),
+    iban: profile.iban,
+    bic: profile.bic,
+    mandateReference: membership?.mandateReference || returnCase.mandateReference || item?.mandateReference,
+  });
+  const required = ["SMTP_HOST", "SMTP_PORT", "SMTP_USER", "SMTP_PASS", "MAIL_FROM"].filter(key => !process.env[key]);
+  if (required.length) return sendJson(res, 503, { ok: false, error: "MAIL_NOT_CONFIGURED" });
+  const transporter = nodemailer.createTransport({
+    host: process.env.SMTP_HOST,
+    port: Number(process.env.SMTP_PORT || 587),
+    secure: String(process.env.SMTP_SECURE || "false") === "true",
+    auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+  });
+  await transporter.sendMail({
+    from: process.env.MAIL_FROM,
+    replyTo: process.env.MAIL_REPLY_TO || process.env.MAIL_FROM,
+    bcc: process.env.MAIL_BCC || "",
+    to: email,
+    subject: reminder.subject,
+    text: reminder.body,
+  });
+  return sendJson(res, 200, { ok: true, sentAt: new Date().toISOString() });
+}
+
 const mimeTypes = {
   ".css": "text/css; charset=utf-8",
   ".html": "text/html; charset=utf-8",
@@ -284,6 +358,7 @@ const server = http.createServer(async (req, res) => {
     if (url.pathname === "/member-finance-data.json" && req.method === "GET") return await handleMemberFinance(res);
     if (url.pathname === "/api/invoice-pdf") return await handleInvoicePdf(req, res);
     if (url.pathname === "/api/send-cancellation-email") return await handleCancellationEmail(req, res);
+    if (url.pathname === "/api/send-return-debit-email") return await handleReturnDebitEmail(req, res);
     if (url.pathname.startsWith("/api/premium-admin")) {
       req.url = `${url.pathname.slice("/api/premium-admin".length) || "/"}${url.search}`;
       return await premiumProxy(req, res);
