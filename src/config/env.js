@@ -27,7 +27,8 @@ export const env = {
   smtpUser: process.env.SMTP_USER || '',
   smtpPass: process.env.SMTP_PASS || '',
   smtpFrom: process.env.SMTP_FROM || '',
-  contractAdminEmail: process.env.CONTRACT_ADMIN_EMAIL || ''
+  contractAdminEmail: process.env.CONTRACT_ADMIN_EMAIL || '',
+  contractActionTokenRequired: String(process.env.CONTRACT_ACTION_TOKEN_REQUIRED || 'false').toLowerCase() === 'true'
 };
 
 export function assertRuntimeEnv() {

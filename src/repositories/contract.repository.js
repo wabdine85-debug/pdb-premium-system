@@ -249,7 +249,7 @@ export async function findContractActionByReceiptTokenHash(tokenHash, db = pool)
   const result = await db.query(
     `SELECT id, display_number, action_type, first_name, last_name, email, mandate_reference,
             communication_email, cancellation_type, cancellation_reason,
-            requested_end_on, status, created_at
+            requested_end_on, request_metadata, status, created_at
      FROM contract_action_requests
      WHERE receipt_token_hash = $1
      LIMIT 1`,
@@ -267,7 +267,7 @@ export async function listContractActionRequests({ status, limit = 50 }, db = po
   const result = await db.query(
     `SELECT id, display_number, action_type, first_name, last_name, email, mandate_reference,
             communication_email, cancellation_type, cancellation_reason,
-            requested_end_on, matched_application_id, status, created_at, updated_at
+            requested_end_on, matched_application_id, request_metadata, status, created_at, updated_at
      FROM contract_action_requests
      ${where}
      ORDER BY created_at DESC

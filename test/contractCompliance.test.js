@@ -158,6 +158,21 @@ test('cancellation receipt formats a database date for customers', () => {
   assert.doesNotMatch(html, /Coordinated Universal Time/);
 });
 
+test('receipt shows an optional contract description safely', () => {
+  const html = contractActionReceiptHtml({
+    id: 'request-123',
+    action_type: 'withdrawal',
+    first_name: 'Test',
+    last_name: 'Person',
+    mandate_reference: '',
+    communication_email: 'test@example.com',
+    request_metadata: { contract_description: 'PDB PREMIUM <Beyond>' },
+    created_at: '2026-09-13T05:14:40.000Z'
+  });
+  assert.match(html, /PDB PREMIUM &lt;Beyond&gt;/);
+  assert.doesNotMatch(html, /<Beyond>/);
+});
+
 test('new contract actions use a short reference while older receipts keep their UUID', () => {
   const action = {
     id: 'e0f422bd-68e3-4c6a-9f95-7c139558979e',

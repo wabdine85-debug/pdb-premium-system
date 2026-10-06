@@ -9,6 +9,7 @@ import {
   requireAdminAccess
 } from '../middleware/adminAuth.js';
 import { rateLimit } from '../middleware/rateLimit.js';
+import { contractActionRateLimit } from '../middleware/contractActionRateLimit.js';
 import {
   requireShopifyCustomer,
   verifyShopifyAppProxy
@@ -42,6 +43,8 @@ import {
 import { sendTransactionalHtml } from '../services/mail.service.js';
 import { reserveNextMandateReference } from '../services/mandateReference.service.js';
 import { syncAcceptedContractToCrm } from '../services/crmContractSync.service.js';
+import { findContractActionMatch } from '../services/contractActionMatching.service.js';
+import { consumeContractActionToken, issueContractActionToken } from '../services/contractActionToken.service.js';
 import { calculateBookingAccess } from '../services/bookingAccess.service.js';
 import { getPackageOffer, SETUP_FEE_CENTS } from '../utils/packageCatalog.js';
 import {
@@ -362,14 +365,23 @@ router.get('/confirmation-latest', verifyShopifyAppProxy, requireShopifyCustomer
   return res.type('html').send(applicationConfirmationHtml(application));
 });
 
-router.post('/action', verifyShopifyAppProxy, contractActionLimiter, async (req, res) => {
+router.get('/action-token', verifyShopifyAppProxy, (_req, res) => {
+  res.set('Cache-Control', 'no-store');
+  return res.json({ ok: true, action_token: issueContractActionToken() });
+});
+
+router.post('/action', verifyShopifyAppProxy, contractActionRateLimit, async (req, res) => {
   try {
+    if (cleanText(req.body?.contact_website, 200)) {
+      return res.status(400).json({ ok: false, error: 'INVALID_ACTION_DATA' });
+    }
     const actionType = req.body?.action_type === 'withdrawal' ? 'withdrawal' : req.body?.action_type === 'cancellation' ? 'cancellation' : '';
     const firstName = cleanText(req.body?.first_name, 80);
     const lastName = cleanText(req.body?.last_name, 80);
     const email = cleanText(req.body?.email, 160).toLowerCase();
     const communicationEmail = cleanText(req.body?.communication_email || email, 160).toLowerCase();
     const mandateReference = cleanText(req.body?.mandate_reference, 80).toUpperCase();
+    const contractDescription = cleanText(req.body?.contract_description, 160);
     const cancellationType = actionType === 'cancellation'
       ? (req.body?.cancellation_type === 'extraordinary' ? 'extraordinary' : 'ordinary')
       : null;
@@ -387,8 +399,16 @@ router.post('/action', verifyShopifyAppProxy, contractActionLimiter, async (req,
     if (requestedEndOn && !isValidIsoDate(requestedEndOn)) {
       return res.status(400).json({ ok: false, error: 'INVALID_END_DATE' });
     }
+    if (env.contractActionTokenRequired && !mandateReference && !contractDescription) {
+      return res.status(400).json({ ok: false, error: 'CONTRACT_DESCRIPTION_REQUIRED' });
+    }
+    if (env.contractActionTokenRequired || req.body?.action_token) {
+      const validToken = await consumeContractActionToken(req.body?.action_token);
+      if (!validToken) return res.status(400).json({ ok: false, error: 'INVALID_ACTION_TOKEN' });
+    }
 
-    const application = mandateReference
+    const match = await findContractActionMatch({ mandateReference, email, firstName, lastName });
+    const application = match.matchedApplicationId
       ? await findApplicationForPublicAction({ mandateReference, email, firstName, lastName })
       : null;
     const receiptToken = crypto.randomBytes(32).toString('base64url');
@@ -405,7 +425,12 @@ router.post('/action', verifyShopifyAppProxy, contractActionLimiter, async (req,
       requestedEndOn,
       matchedApplicationId: application?.id || null,
       receiptTokenHash: hashPublicToken(receiptToken),
-      metadata: { shop: req.shopifyProxy.shop || null }
+      metadata: {
+        shop: req.shopifyProxy.shop || null,
+        contract_description: contractDescription,
+        match_state: match.state,
+        match_sources: match.sources
+      }
     });
     if (application) {
       await addContractEvent(application.id, `${actionType}_received`, 'customer', {

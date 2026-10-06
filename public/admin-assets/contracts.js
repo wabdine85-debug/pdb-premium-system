@@ -289,6 +289,14 @@
       addDetail(grid, 'E-Mail', action.email);
       addDetail(grid, 'Bestätigungsadresse', action.communication_email);
       addDetail(grid, 'Mandatsreferenz', action.mandate_reference || 'Nicht angegeben');
+      if (action.request_metadata?.contract_description) {
+        addDetail(grid, 'Bezeichneter Vertrag', action.request_metadata.contract_description);
+      }
+      const sourceNames = { online: 'Online-Vertrag', member: 'Member-Datenbank', office: 'PDB Office' };
+      const matchSources = action.request_metadata?.match_sources || [];
+      if (matchSources.length) {
+        addDetail(grid, 'Mögliche Datenquelle', matchSources.map((source) => sourceNames[source] || source).join(', '));
+      }
       if (action.action_type === 'cancellation') {
         addDetail(grid, 'Art', action.cancellation_type === 'extraordinary' ? 'Außerordentlich' : 'Ordentlich');
         addDetail(grid, 'Gewünschtes Ende', action.requested_end_on ? date.format(new Date(action.requested_end_on)) : 'Nächstmöglich');
@@ -297,9 +305,12 @@
 
       const guidance = document.createElement('div');
       guidance.className = 'access-guidance is-waiting';
-      guidance.textContent = action.matched_application_id
-        ? 'Online-Vertrag zugeordnet. Vertragsende und SEPA-Einzug manuell prüfen.'
-        : 'Keinem Online-Vertrag automatisch zugeordnet. Kunden- und Vertragsdaten manuell abgleichen.';
+      const matchState = action.request_metadata?.match_state;
+      guidance.textContent = matchState === 'reference_match'
+        ? 'Vertragsreferenz passt zu vorhandenen Daten. Vertragsende und SEPA-Einzug manuell prüfen.'
+        : matchState === 'possible_match'
+          ? 'Möglicher Treffer in Mitgliedsdaten. Vertrag und Identität manuell abgleichen.'
+          : 'Vertrag nicht eindeutig zugeordnet. Kunden- und Vertragsdaten manuell abgleichen.';
       card.append(heading, grid, guidance);
       contractActionList.appendChild(card);
     });

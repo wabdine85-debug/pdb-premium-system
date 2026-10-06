@@ -104,6 +104,21 @@ The protected contract administration page lists all declarations with status
 `received` for manual review, including unmatched declarations. When
 `CONTRACT_ADMIN_EMAIL` and SMTP are configured, new withdrawals and
 cancellations also trigger a generic internal email without customer data.
+For new declarations, the server compares name and contract email with online
+applications, local members, and PDB Office memberships. A matching mandate
+reference is shown as a reference match; name and email alone are only a
+possible match. The result is visible only in the protected administration
+page and never decides whether a declaration is legally effective. The public
+endpoint also accepts an optional `contract_description` for customers without
+a mandate reference. Existing storefront forms without that field continue to
+work; the field should be added there before it can be required server-side.
+The public action endpoint uses database-backed limits of ten submissions per
+15 minutes and thirty per 24 hours per storefront visitor IP. Only a keyed
+hash of the IP is stored, and expired counters are cleaned up automatically.
+The optional one-use form token and hidden bot trap are described in
+`docs/contract-action-bot-protection.md`. Keep
+`CONTRACT_ACTION_TOKEN_REQUIRED=false` until the Shopify forms send the token;
+then enable it after testing both public forms.
 The admin must review the declaration, contact the customer as needed, and
 handle the contract and SEPA mandate manually; receipt alone does not change
 their status. Email delivery failures are logged, so the admin queue remains

@@ -44,6 +44,26 @@ export async function ensureContractActionSchema(db = pool) {
   `);
 }
 
+export async function ensureContractActionRateLimitSchema(db = pool) {
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS contract_action_rate_limits (
+      source_hash TEXT NOT NULL,
+      window_name TEXT NOT NULL,
+      attempts INTEGER NOT NULL,
+      reset_at TIMESTAMPTZ NOT NULL,
+      PRIMARY KEY (source_hash, window_name)
+    )
+  `);
+  await db.query(`DELETE FROM contract_action_rate_limits WHERE reset_at < NOW() - INTERVAL '2 days'`);
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS contract_action_used_tokens (
+      token_hash TEXT PRIMARY KEY,
+      expires_at TIMESTAMPTZ NOT NULL
+    )
+  `);
+  await db.query(`DELETE FROM contract_action_used_tokens WHERE expires_at < NOW() - INTERVAL '2 days'`);
+}
+
 export async function ensureMemberMonthlyUsageImportSchema(db = pool) {
   await db.query(`
     CREATE TABLE IF NOT EXISTS member_monthly_usage_imports (
