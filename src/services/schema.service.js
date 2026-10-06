@@ -29,6 +29,19 @@ export async function ensureContractActionSchema(db = pool) {
     CREATE INDEX IF NOT EXISTS contract_action_requests_status_idx
       ON contract_action_requests (status, created_at ASC)
   `);
+  await db.query(`CREATE SEQUENCE IF NOT EXISTS contract_action_display_number_seq`);
+  await db.query(`
+    ALTER TABLE contract_action_requests
+      ADD COLUMN IF NOT EXISTS display_number BIGINT
+  `);
+  await db.query(`
+    ALTER TABLE contract_action_requests
+      ALTER COLUMN display_number SET DEFAULT nextval('contract_action_display_number_seq')
+  `);
+  await db.query(`
+    CREATE UNIQUE INDEX IF NOT EXISTS contract_action_requests_display_number_idx
+      ON contract_action_requests (display_number)
+  `);
 }
 
 export async function ensureMemberMonthlyUsageImportSchema(db = pool) {

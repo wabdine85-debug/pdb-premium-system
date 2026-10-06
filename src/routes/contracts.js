@@ -34,7 +34,9 @@ import { setPremiumCustomerTag } from '../services/shopifyAdmin.service.js';
 import {
   adminAcceptanceSummaryHtml,
   adminApplicationNotificationHtml,
+  adminContractActionNotificationHtml,
   applicationConfirmationHtml,
+  contractActionReference,
   contractActionReceiptHtml
 } from '../services/contractDocuments.service.js';
 import { sendTransactionalHtml } from '../services/mail.service.js';
@@ -110,6 +112,23 @@ async function sendInternalAcceptanceSummary(application, customerConfirmationSe
     subject: `Vertrag angenommen · ${application.first_name} ${application.last_name} · ${application.mandate_reference}`,
     html: adminAcceptanceSummaryHtml(application, { customerConfirmationSent })
   });
+}
+
+async function notifyAdminOfContractAction(actionType) {
+  if (!env.contractAdminEmail) {
+    console.error('Contract action admin notification unavailable: ADMIN_EMAIL_NOT_CONFIGURED');
+    return;
+  }
+  try {
+    const delivery = await sendTransactionalHtml({
+      to: env.contractAdminEmail,
+      subject: actionType === 'withdrawal' ? 'Widerruf eingegangen' : 'Kündigung eingegangen',
+      html: adminContractActionNotificationHtml(actionType)
+    });
+    if (!delivery.sent) console.error('Contract action admin notification not sent:', delivery.reason);
+  } catch (error) {
+    console.error('Contract action admin notification failed:', error.message);
+  }
 }
 
 router.post(
@@ -408,11 +427,14 @@ router.post('/action', verifyShopifyAppProxy, contractActionLimiter, async (req,
       console.error('Contract action confirmation email failed:', mailError.message);
     }
 
+    await notifyAdminOfContractAction(actionType);
+
     res.set('Cache-Control', 'no-store');
     return res.status(201).json({
       ok: true,
       request: {
         id: action.id,
+        reference: contractActionReference(action),
         action_type: action.action_type,
         received_at: action.created_at,
         status: action.status
@@ -429,9 +451,11 @@ router.post('/action', verifyShopifyAppProxy, contractActionLimiter, async (req,
 router.get('/action-confirmation', verifyShopifyAppProxy, async (req, res) => {
   const action = await findContractActionByReceiptTokenHash(hashPublicToken(String(req.query.token || '')));
   if (!action) return res.status(404).send('Eingangsbestätigung nicht gefunden.');
-  const filename = action.action_type === 'withdrawal' ? 'PDB-Widerruf' : 'PDB-Kuendigung';
+  const filename = action.display_number
+    ? contractActionReference(action)
+    : `${action.action_type === 'withdrawal' ? 'PDB-Widerruf' : 'PDB-Kuendigung'}-${action.id}`;
   res.set('Cache-Control', 'private, no-store');
-  res.set('Content-Disposition', `attachment; filename="${filename}-${action.id}.html"`);
+  res.set('Content-Disposition', `attachment; filename="${filename}.html"`);
   return res.type('html').send(contractActionReceiptHtml(action));
 });
 
@@ -456,6 +480,7 @@ router.post('/cancel', verifyShopifyAppProxy, requireShopifyCustomer, async (req
   } catch (mailError) {
     console.error('Member cancellation confirmation email failed:', mailError.message);
   }
+  await notifyAdminOfContractAction('cancellation');
   res.set('Cache-Control', 'no-store');
   return res.json({
     ok: true,
@@ -501,7 +526,10 @@ router.get('/admin', requireAdminAccess, async (req, res) => {
 
 router.get('/admin-actions', requireAdminAccess, async (req, res) => {
   const actions = await listContractActionRequests({ status: req.query.status, limit: req.query.limit });
-  return res.json({ ok: true, actions });
+  return res.json({ ok: true, actions: actions.map((action) => ({
+    ...action,
+    reference: contractActionReference(action)
+  })) });
 });
 
 router.get('/admin/:id/sepa', requireAdminAccess, async (req, res) => {

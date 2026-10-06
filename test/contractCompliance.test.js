@@ -3,7 +3,9 @@ import test from 'node:test';
 import {
   adminAcceptanceSummaryHtml,
   adminApplicationNotificationHtml,
+  adminContractActionNotificationHtml,
   applicationConfirmationHtml,
+  contractActionReference,
   contractActionReceiptHtml,
   escapeHtml
 } from '../src/services/contractDocuments.service.js';
@@ -138,6 +140,43 @@ test('withdrawal receipt contains durable receipt identifiers and escapes input'
   assert.doesNotMatch(html, /<Test>/);
 });
 
+test('cancellation receipt formats a database date for customers', () => {
+  const html = contractActionReceiptHtml({
+    id: 'request-123',
+    display_number: '44',
+    action_type: 'cancellation',
+    first_name: 'Test',
+    last_name: 'Person',
+    mandate_reference: '',
+    communication_email: 'test@example.com',
+    cancellation_type: 'ordinary',
+    requested_end_on: new Date('2026-09-18T00:00:00.000Z'),
+    created_at: '2026-09-13T05:14:40.000Z'
+  });
+  assert.match(html, /PDB-K-2026-000044/);
+  assert.match(html, /18\.09\.2026/);
+  assert.doesNotMatch(html, /Coordinated Universal Time/);
+});
+
+test('new contract actions use a short reference while older receipts keep their UUID', () => {
+  const action = {
+    id: 'e0f422bd-68e3-4c6a-9f95-7c139558979e',
+    display_number: '44',
+    action_type: 'cancellation',
+    created_at: '2026-09-13T05:14:40.000Z'
+  };
+  assert.equal(contractActionReference(action), 'PDB-K-2026-000044');
+  assert.equal(contractActionReference({ ...action, action_type: 'withdrawal' }), 'PDB-W-2026-000044');
+  assert.equal(contractActionReference({ ...action, display_number: null }), action.id);
+});
+
+test('admin contract action notification contains no customer data', () => {
+  const html = adminContractActionNotificationHtml('cancellation');
+  assert.match(html, /Kündigung eingegangen/);
+  assert.match(html, /Geschützte Vertragsverwaltung öffnen/);
+  assert.doesNotMatch(html, /Vorgangsnummer|Mandatsreferenz|Bestätigungsadresse/);
+});
+
 test('contract document escaping covers all HTML control characters', () => {
   assert.equal(escapeHtml(`<>&"'`), '&lt;&gt;&amp;&quot;&#039;');
 });
@@ -145,10 +184,14 @@ test('contract document escaping covers all HTML control characters', () => {
 test('contract action schema bootstrap is additive and idempotent SQL', async () => {
   const queries = [];
   await ensureContractActionSchema({ query: async (sql) => queries.push(sql) });
-  assert.equal(queries.length, 3);
+  assert.equal(queries.length, 7);
   assert.match(queries[0], /CREATE TABLE IF NOT EXISTS contract_action_requests/);
   assert.match(queries[1], /CREATE INDEX IF NOT EXISTS/);
   assert.match(queries[2], /CREATE INDEX IF NOT EXISTS/);
+  assert.match(queries[3], /CREATE SEQUENCE IF NOT EXISTS contract_action_display_number_seq/);
+  assert.match(queries[4], /ADD COLUMN IF NOT EXISTS display_number BIGINT/);
+  assert.match(queries[5], /SET DEFAULT nextval/);
+  assert.match(queries[6], /CREATE UNIQUE INDEX IF NOT EXISTS contract_action_requests_display_number_idx/);
 });
 
 test('member usage import schema is additive and auditable', async () => {

@@ -86,7 +86,25 @@ export function contractActionReceiptHtml(action) {
   const actionLabel = isWithdrawal ? 'Widerrufserklärung' : 'Kündigungserklärung';
   const details = isWithdrawal
     ? ''
-    : `<tr><td>Art der Kündigung</td><td>${action.cancellation_type === 'extraordinary' ? 'Außerordentlich' : 'Ordentlich'}</td></tr><tr><td>Gewünschtes Vertragsende</td><td>${escapeHtml(action.requested_end_on || 'zum nächstmöglichen Zeitpunkt')}</td></tr>${action.cancellation_reason ? `<tr><td>Begründung</td><td>${escapeHtml(action.cancellation_reason)}</td></tr>` : ''}`;
+    : `<tr><td>Art der Kündigung</td><td>${action.cancellation_type === 'extraordinary' ? 'Außerordentlich' : 'Ordentlich'}</td></tr><tr><td>Gewünschtes Vertragsende</td><td>${escapeHtml(action.requested_end_on ? formatDate(action.requested_end_on) : 'zum nächstmöglichen Zeitpunkt')}</td></tr>${action.cancellation_reason ? `<tr><td>Begründung</td><td>${escapeHtml(action.cancellation_reason)}</td></tr>` : ''}`;
 
-  return documentShell(title, `<h1>${title}</h1><p>Ihre ${actionLabel} ist bei PDB – AESTHETIC ROOM eingegangen und wird unverzüglich geprüft.</p><table><tr><td>Vorgangsnummer</td><td>${escapeHtml(action.id)}</td></tr><tr><td>Eingang</td><td>${escapeHtml(formatDateTime(action.created_at))}</td></tr><tr><td>Name</td><td>${escapeHtml(action.first_name)} ${escapeHtml(action.last_name)}</td></tr><tr><td>Vertrag / Mandatsreferenz</td><td>${escapeHtml(action.mandate_reference || 'nicht angegeben')}</td></tr><tr><td>Bestätigungsadresse</td><td>${escapeHtml(action.communication_email)}</td></tr>${details}</table><div class="note">Diese Bestätigung dokumentiert den Eingang Ihrer Erklärung. Sie enthält noch keine Aussage über das Ergebnis einer rechtlichen oder sachlichen Prüfung.</div>`);
+  return documentShell(title, `<h1>${title}</h1><p>Ihre ${actionLabel} ist bei PDB – AESTHETIC ROOM eingegangen und wird unverzüglich geprüft.</p><table><tr><td>Vorgangsnummer</td><td>${escapeHtml(contractActionReference(action))}</td></tr><tr><td>Eingang</td><td>${escapeHtml(formatDateTime(action.created_at))}</td></tr><tr><td>Name</td><td>${escapeHtml(action.first_name)} ${escapeHtml(action.last_name)}</td></tr><tr><td>Vertrag / Mandatsreferenz</td><td>${escapeHtml(action.mandate_reference || 'nicht angegeben')}</td></tr><tr><td>Bestätigungsadresse</td><td>${escapeHtml(action.communication_email)}</td></tr>${details}</table><div class="note">Diese Bestätigung dokumentiert den Eingang Ihrer Erklärung. Sie enthält noch keine Aussage über das Ergebnis einer rechtlichen oder sachlichen Prüfung.</div>`);
+}
+
+export function contractActionReference(action) {
+  if (!action.display_number) return String(action.id);
+  const year = new Intl.DateTimeFormat('en', {
+    year: 'numeric',
+    timeZone: 'Europe/Berlin'
+  }).format(new Date(action.created_at));
+  const type = action.action_type === 'withdrawal' ? 'W' : 'K';
+  return `PDB-${type}-${year}-${String(action.display_number).padStart(6, '0')}`;
+}
+
+export function adminContractActionNotificationHtml(actionType) {
+  const actionLabel = actionType === 'withdrawal' ? 'Widerruf' : 'Kündigung';
+  return documentShell(
+    `Neuer ${actionLabel} eingegangen`,
+    `<h1>Neuer ${actionLabel} eingegangen</h1><p>Eine Erklärung wurde gespeichert und muss geprüft werden.</p><div class="note"><a href="https://pdb-premium-system.onrender.com/admin/contracts">Geschützte Vertragsverwaltung öffnen</a>. Dort finden Sie die Einzelheiten. Der Eingang ändert den Vertrags- oder SEPA-Status nicht automatisch.</div>`
+  );
 }

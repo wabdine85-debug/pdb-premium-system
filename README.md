@@ -66,7 +66,7 @@ The following environment variables are required in production:
 - `ADMIN_SESSION_HOURS` (optional, 1–24 hours; defaults to 8)
 - `CONTRACT_VERSION`
 - `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`
-- `CONTRACT_ADMIN_EMAIL` (receives new-application notices without full IBAN data)
+- `CONTRACT_ADMIN_EMAIL` (receives new-application notices and generic contract-action alerts without customer or bank data in the latter)
 
 The Shopify app proxy must forward `/apps/pdb/*` to this service under
 `/api/*`. Contract and booking endpoints reject unsigned proxy requests.
@@ -96,7 +96,18 @@ The storefront exposes permanently reachable links for `Vertrag widerrufen`
 and `Verträge hier kündigen`. Every declaration is stored independently in
 `contract_action_requests`, including declarations that cannot be matched
 automatically. The customer receives an immediate downloadable HTML receipt;
-when SMTP is configured, the same receipt is also sent as an attachment.
+when SMTP is configured, the same receipt is also sent in the email body.
+New declarations receive a short, unique reference such as
+`PDB-K-2026-000044` (`K` for cancellation, `W` for withdrawal). The UUID remains
+the internal identifier and older receipts keep their existing UUID reference.
+The protected contract administration page lists all declarations with status
+`received` for manual review, including unmatched declarations. When
+`CONTRACT_ADMIN_EMAIL` and SMTP are configured, new withdrawals and
+cancellations also trigger a generic internal email without customer data.
+The admin must review the declaration, contact the customer as needed, and
+handle the contract and SEPA mandate manually; receipt alone does not change
+their status. Email delivery failures are logged, so the admin queue remains
+the source of truth.
 
 Submitting the membership form is a binding order and grants the SEPA mandate.
 The contract is formed only when an administrator activates the application.

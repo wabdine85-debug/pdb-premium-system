@@ -13,6 +13,8 @@
   const officeLink = document.getElementById('office-link');
   const statusFilter = document.getElementById('status-filter');
   const applicationList = document.getElementById('application-list');
+  const contractActionStatus = document.getElementById('contract-action-status');
+  const contractActionList = document.getElementById('contract-action-list');
   const sepaDialog = document.getElementById('sepa-dialog');
   const sepaDetails = document.getElementById('sepa-details');
   const activateDialog = document.getElementById('activate-dialog');
@@ -96,6 +98,7 @@
 
   function showLogin() {
     applicationList.replaceChildren();
+    contractActionList.replaceChildren();
     adminPanel.hidden = true;
     logoutButton.hidden = true;
     officeLink.hidden = true;
@@ -113,7 +116,7 @@
         return;
       }
       showAdmin();
-      await loadApplications();
+      await Promise.all([loadApplications(), loadContractActions()]);
     } catch {
       showLogin();
     }
@@ -256,6 +259,64 @@
     });
   }
 
+  function renderContractActions(actions) {
+    contractActionList.replaceChildren();
+    if (!actions.length) {
+      const empty = document.createElement('div');
+      empty.className = 'empty-state';
+      empty.textContent = 'Keine ungeprüften Kündigungen oder Widerrufe gefunden.';
+      contractActionList.appendChild(empty);
+      return;
+    }
+
+    actions.forEach((action) => {
+      const card = document.createElement('article');
+      card.className = 'application-card';
+      const heading = document.createElement('div');
+      heading.className = 'application-heading';
+      const title = document.createElement('h3');
+      title.textContent = action.action_type === 'withdrawal' ? 'Widerruf' : 'Kündigung';
+      const badge = document.createElement('span');
+      badge.className = 'badge';
+      badge.textContent = 'Eingegangen · Prüfung offen';
+      heading.append(title, badge);
+
+      const grid = document.createElement('div');
+      grid.className = 'data-grid';
+      addDetail(grid, 'Vorgangsnummer', action.reference || action.id);
+      addDetail(grid, 'Eingang', `${dateTime.format(new Date(action.created_at))} Uhr`);
+      addDetail(grid, 'Name', `${action.first_name} ${action.last_name}`);
+      addDetail(grid, 'E-Mail', action.email);
+      addDetail(grid, 'Bestätigungsadresse', action.communication_email);
+      addDetail(grid, 'Mandatsreferenz', action.mandate_reference || 'Nicht angegeben');
+      if (action.action_type === 'cancellation') {
+        addDetail(grid, 'Art', action.cancellation_type === 'extraordinary' ? 'Außerordentlich' : 'Ordentlich');
+        addDetail(grid, 'Gewünschtes Ende', action.requested_end_on ? date.format(new Date(action.requested_end_on)) : 'Nächstmöglich');
+        if (action.cancellation_reason) addDetail(grid, 'Begründung', action.cancellation_reason);
+      }
+
+      const guidance = document.createElement('div');
+      guidance.className = 'access-guidance is-waiting';
+      guidance.textContent = action.matched_application_id
+        ? 'Online-Vertrag zugeordnet. Vertragsende und SEPA-Einzug manuell prüfen.'
+        : 'Keinem Online-Vertrag automatisch zugeordnet. Kunden- und Vertragsdaten manuell abgleichen.';
+      card.append(heading, grid, guidance);
+      contractActionList.appendChild(card);
+    });
+  }
+
+  async function loadContractActions() {
+    setStatus(contractActionStatus, 'Kündigungen und Widerrufe werden geladen…');
+    try {
+      const result = await adminRequest('/admin-actions?status=received&limit=100');
+      const actions = result.actions || [];
+      renderContractActions(actions);
+      setStatus(contractActionStatus, `${actions.length} ungeprüfte Erklärung(en) geladen.`);
+    } catch (error) {
+      setStatus(contractActionStatus, error.message, true);
+    }
+  }
+
   async function loadApplications() {
     setStatus(adminStatus, 'Verträge werden geladen…');
     const query = statusFilter.value ? `?status=${encodeURIComponent(statusFilter.value)}` : '';
@@ -306,7 +367,7 @@
       await adminRequest('/admin?status=sepa_pending&limit=1');
       tokenInput.value = '';
       showAdmin();
-      await loadApplications();
+      await Promise.all([loadApplications(), loadContractActions()]);
     } catch (error) {
       recoveryToken = '';
       setStatus(loginStatus, error.message, true);
