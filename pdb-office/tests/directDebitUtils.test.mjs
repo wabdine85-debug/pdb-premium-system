@@ -287,7 +287,8 @@ test("return debit reminder contains an auditable amount breakdown and payment d
   assert.match(reminder.body, /15\.09\.2026/);
   assert.match(reminder.body, /DE82 5105 0015 0107 1611 92/);
   assert.match(reminder.body, /Empfänger: PDB Aesthetik Room, Noureen Hussain/);
-  assert.match(reminder.body, /Verwendungszweck: Mandatsreferenz PDB-M-2026-0001 - September 2026/);
+  assert.match(reminder.body, /Verwendungszweck: PDB-M-2026-0001 - September 2026/);
+  assert.doesNotMatch(reminder.body, /Verwendungszweck: Mandatsreferenz/);
   assert.match(reminder.body, /kannst du diese E-Mail ignorieren/);
 });
 

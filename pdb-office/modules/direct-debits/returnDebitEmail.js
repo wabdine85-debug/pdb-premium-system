@@ -58,7 +58,7 @@ export function buildReturnDebitReminder({
     ? rawMandateReference
     : "";
   const paymentReference = cleanMandateReference
-    ? `Mandatsreferenz ${cleanMandateReference} - ${period}`
+    ? `${cleanMandateReference} - ${period}`
     : `Membership ${period} - ${cleanName || "Kundin/Kunde"}`;
   const amountDetails = fee > 0
     ? `Darin enthalten: ${formatCurrency(principal)} Membership-Beitrag und ${formatCurrency(fee)} von der Bank berechnete Rücklastschriftkosten.`
