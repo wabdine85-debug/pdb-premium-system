@@ -4,6 +4,7 @@ import revenueSeed from "../data/revenue-seed-default.json";
 import { normalizeRevenueEntry } from "../modules/revenue/revenueUtils.js";
 import { getStorageRevision } from "./storageRevision.js";
 import { rebaseDataChange } from "./storageMerge.js";
+import { recordMembershipActivity } from "../modules/memberships/membershipActivity.js";
 
 const STORAGE_KEY = "crm_data_v1";
 const MANUAL_BACKUP_KEY = "crm_manual_backup_v1";
@@ -253,7 +254,10 @@ export function useStorage() {
   const save = useCallback((updater) => {
     const previous = dataRef.current;
     const updated = typeof updater === "function" ? updater(previous) : updater;
-    const next = stampData(previous, updated);
+    const next = stampData(previous, {
+      ...updated,
+      memberships: recordMembershipActivity(previous.memberships, updated.memberships),
+    });
     dataRef.current = next;
     const locallySaved = persistLocal(next);
     setData(next);

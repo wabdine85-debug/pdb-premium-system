@@ -11,6 +11,7 @@ import { getNextMandateReference } from "./modules/memberships/mandateReferences
 import { createReactivationSepaTask, extendDateByDays, getLatestPause, getPauseDays, resumeMembership, scheduleMembershipResume, startMembershipPause } from "./modules/memberships/membershipPauses.js";
 import { createMembershipTimeline, getMembershipNextAction, getMembershipPlannedAmount, isDueWithinNextPlanningMonth, isMembershipIncludedInPlannedRevenue } from "./modules/memberships/membershipPresentation.js";
 import { isMembershipActiveOnDate } from "./modules/memberships/membershipLifecycle.js";
+import { getRecentMembershipActivity } from "./modules/memberships/membershipActivity.js";
 import { findSafeIdentityMatch } from "./modules/memberships/identityMatching.js";
 import { useStorage, migrateData } from "./services/crmStorage.js";
 import { DEFAULT_INVOICE_PROFILE_ID, INVOICE_PAYMENT_TERMS, PDB_INVOICE_CATEGORIES, buildInvoiceNumber, buildOfferNumber, calculateInvoiceDueDate, calculateInvoiceTotals, defaultInvoiceProfiles, getInvoiceCategoryLabel, getInvoiceDueLabel, getInvoicePositionDateLabel, getInvoiceProfile, isMedicalInvoiceProfile } from "./modules/invoices/invoiceProfiles.js";
@@ -3032,10 +3033,13 @@ function Memberships({ data, save }) {
     ...completedSetupAlerts,
     ...completedAppliedPlanAlerts,
   ].sort(sortByRecentActivity);
+  const recentChangeAlerts = getRecentMembershipActivity(memberships, today())
+    .map(activity => ({ type: "recent-change", date: activity.date, sortDate: activity.changedAt || activity.date, membership: activity.membership, activity }));
   const membershipAlertGroups = [
     { key: "tasks", label: "Offene Aufgaben", alerts: openTaskAlerts.slice(0, 15) },
     { key: "planned", label: "Geplant / startet bald", alerts: plannedAlerts.slice(0, 15) },
     { key: "completed", label: "Kürzlich erledigt", alerts: recentlyCompletedAlerts.slice(0, 15) },
+    { key: "changes", label: "Kürzlich geändert", alerts: recentChangeAlerts },
     { key: "cancellations", label: "Kündigungen / läuft aus", alerts: cancellationAlerts.sort((a, b) => a.date.localeCompare(b.date)) },
     { key: "paused", label: "Pausiert", alerts: pausedAlerts.sort(sortByRecentActivity) },
   ].filter(group => group.alerts.length > 0);
@@ -3903,7 +3907,7 @@ function Memberships({ data, save }) {
           <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", marginBottom: 10 }}>
             <div>
               <h3 id="membership-workspace-title" style={{ margin: 0, fontSize: 16, color: "#273a35" }}>Arbeitsbereich</h3>
-              <p style={{ margin: "3px 0 0", fontSize: 12, color: "#64748b" }}>Aufgaben, geplante Änderungen und pausierte Memberships – klar voneinander getrennt.</p>
+              <p style={{ margin: "3px 0 0", fontSize: 12, color: "#64748b" }}>Aufgaben, Änderungen der letzten 14 Tage und pausierte Memberships – klar voneinander getrennt.</p>
             </div>
             <span className="crm-workspace-count">{openTaskAlerts.length} offen</span>
           </div>
@@ -3933,6 +3937,7 @@ function Memberships({ data, save }) {
               const planLine = `Paket ${m.plan || "offen"} · Beitrag ${fmt(m.monthlyAmount)} · Start ${fmtDate(m.startDate)}`;
               const signedLine = m.contractSignedAt ? `Unterschrift ${fmtDate(m.contractSignedAt)}` : "Unterschrift offen";
               const isCancellation = alert.type === "cancellation";
+              const isRecentChange = alert.type === "recent-change";
               const isNewMember = alert.type === "new-member";
               const isPaused = alert.type === "paused";
               const isReactivationSepa = alert.type === "reactivation-sepa";
@@ -3941,7 +3946,9 @@ function Memberships({ data, save }) {
               const isSetupFee = alert.type === "setup-fee";
               const isAppliedPlan = alert.type === "applied-plan";
               const doneAt = isPaused ? "" : (alert.completed ? alert.completionDate : m.alertDone?.[alert.type]);
-              const text = isCancellation
+              const text = isRecentChange
+                ? `${name}: ${alert.activity.text}`
+                : isCancellation
                 ? `${name} ist gekündigt zum ${fmtDate(m.endDate)}`
                 : isNewMember
                   ? `${name} ist neu als Member angelegt`
@@ -3959,9 +3966,10 @@ function Memberships({ data, save }) {
                   ? `${name} ist pausiert`
                 : `${name}: Änderung auf ${m.scheduledPlan} ab ${fmtDate(m.scheduledStartDate)}`;
               return (
-                <div className="crm-member-alert" key={`${alert.type}-${m.id}`} style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", background: "#fff", borderRadius: 10, padding: "10px 12px", border: "1px solid #ffedd5" }}>
+                <div className="crm-member-alert" key={alert.activity?.id || `${alert.type}-${m.id}`} style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", background: "#fff", borderRadius: 10, padding: "10px 12px", border: "1px solid #ffedd5" }}>
                   <div>
                     <div style={{ fontSize: 13, fontWeight: 800, color: "#1e293b" }}>{text}</div>
+                    {isRecentChange && <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>Geändert am {fmtDate(alert.date)} · Aktueller Status: {m.status || "offen"}{m.endDate ? ` · Vertragsende: ${fmtDate(m.endDate)}` : ""}</div>}
                     {isCancellation && m.notes && <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>{m.notes}</div>}
                     {isNewMember && (
                       <>
@@ -4047,7 +4055,7 @@ function Memberships({ data, save }) {
                         {appliedPlanChange.bankingNote && <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>{appliedPlanChange.bankingNote}</div>}
                       </>
                     )}
-                    {!isCancellation && !isNewMember && !isPaused && !isReactivationSepa && !isPreparation && !isSetupBanking && !isSetupFee && !isAppliedPlan && (
+                    {!isRecentChange && !isCancellation && !isNewMember && !isPaused && !isReactivationSepa && !isPreparation && !isSetupBanking && !isSetupFee && !isAppliedPlan && (
                       <>
                         <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>
                           Aktuell {m.plan} / {fmt(m.monthlyAmount)} → {m.scheduledPlan} / {fmt(scheduledAmount)}
@@ -4068,8 +4076,8 @@ function Memberships({ data, save }) {
                     {doneAt && <div style={{ fontSize: 12, color: "#047857", marginTop: 4, fontWeight: 800 }}>Erledigt am {fmtDate(doneAt)}</div>}
                   </div>
                   <div className="crm-member-alert-actions" style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", flexWrap: "wrap", gap: 8, flexShrink: 0 }}>
-                    <Badge status={doneAt ? "erledigt" : isReactivationSepa ? "Banking offen" : isCancellation || isPaused ? (m.status || alert.type) : isNewMember ? "erledigt" : isSetupFee ? "Gebühr offen" : isSetupBanking ? (alert.planned ? "SEPA geplant" : "Einrichtung offen") : isAppliedPlan ? (hasDetailedAppliedWorkflow ? (appliedImmediateChargeStatus === "offen" ? "Abbuchung offen" : appliedSetupFeeStatus === "offen" ? "Gebühr offen" : "SEPA offen") : appliedBankingStatus !== "erledigt" ? `Banking ${appliedBankingStatus}` : "Gebühr offen") : isPreparation ? `Banking ${setupBankingStatus}` : `Banking ${bankingStatus}`} />
-                    {isNewMember
+                    <Badge status={isRecentChange ? m.status || "geändert" : doneAt ? "erledigt" : isReactivationSepa ? "Banking offen" : isCancellation || isPaused ? (m.status || alert.type) : isNewMember ? "erledigt" : isSetupFee ? "Gebühr offen" : isSetupBanking ? (alert.planned ? "SEPA geplant" : "Einrichtung offen") : isAppliedPlan ? (hasDetailedAppliedWorkflow ? (appliedImmediateChargeStatus === "offen" ? "Abbuchung offen" : appliedSetupFeeStatus === "offen" ? "Gebühr offen" : "SEPA offen") : appliedBankingStatus !== "erledigt" ? `Banking ${appliedBankingStatus}` : "Gebühr offen") : isPreparation ? `Banking ${setupBankingStatus}` : `Banking ${bankingStatus}`} />
+                    {isRecentChange ? null : isNewMember
                       ? doneAt ? <Btn small variant="ghost" onClick={() => reopenAlert(m, alert.type)}>Hinweis wieder öffnen</Btn> : <Btn small variant="outline" onClick={() => markAlertDone(m, alert.type)}>Hinweis schließen</Btn>
                       : isCancellation
                       ? <>
