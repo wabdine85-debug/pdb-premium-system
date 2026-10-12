@@ -44,12 +44,15 @@ export function buildReturnDebitReminder({
   iban,
   bic,
   mandateReference,
+  reminderNumber = 1,
 }) {
   const cleanName = String(memberName || "").trim();
   const period = formatBillingMonth(billingMonth);
   const principal = Math.max(0, Number(principalAmount) || 0);
   const fee = Math.max(0, Number(bankFee) || 0);
   const total = principal + fee;
+  const sequenceNumber = Math.max(1, Math.floor(Number(reminderNumber) || 1));
+  const isFollowUp = sequenceNumber >= 2;
   const rawMandateReference = String(mandateReference || "").trim().toUpperCase();
   const cleanMandateReference = /^PDB-M-\d{4}-\d{4}$/.test(rawMandateReference)
     ? rawMandateReference
@@ -68,17 +71,20 @@ export function buildReturnDebitReminder({
   ].filter(Boolean);
 
   return {
-    subject: `Zahlungserinnerung zur PDB Membership – ${period}`,
+    subject: `${isFollowUp ? `${sequenceNumber}. ` : ""}Zahlungserinnerung zur PDB Membership – ${period}`,
     body: [
       cleanName ? `Hallo ${cleanName},` : "Hallo,",
       "",
-      `die Lastschrift für deine PDB Membership im ${period} wurde${returnedAt ? ` am ${formatDate(returnedAt)}` : ""} zurückgegeben. Bis heute konnten wir keinen entsprechenden Zahlungseingang feststellen.`,
+      isFollowUp
+        ? `wir haben dich bereits wegen der zurückgegebenen Lastschrift für deine PDB Membership im ${period} informiert. Bis heute konnten wir keinen entsprechenden Zahlungseingang feststellen.`
+        : `die Lastschrift für deine PDB Membership im ${period} wurde${returnedAt ? ` am ${formatDate(returnedAt)}` : ""} zurückgegeben. Bis heute konnten wir keinen entsprechenden Zahlungseingang feststellen.`,
       "",
       `Offener Betrag: ${formatCurrency(total)}`,
       amountDetails,
       "",
       `Bitte überweise den offenen Betrag bis zum ${formatDate(dueDate)} auf folgendes Konto:`,
       ...bankDetails,
+      ...(isFollowUp ? ["", "Sollte bis zu diesem Termin kein Zahlungseingang vorliegen, müssen wir den offenen Vorgang im Mahnwesen weiterbearbeiten."] : []),
       "",
       "Falls du den Betrag inzwischen überwiesen hast, kannst du diese E-Mail ignorieren.",
       "",

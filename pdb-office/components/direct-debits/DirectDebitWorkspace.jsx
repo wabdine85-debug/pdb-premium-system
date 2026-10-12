@@ -237,7 +237,8 @@ export default function DirectDebitWorkspace({ data, save }) {
     const { email, membership } = contactForCase(returnCase);
     const run = runs.find(entry => entry.id === returnCase.runId);
     const item = items.find(entry => entry.id === returnCase.itemId);
-    const dueDate = addCalendarDays(isoToday(), 7);
+    const reminderNumber = Number(returnCase.reminderEmailCount || 0) + 1;
+    const dueDate = addCalendarDays(isoToday(), reminderNumber >= 2 ? 4 : 7);
     const reminder = buildReturnDebitReminder({
       memberName: returnCase.memberName,
       billingMonth: run?.month || returnCase.returnedAt?.slice(0, 7),
@@ -250,6 +251,7 @@ export default function DirectDebitWorkspace({ data, save }) {
       iban: primaryInvoiceProfile.iban,
       bic: primaryInvoiceProfile.bic,
       mandateReference: membership?.mandateReference || returnCase.mandateReference || item?.mandateReference,
+      reminderNumber,
     });
     setMailStatus(null);
     setEmailPreview({
@@ -260,6 +262,7 @@ export default function DirectDebitWorkspace({ data, save }) {
       subject: reminder.subject,
       body: reminder.body,
       totalAmount: reminder.totalAmount,
+      reminderNumber,
     });
   };
 
@@ -281,6 +284,7 @@ export default function DirectDebitWorkspace({ data, save }) {
       iban: primaryInvoiceProfile.iban,
       bic: primaryInvoiceProfile.bic,
       mandateReference: membership?.mandateReference || returnCase.mandateReference || item?.mandateReference,
+      reminderNumber: emailPreview.reminderNumber,
     });
     setEmailPreview(current => ({ ...current, dueDate, subject: reminder.subject, body: reminder.body }));
   };
@@ -305,7 +309,8 @@ export default function DirectDebitWorkspace({ data, save }) {
       const result = await response.json();
       if (!response.ok || !result.ok) throw new Error(result.error || "E-Mail konnte nicht gesendet werden.");
       const sentAt = result.sentAt || new Date().toISOString();
-      const historyText = `Zahlungserinnerung per E-Mail an ${emailPreview.email} gesendet · Zahlungsfrist ${dateLabel(emailPreview.dueDate)}`;
+      const reminderLabel = emailPreview.reminderNumber >= 2 ? `${emailPreview.reminderNumber}. Zahlungserinnerung` : "Zahlungserinnerung";
+      const historyText = `${reminderLabel} per E-Mail an ${emailPreview.email} gesendet · Zahlungsfrist ${dateLabel(emailPreview.dueDate)}`;
       save(current => ({
         ...current,
         returnDebitCases: (current.returnDebitCases || []).map(returnCase => returnCase.id === emailPreview.caseId ? {
@@ -323,7 +328,7 @@ export default function DirectDebitWorkspace({ data, save }) {
           timeline: [...(member.timeline || []), {
             id: uid(),
             type: "payment",
-            text: `Zahlungserinnerung per E-Mail gesendet · ${money(emailPreview.totalAmount)}`,
+            text: `${reminderLabel} per E-Mail gesendet · ${money(emailPreview.totalAmount)}`,
             date: sentAt.slice(0, 10),
             ts: Date.parse(sentAt),
           }],
@@ -868,11 +873,11 @@ export default function DirectDebitWorkspace({ data, save }) {
         {!isClosed(caseDraft.status) && <div className="ddb-contact-card">
           <div>
             <span className="ddb-eyebrow">Direkter Kundenkontakt</span>
-            <strong>Zahlungserinnerung per E-Mail</strong>
+            <strong>{Number(selectedCase.reminderEmailCount || 0) > 0 ? `${Number(selectedCase.reminderEmailCount || 0) + 1}. Zahlungserinnerung per E-Mail` : "Zahlungserinnerung per E-Mail"}</strong>
             <small>{contactForCase(selectedCase).email || "Keine E-Mail-Adresse in den Kundendaten hinterlegt"}</small>
             {selectedCase.lastReminderEmailSentAt && <small>Zuletzt gesendet: {new Date(selectedCase.lastReminderEmailSentAt).toLocaleString("de-DE", { dateStyle: "short", timeStyle: "short" })}</small>}
           </div>
-          <button className="ddb-button ddb-button--secondary" type="button" disabled={!contactForCase(selectedCase).email} onClick={() => openReturnDebitEmail(selectedCase)}>E-Mail vorbereiten</button>
+          <button className="ddb-button ddb-button--secondary" type="button" disabled={!contactForCase(selectedCase).email} onClick={() => openReturnDebitEmail(selectedCase)}>{Number(selectedCase.reminderEmailCount || 0) > 0 ? `${Number(selectedCase.reminderEmailCount || 0) + 1}. E-Mail vorbereiten` : "E-Mail vorbereiten"}</button>
         </div>}
         {mailStatus && <div className={`ddb-mail-status ddb-mail-status--${mailStatus.type}`} role="status">{mailStatus.message}</div>}
         <div className="ddb-form-grid">
@@ -887,7 +892,7 @@ export default function DirectDebitWorkspace({ data, save }) {
       </form></div>}
 
       {emailPreview && <div className="ddb-modal-backdrop ddb-modal-backdrop--email" role="presentation"><div className="ddb-modal ddb-modal--email" role="dialog" aria-modal="true" aria-labelledby="ddb-email-title">
-        <div className="ddb-modal__heading"><div><span className="ddb-eyebrow">Vor Versand prüfen</span><h3 id="ddb-email-title">Zahlungserinnerung</h3></div><button aria-label="E-Mail-Vorschau schließen" type="button" onClick={() => setEmailPreview(null)}>×</button></div>
+        <div className="ddb-modal__heading"><div><span className="ddb-eyebrow">Vor Versand prüfen</span><h3 id="ddb-email-title">{emailPreview.reminderNumber >= 2 ? `${emailPreview.reminderNumber}. Zahlungserinnerung` : "Zahlungserinnerung"}</h3></div><button aria-label="E-Mail-Vorschau schließen" type="button" onClick={() => setEmailPreview(null)}>×</button></div>
         <div className="ddb-email-note"><strong>Es wird noch nichts automatisch versendet.</strong><span>Prüfe Empfänger, Betrag, Frist und Text. Erst „Jetzt senden“ verschickt die Nachricht.</span></div>
         <div className="ddb-form-grid">
           <label>Empfänger<input type="email" value={emailPreview.email} readOnly /></label>

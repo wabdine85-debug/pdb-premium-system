@@ -31,7 +31,9 @@ Die drei Listen liegen im vorhandenen CRM-Dokument und werden durch
 5. Rücklastschrift bearbeiten, nächste Aktion und Verlauf dokumentieren.
 6. Bei Bedarf im Fall **E-Mail vorbereiten** öffnen, Empfänger, Frist und Text
    prüfen und die Zahlungserinnerung bewusst versenden.
-7. Erst bei Zahlungseingang oder bewusstem Storno wird der Fall geschlossen.
+7. Bleibt der Fall offen, erzeugt der nächste Versand automatisch eine nummerierte
+   zweite Zahlungserinnerung mit kürzerer Frist und dokumentiert sie getrennt im Verlauf.
+8. Erst bei Zahlungseingang oder bewusstem Storno wird der Fall geschlossen.
 
 Wiederholte Dateiimporte erzeugen anhand eines stabilen
 Transaktionsfingerprints keine doppelten Rücklastschriftbuchungen.

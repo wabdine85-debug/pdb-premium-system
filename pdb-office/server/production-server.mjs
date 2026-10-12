@@ -286,6 +286,7 @@ async function handleReturnDebitEmail(req, res) {
     iban: profile.iban,
     bic: profile.bic,
     mandateReference: membership?.mandateReference || returnCase.mandateReference || item?.mandateReference,
+    reminderNumber: Number(returnCase.reminderEmailCount || 0) + 1,
   });
   const required = ["SMTP_HOST", "SMTP_PORT", "SMTP_USER", "SMTP_PASS", "MAIL_FROM"].filter(key => !process.env[key]);
   if (required.length) return sendJson(res, 503, { ok: false, error: "MAIL_NOT_CONFIGURED" });

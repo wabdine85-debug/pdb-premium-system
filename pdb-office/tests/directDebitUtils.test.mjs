@@ -307,3 +307,20 @@ test("return debit reminder never presents a package label as mandate reference"
   assert.doesNotMatch(reminder.body, /Mandatsreferenz Mitgliedschaft/);
   assert.match(reminder.body, /Verwendungszweck: Membership September 2026 - Bettina Beispiel/);
 });
+
+test("second return debit reminder uses follow-up wording and escalation", () => {
+  const reminder = buildReturnDebitReminder({
+    memberName: "Bettina Beispiel",
+    billingMonth: "2026-10",
+    principalAmount: 199,
+    bankFee: 4.96,
+    dueDate: "2026-10-16",
+    reminderNumber: 2,
+  });
+
+  assert.match(reminder.subject, /^2\. Zahlungserinnerung/);
+  assert.match(reminder.body, /bereits wegen der zurückgegebenen Lastschrift/);
+  assert.match(reminder.body, /im Mahnwesen weiterbearbeiten/);
+  assert.match(reminder.body, /16\.10\.2026/);
+  assert.match(reminder.body, /kannst du diese E-Mail ignorieren/);
+});
