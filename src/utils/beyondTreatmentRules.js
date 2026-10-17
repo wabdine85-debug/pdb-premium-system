@@ -1,4 +1,5 @@
 export const BEYOND_TREATMENT_SESSION_LIMITS = Object.freeze({
+  "motus-pro-deka-ganzkoerper": 3,
   "3x-kryolipolyse": 3,
   "3x-ems-sella": 3,
   "2x-forma": 2,

@@ -16,11 +16,48 @@ function createFakeDb(bookings) {
 }
 
 test("BEYOND multi-session treatments use the configured appointment counts", () => {
+  assert.equal(getBeyondTreatmentSessionLimit("motus-pro-deka-ganzkoerper"), 3);
   assert.equal(getBeyondTreatmentSessionLimit("3x-kryolipolyse"), 3);
   assert.equal(getBeyondTreatmentSessionLimit("3x-ems-sella"), 3);
   assert.equal(getBeyondTreatmentSessionLimit("2x-forma"), 2);
   assert.equal(getBeyondTreatmentSessionLimit("3x-ems-sculpt"), 3);
   assert.equal(getBeyondTreatmentSessionLimit("medical-needling"), 1);
+});
+
+test("MOTUS three large zones grant three bookings and lock the monthly treatment", async () => {
+  const member = { id: 1, package_key: "beyond" };
+  const motus = {
+    category_key: "beyond",
+    treatment_key: "motus-pro-deka-ganzkoerper"
+  };
+  const emsSella = {
+    category_key: "beyond",
+    treatment_key: "3x-ems-sella"
+  };
+  const db = createFakeDb([{
+    category_key: "beyond",
+    treatment_key: "motus-pro-deka-ganzkoerper"
+  }]);
+
+  const selected = await getTreatmentEntitlementsForMonth(
+    member,
+    motus,
+    "2026-10-01",
+    db
+  );
+  const locked = await getTreatmentEntitlementsForMonth(
+    member,
+    emsSella,
+    "2026-10-01",
+    db
+  );
+
+  assert.equal(selected.remaining.beyond, 2);
+  assert.equal(selected.beyondTreatment.sessionLimit, 3);
+  assert.equal(selected.beyondTreatment.remainingSessions, 2);
+  assert.equal(selected.beyondTreatment.locked, false);
+  assert.equal(locked.remaining.beyond, 0);
+  assert.equal(locked.beyondTreatment.locked, true);
 });
 
 test("3x BEYOND treatments grant three sessions and lock the monthly treatment", async () => {
