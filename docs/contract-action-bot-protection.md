@@ -7,6 +7,21 @@ Schutzschritt stellt `GET /apps/pdb/contracts/action-token` einen 30 Minuten
 gültigen Formularnachweis bereit. Der Server akzeptiert ihn frühestens nach
 zwei Sekunden und nur einmal. Es werden keine externen Dienste benötigt.
 
+## Interne Benachrichtigungen bei auffälligen Paaren
+
+Eine einzelne Erklärung ohne Mitgliedschaftstreffer wird nach etwa 90 Sekunden
+weiterhin per E-Mail an die Verwaltung gemeldet. Wenn innerhalb einer Minute
+unter derselben E-Mail-Adresse ein Widerruf und eine Kündigung mit jeweils
+anderen Vor- und Nachnamen sowie anderen Vertragskennungen eingehen und beide
+ohne Treffer sind, werden die einzelnen Alarm-Mails gebündelt. Die Vorgänge
+bleiben sofort im Vertrags-Admin sichtbar, dort als auffälliges Paar markiert,
+und die Eingangsbestätigung an die
+absendende Person geht unverzüglich heraus. Eine Zusammenfassung der
+gebündelten Vorgänge wird frühestens nach sieben Tagen per E-Mail versandt.
+Ein Treffer oder ein unklarer CRM-Abgleich löst weiterhin sofort eine
+Verwaltungsbenachrichtigung aus. Diese Regel ist eine Priorisierung für die
+Verwaltung, keine Entscheidung über die Wirksamkeit der Erklärung.
+
 ## Shopify-Formular ergänzen
 
 Im veröffentlichten Theme liegen die Formulare `#pdb-withdrawal-form` und

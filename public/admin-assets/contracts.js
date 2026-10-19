@@ -284,6 +284,9 @@
       const grid = document.createElement('div');
       grid.className = 'data-grid';
       addDetail(grid, 'Vorgangsnummer', action.reference || action.id);
+      if (action.notification_state === 'batched' || action.notification_state === 'reported') {
+        addDetail(grid, 'Hinweis', 'Auffälliges Paar · alle Angaben trotzdem manuell prüfen');
+      }
       addDetail(grid, 'Eingang', `${dateTime.format(new Date(action.created_at))} Uhr`);
       addDetail(grid, 'Name', `${action.first_name} ${action.last_name}`);
       addDetail(grid, 'E-Mail', action.email);

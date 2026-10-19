@@ -260,17 +260,20 @@ export async function findContractActionByReceiptTokenHash(tokenHash, db = pool)
 
 export async function listContractActionRequests({ status, limit = 50 }, db = pool) {
   const values = [];
-  const where = status ? 'WHERE status = $1' : '';
+  const where = status ? 'WHERE a.status = $1' : '';
   if (status) values.push(status);
   values.push(Math.min(Math.max(Number(limit) || 50, 1), 100));
   const limitParam = values.length;
   const result = await db.query(
-    `SELECT id, display_number, action_type, first_name, last_name, email, mandate_reference,
-            communication_email, cancellation_type, cancellation_reason,
-            requested_end_on, matched_application_id, request_metadata, status, created_at, updated_at
-     FROM contract_action_requests
+    `SELECT a.id, a.display_number, a.action_type, a.first_name, a.last_name, a.email,
+            a.mandate_reference, a.communication_email, a.cancellation_type,
+            a.cancellation_reason, a.requested_end_on, a.matched_application_id,
+            a.request_metadata, a.status, a.created_at, a.updated_at,
+            n.state AS notification_state
+     FROM contract_action_requests a
+     LEFT JOIN contract_action_admin_notifications n ON n.action_id = a.id
      ${where}
-     ORDER BY created_at DESC
+     ORDER BY a.created_at DESC
      LIMIT $${limitParam}`,
     values
   );

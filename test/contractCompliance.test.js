@@ -199,7 +199,7 @@ test('contract document escaping covers all HTML control characters', () => {
 test('contract action schema bootstrap is additive and idempotent SQL', async () => {
   const queries = [];
   await ensureContractActionSchema({ query: async (sql) => queries.push(sql) });
-  assert.equal(queries.length, 7);
+  assert.equal(queries.length, 9);
   assert.match(queries[0], /CREATE TABLE IF NOT EXISTS contract_action_requests/);
   assert.match(queries[1], /CREATE INDEX IF NOT EXISTS/);
   assert.match(queries[2], /CREATE INDEX IF NOT EXISTS/);
@@ -207,6 +207,8 @@ test('contract action schema bootstrap is additive and idempotent SQL', async ()
   assert.match(queries[4], /ADD COLUMN IF NOT EXISTS display_number BIGINT/);
   assert.match(queries[5], /SET DEFAULT nextval/);
   assert.match(queries[6], /CREATE UNIQUE INDEX IF NOT EXISTS contract_action_requests_display_number_idx/);
+  assert.match(queries[7], /CREATE TABLE IF NOT EXISTS contract_action_admin_notifications/);
+  assert.match(queries[8], /CREATE INDEX IF NOT EXISTS contract_action_admin_notifications_due_idx/);
 });
 
 test('member usage import schema is additive and auditable', async () => {

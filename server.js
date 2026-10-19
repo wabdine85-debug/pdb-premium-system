@@ -5,6 +5,7 @@ import {
   ensureMemberMonthlyUsageImportSchema,
   ensurePremiumAdminSchema
 } from './src/services/schema.service.js';
+import { startContractActionAdminAlerts } from './src/services/contractActionAdminAlerts.service.js';
 
 assertRuntimeEnv();
 await ensureContractActionSchema();
@@ -16,4 +17,5 @@ const { default: app } = await import('./app.js');
 
 app.listen(env.port, () => {
   console.log(`Server läuft auf Port ${env.port}`);
+  startContractActionAdminAlerts();
 });

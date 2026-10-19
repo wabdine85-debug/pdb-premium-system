@@ -45,6 +45,7 @@ import { reserveNextMandateReference } from '../services/mandateReference.servic
 import { syncAcceptedContractToCrm } from '../services/crmContractSync.service.js';
 import { findContractActionMatch } from '../services/contractActionMatching.service.js';
 import { consumeContractActionToken, issueContractActionToken } from '../services/contractActionToken.service.js';
+import { queueUnmatchedContractActionAlert } from '../services/contractActionAdminAlerts.service.js';
 import { calculateBookingAccess } from '../services/bookingAccess.service.js';
 import { getPackageOffer, SETUP_FEE_CENTS } from '../utils/packageCatalog.js';
 import {
@@ -452,7 +453,16 @@ router.post('/action', verifyShopifyAppProxy, contractActionRateLimit, async (re
       console.error('Contract action confirmation email failed:', mailError.message);
     }
 
-    await notifyAdminOfContractAction(actionType);
+    if (match.state === 'unmatched') {
+      try {
+        await queueUnmatchedContractActionAlert(action.id);
+      } catch (error) {
+        console.error('Contract action admin alert queue failed:', error.message);
+        await notifyAdminOfContractAction(actionType);
+      }
+    } else {
+      await notifyAdminOfContractAction(actionType);
+    }
 
     res.set('Cache-Control', 'no-store');
     return res.status(201).json({
