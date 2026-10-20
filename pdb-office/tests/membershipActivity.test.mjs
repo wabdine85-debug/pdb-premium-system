@@ -21,3 +21,28 @@ test("shows existing changed memberships for 14 days without treating the exit d
   assert.equal(getRecentMembershipActivity([membership], "2026-10-12").length, 1);
   assert.equal(getRecentMembershipActivity([membership], "2026-10-26").length, 0);
 });
+
+test("shows one recent row per membership and collapses repeated messages from the same day", () => {
+  const memberships = [
+    {
+      id: "berenice", memberId: "customer-1", status: "vorbereitung",
+      activityLog: [
+        { id: "created", date: "2026-10-20", changedAt: "2026-10-20T08:00:00Z", text: "Membership angelegt" },
+        { id: "first-edit", date: "2026-10-20", changedAt: "2026-10-20T09:00:00Z", text: "Membership-Daten geändert" },
+        { id: "second-edit", date: "2026-10-20", changedAt: "2026-10-20T10:00:00Z", text: "Membership-Daten geändert" },
+      ],
+    },
+    {
+      id: "another-contract", memberId: "customer-1", status: "aktiv",
+      activityLog: [{ id: "plan", date: "2026-10-19", changedAt: "2026-10-19T10:00:00Z", text: "Paket: Beyond" }],
+    },
+  ];
+
+  const recent = getRecentMembershipActivity(memberships, "2026-10-20");
+  assert.equal(recent.length, 2);
+  assert.equal(recent[0].membership.id, "berenice");
+  assert.equal(recent[0].text, "Membership angelegt");
+  assert.deepEqual(recent[0].changes.map(change => change.text), ["Membership-Daten geändert", "Membership angelegt"]);
+  assert.equal(recent[1].membership.id, "another-contract");
+  assert.equal(memberships[0].activityLog.length, 3);
+});

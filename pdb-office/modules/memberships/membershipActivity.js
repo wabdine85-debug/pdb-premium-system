@@ -49,8 +49,22 @@ export function getRecentMembershipActivity(memberships = [], today, days = ACTI
     const events = log.length ? log : membership.updatedAt
       ? [{ id: `${membership.id}-legacy-${membership.updatedAt}`, date: membership.updatedAt.slice(0, 10), text: membership.status === "abgelaufen" ? "Beendigung erfasst" : "Membership-Daten geändert" }]
       : [];
-    return events
+    const recentEvents = events
       .filter(event => event.date >= cutoffDate && event.date <= today)
-      .map(event => ({ membership, ...event }));
+      .sort((a, b) => (b.changedAt || b.date).localeCompare(a.changedAt || a.date));
+    if (!recentEvents.length) return [];
+
+    // Repeated saves can create the same visible message on one day. Keep the
+    // stored log intact, but show each message only once in this overview.
+    const seen = new Set();
+    const changes = recentEvents.filter(event => {
+      const key = `${event.date}:${event.text}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+    const latest = recentEvents[0];
+    const headline = changes.find(event => event.date === latest.date && event.text !== "Membership-Daten geändert") || latest;
+    return [{ membership, ...latest, text: headline.text, changes }];
   }).sort((a, b) => (b.changedAt || b.date).localeCompare(a.changedAt || a.date));
 }

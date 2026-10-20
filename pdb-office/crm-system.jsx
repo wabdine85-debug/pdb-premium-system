@@ -3946,8 +3946,11 @@ function Memberships({ data, save }) {
               const isSetupFee = alert.type === "setup-fee";
               const isAppliedPlan = alert.type === "applied-plan";
               const doneAt = isPaused ? "" : (alert.completed ? alert.completionDate : m.alertDone?.[alert.type]);
+              const recentChangeName = isRecentChange && memberships.some(other => other.id !== m.id && other.memberId && other.memberId === m.memberId)
+                ? `${name} (${m.packageLabel || m.plan || "weiterer Vertrag"})`
+                : name;
               const text = isRecentChange
-                ? `${name}: ${alert.activity.text}`
+                ? `${recentChangeName}: ${alert.activity.text}`
                 : isCancellation
                 ? `${name} ist gekündigt zum ${fmtDate(m.endDate)}`
                 : isNewMember
@@ -3970,6 +3973,16 @@ function Memberships({ data, save }) {
                   <div>
                     <div style={{ fontSize: 13, fontWeight: 800, color: "#1e293b" }}>{text}</div>
                     {isRecentChange && <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>Geändert am {fmtDate(alert.date)} · Aktueller Status: {m.status || "offen"}{m.endDate ? ` · Vertragsende: ${fmtDate(m.endDate)}` : ""}</div>}
+                    {isRecentChange && alert.activity.changes.length > 1 && (
+                      <details style={{ marginTop: 6, fontSize: 12, color: "#475569" }}>
+                        <summary style={{ cursor: "pointer", fontWeight: 700 }}>{alert.activity.changes.length} Änderungen anzeigen</summary>
+                        <ul style={{ margin: "6px 0 0", paddingLeft: 18 }}>
+                          {alert.activity.changes.map(change => (
+                            <li key={change.id}>{fmtDate(change.date)} · {change.text}</li>
+                          ))}
+                        </ul>
+                      </details>
+                    )}
                     {isCancellation && m.notes && <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>{m.notes}</div>}
                     {isNewMember && (
                       <>
