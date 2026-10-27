@@ -46,7 +46,7 @@ test("one PRIVATE booking consumes the monthly PRIVATE entitlement", async () =>
   assert.deepEqual(entitlements.allowedCategories, []);
 });
 
-test("Body Sculpt grants four sessions while locking the monthly protocol", async () => {
+test("Body Sculpt grants six sessions while locking the monthly protocol", async () => {
   const member = { id: 1, package_key: "private" };
   const bodySculpt = {
     category_key: "private",
@@ -76,10 +76,16 @@ test("Body Sculpt grants four sessions while locking the monthly protocol", asyn
     db
   );
 
-  assert.equal(bodyEntitlements.remaining.private, 3);
-  assert.equal(bodyEntitlements.privateProtocol.sessionLimit, 4);
+  assert.equal(bodyEntitlements.remaining.private, 5);
+  assert.equal(bodyEntitlements.privateProtocol.sessionLimit, 6);
   assert.equal(otherEntitlements.remaining.private, 0);
   assert.equal(otherEntitlements.privateProtocol.locked, true);
+  for (const used of [5, 6]) {
+    const result = await getTreatmentEntitlementsForMonth(member, bodySculpt,
+      "2026-08-01", createFakeDb(Array.from({ length: used }, () => bodySculpt)));
+    assert.equal(result.remaining.private, 6 - used);
+  }
+
 });
 
 test("all other PRIVATE protocols allow exactly one session", () => {
@@ -88,7 +94,7 @@ test("all other PRIVATE protocols allow exactly one session", () => {
   );
 
   for (const treatment of privateTreatments) {
-    const expected = treatment.treatment_key === "private-body-sculpt-intensive" ? 4 : 1;
+    const expected = treatment.treatment_key === "private-body-sculpt-intensive" ? 6 : 1;
     assert.equal(getPrivateProtocolSessionLimit(treatment.treatment_key), expected);
   }
 });
