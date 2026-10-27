@@ -6,13 +6,13 @@ const URL_BEYOND = "https://palais-de-beaute.salonized.com/widget_bookings/new?w
 export const treatments = [
   // --- PURE CATEGORY (100er IDs) ---
   { id: 101, treatment_key: "laser-kleine-zone", title: "Laser Haarentfernung – kleine Zone", category_key: "pure", salonized_url: URL_PURE, is_active: true },
-  { id: 102, treatment_key: "kleine-gesichtsbehandlung", title: "Kleine Gesichtsbehandlung", category_key: "pure", salonized_url: URL_PURE, is_active: true },
+  { id: 102, treatment_key: "kleine-gesichtsbehandlung", title: "Klassische Gesichtsbehandlung", category_key: "pure", salonized_url: URL_PURE, is_active: true },
   { id: 103, treatment_key: "aquafacial", title: "Aquafacial", category_key: "pure", salonized_url: URL_PURE, is_active: true },
   { id: 104, treatment_key: "lymphdrainage", title: "Lymphdrainage", category_key: "pure", salonized_url: URL_PURE, is_active: true },
   { id: 105, treatment_key: "dermaplaning", title: "Dermaplaning", category_key: "pure", salonized_url: URL_PURE, is_active: true },
   { id: 106, treatment_key: "gesichtsmassage", title: "Gesichtsmassage", category_key: "pure", salonized_url: URL_PURE, is_active: true },
   { id: 107, treatment_key: "microdermabrasion", title: "Microdermabrasion", category_key: "pure", salonized_url: URL_PURE, is_active: true },
-  { id: 108, treatment_key: "hautaufhellung", title: "Hautaufhellung", category_key: "pure", salonized_url: URL_PURE, is_active: true },
+  { id: 108, treatment_key: "hautaufhellung", title: "Hautaufhellung", category_key: "pure", salonized_url: URL_PURE, is_active: false },
   { id: 109, treatment_key: "matrix-lifting-mask", title: "Matrix Lifting Mask", category_key: "pure", salonized_url: URL_PURE, is_active: true },
   { id: 110, treatment_key: "pinkwax-eine-zone", title: "Pinkwax – eine Zone", category_key: "pure", salonized_url: URL_PURE, is_active: false },
   { id: 111, treatment_key: "refit", title: "Refit", category_key: "pure", salonized_url: URL_PURE, is_active: false },
@@ -31,9 +31,9 @@ export const treatments = [
   { id: 204, treatment_key: "ems-sculpt-neo", title: "Ems-Sculpt Neo", category_key: "define", salonized_url: URL_DEFINE, is_active: true },
   { id: 205, treatment_key: "aknebehandlung", title: "Aknebehandlung", category_key: "define", salonized_url: URL_DEFINE, is_active: false },
   { id: 206, treatment_key: "hautverjuengung", title: "Hautverjüngung", category_key: "define", salonized_url: URL_DEFINE, is_active: false },
-  { id: 207, treatment_key: "oxy-geneo-define", title: "Oxy Geneo", category_key: "define", salonized_url: URL_DEFINE, shopify_product_handle: "oxy-geneo", is_active: true },
+  { id: 207, treatment_key: "oxy-geneo-define", title: "Oxy Geneo", category_key: "define", salonized_url: URL_DEFINE, shopify_product_handle: "oxy-geneo", is_active: false },
   { id: 208, treatment_key: "radiofrequenz-define", title: "Radiofrequenz", category_key: "define", salonized_url: URL_DEFINE, is_active: false },
-  { id: 209, treatment_key: "g8-cellulite", title: "G8 Cellulite", category_key: "define", salonized_url: URL_DEFINE, is_active: true },
+  { id: 209, treatment_key: "g8-cellulite", title: "G8 Cellulite", category_key: "define", salonized_url: URL_DEFINE, is_active: false },
   { id: 210, treatment_key: "motus-pro-deka-gross", title: "MOTUS PRO DEKA® – Haarentfernung große Zone", category_key: "define", salonized_url: URL_DEFINE, is_active: true },
   { id: 211, treatment_key: "forma-inmode", title: "FORMA by INMODE™ – Gesicht, Hals oder Dekolleté", category_key: "define", salonized_url: URL_DEFINE, is_active: true },
   { id: 212, treatment_key: "hydrafacial-signature", title: "HYDRAFACIAL® Signature", category_key: "define", salonized_url: URL_DEFINE, is_active: true },
@@ -43,8 +43,8 @@ export const treatments = [
 
   // --- BEYOND CATEGORY (300er IDs) ---
   { id: 301, treatment_key: "morpheus8-gesicht", title: "Morpheus8 – Gesichtsareal", category_key: "beyond", salonized_url: URL_BEYOND, is_active: true },
-  { id: 302, treatment_key: "motus-pro-deka-ganzkoerper", title: "MOTUS PRO DEKA® – Laser Haarentfernung drei große Zonen", category_key: "beyond", salonized_url: URL_BEYOND, is_active: true },
-  { id: 303, treatment_key: "hifu-gesicht", title: "HIFU – Gesicht, Hals oder Dekolleté", category_key: "beyond", salonized_url: URL_BEYOND, is_active: true },
+  { id: 302, treatment_key: "motus-pro-deka-ganzkoerper", title: "MOTUS PRO DEKA® – drei große Zonen in einem Termin", category_key: "beyond", salonized_url: URL_BEYOND, is_active: true },
+  { id: 303, treatment_key: "hifu-gesicht", title: "HIFU – ein frei wählbares Gesichtsareal", category_key: "beyond", salonized_url: URL_BEYOND, is_active: true },
   { id: 304, treatment_key: "redtouch-pro", title: "RedTouch PRO", category_key: "beyond", salonized_url: URL_BEYOND, is_active: true },
   { id: 305, treatment_key: "hydrafacial-meets-forma", title: "HydraFacial meets Forma", category_key: "beyond", salonized_url: URL_BEYOND, is_active: true },
   { id: 306, treatment_key: "exosomen", title: "Exosomen", category_key: "beyond", salonized_url: URL_BEYOND, is_active: true },
@@ -56,6 +56,8 @@ export const treatments = [
   { id: 312, treatment_key: "3x-ems-sella", title: "3x EMS-Sella", category_key: "beyond", salonized_url: URL_BEYOND, is_active: true },
   { id: 313, treatment_key: "2x-forma", title: "2x Forma", category_key: "beyond", salonized_url: URL_BEYOND, is_active: true },
   { id: 314, treatment_key: "3x-ems-sculpt", title: "3x EMS-Sculpt", category_key: "beyond", salonized_url: URL_BEYOND, is_active: true },
+
+  { id: 315, treatment_key: "ultraschall-titan-komplett", title: "Ultraschall Titan – Gesicht, Hals und Dekolleté", category_key: "beyond", salonized_url: URL_BEYOND, is_active: true },
 
   // --- PRIVATE CATEGORY (400er IDs) ---
   { id: 401, treatment_key: "private-morpheus8-total-face", title: "Morpheus8 Total Face", category_key: "private", salonized_url: null, is_active: true },

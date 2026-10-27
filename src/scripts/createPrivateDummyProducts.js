@@ -37,22 +37,22 @@ const products = [
   {
     title: "HydraForma Ultimate",
     handle: "private-hydraforma-ultimate",
-    descriptionHtml: "<p>HydraFacial und FORMA by INMODE™ kombiniert in einer 90-minütigen PRIVATE-Sitzung.</p>"
+    descriptionHtml: "<p>HydraForma Ultimate kombiniert HydraFacial Signature, FORMA by INMODE™ für Gesicht und Hals, eine CIRCADIA-Maske und LED-Lichttherapie in einer 90-minütigen PRIVATE-Sitzung.</p>"
   },
   {
     title: "Regeneration Pro",
     handle: "private-regeneration-pro",
-    descriptionHtml: "<p>Medical Needling und Exosomen kombiniert in einer 90-minütigen PRIVATE-Sitzung.</p>"
+    descriptionHtml: "<p>Medical Needling + Exosomen + LED-Lichttherapie.</p>"
   },
   {
     title: "Glass Skin Protocol",
     handle: "private-glass-skin",
-    descriptionHtml: "<p>Dermaplaning, HydraFacial und OxyGeneo als 90-minütiges PRIVATE-Protokoll.</p>"
+    descriptionHtml: "<p>Dermaplaning + HydraFacial + Circadia Firming Peptide.</p>"
   },
   {
     title: "Pigment & Texture Protocol",
     handle: "private-pigment-texture",
-    descriptionHtml: "<p>MESO PEEL MD und eine passend zum Hautbild ausgewählte apparative Technologie in einer 90-minütigen PRIVATE-Sitzung.</p>"
+    descriptionHtml: "<p>Carbon Laser Peeling + HydraFacial + FORMA.</p>"
   },
   {
     title: "Laser Complete",
@@ -62,12 +62,12 @@ const products = [
   {
     title: "Body Sculpt Intensive",
     handle: "private-body-sculpt-intensive",
-    descriptionHtml: "<p>EMS Sculpt, G8 und Lymphdrainage als vier einzelne PRIVATE-Termine à 90 Minuten innerhalb eines Mitgliedschaftsmonats.</p>"
+    descriptionHtml: "<p>4 Termine: EMS Sculpt + Lymphdrainage. Vier Termine im Mitgliedschaftsmonat.</p>"
   },
   {
     title: "Cryo Contour Intensive",
     handle: "private-cryo-contour-intensive",
-    descriptionHtml: "<p>Kryolipolyse, G8 und Lymphdrainage kombiniert in einer 90-minütigen PRIVATE-Sitzung.</p>"
+    descriptionHtml: "<p>2 × Kryolipolyse + 2 × EMS Sculpt + 2 × Lymphdrainage.</p>"
   }
 ];
 

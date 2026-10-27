@@ -47,7 +47,7 @@ router.post("/create", verifyShopifyAppProxy, requireShopifyCustomer, requireMat
     }
 
     const result = await pool.query(
-  `SELECT id, treatment_key, category_key, salonized_url FROM treatments WHERE treatment_key = $1 LIMIT 1`,
+  `SELECT id, treatment_key, category_key, salonized_url FROM treatments WHERE treatment_key = $1 AND is_active = true LIMIT 1`,
   [treatment_key]
 );
 
@@ -257,7 +257,7 @@ router.post("/validate-slot", verifyShopifyAppProxy, requireShopifyCustomer, req
         ON t.id = bt.treatment_id
       JOIN members m
         ON m.id = bt.member_id
-      WHERE bt.token = $1
+      WHERE bt.token = $1 AND t.is_active = true
       LIMIT 1
       `,
       [token]
@@ -433,7 +433,7 @@ router.post("/consume", verifyShopifyAppProxy, requireShopifyCustomer, requireMa
         ON t.id = bt.treatment_id
       JOIN members m
         ON m.id = bt.member_id
-      WHERE bt.token = $1
+      WHERE bt.token = $1 AND t.is_active = true
       LIMIT 1
       FOR UPDATE OF bt, m
       `,
@@ -617,7 +617,7 @@ router.post("/consume", verifyShopifyAppProxy, requireShopifyCustomer, requireMa
       FROM booking_tokens bt
       JOIN treatments t
         ON t.id = bt.treatment_id
-      WHERE bt.token = $1
+      WHERE bt.token = $1 AND t.is_active = true
       LIMIT 1
       `,
       [token]
@@ -674,7 +674,7 @@ router.get("/redirect/:token", async (req, res) => {
       FROM booking_tokens bt
       JOIN treatments t
         ON t.id = bt.treatment_id
-      WHERE bt.token = $1
+      WHERE bt.token = $1 AND t.is_active = true
       LIMIT 1
       `,
       [token]
