@@ -45,7 +45,7 @@ export const treatments = [
   { id: 301, treatment_key: "morpheus8-gesicht", title: "Morpheus8 – Gesichtsareal", category_key: "beyond", salonized_url: URL_BEYOND, is_active: true },
   { id: 302, treatment_key: "motus-pro-deka-ganzkoerper", title: "MOTUS PRO DEKA® – drei große Zonen in einem Termin", category_key: "beyond", salonized_url: URL_BEYOND, is_active: true },
   { id: 303, treatment_key: "hifu-gesicht", title: "HIFU – ein frei wählbares Gesichtsareal", category_key: "beyond", salonized_url: URL_BEYOND, is_active: true },
-  { id: 304, treatment_key: "redtouch-pro", title: "RedTouch PRO", category_key: "beyond", salonized_url: URL_BEYOND, is_active: true },
+  { id: 304, treatment_key: "redtouch-pro", title: "RedTouch PRO – Gesicht", category_key: "beyond", salonized_url: URL_BEYOND, is_active: true },
   { id: 305, treatment_key: "hydrafacial-meets-forma", title: "HydraFacial meets Forma", category_key: "beyond", salonized_url: URL_BEYOND, is_active: true },
   { id: 306, treatment_key: "exosomen", title: "Exosomen", category_key: "beyond", salonized_url: URL_BEYOND, is_active: true },
   { id: 307, treatment_key: "polynukleotide", title: "Polynukleotide", category_key: "beyond", salonized_url: URL_BEYOND, is_active: true },

@@ -67,7 +67,7 @@ const products = [
   {
     title: "Cryo Contour Intensive",
     handle: "private-cryo-contour-intensive",
-    descriptionHtml: "<p>2 × Kryolipolyse + 2 × EMS Sculpt + 2 × Lymphdrainage.</p>"
+    descriptionHtml: "<p>2 Termine pro Monat, jeweils 1 × Kryolipolyse + 1 × EMS-Sculpt + 1 × Lymphdrainage.</p>"
   }
 ];
 

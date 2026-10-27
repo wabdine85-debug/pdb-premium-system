@@ -8,7 +8,7 @@ export const PRIVATE_PROTOCOL_SESSION_LIMITS = Object.freeze({
   "private-pigment-texture": 1,
   "private-laser-complete": 1,
   "private-body-sculpt-intensive": 6,
-  "private-cryo-contour-intensive": 1
+  "private-cryo-contour-intensive": 2
 });
 
 export function getPrivateProtocolSessionLimit(treatmentKey) {

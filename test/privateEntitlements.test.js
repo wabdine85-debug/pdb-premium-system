@@ -88,13 +88,31 @@ test("Body Sculpt grants six sessions while locking the monthly protocol", async
 
 });
 
-test("all other PRIVATE protocols allow exactly one session", () => {
+test("PRIVATE protocols use their confirmed session limits", () => {
   const privateTreatments = treatments.filter(
     (treatment) => treatment.category_key === "private"
   );
 
   for (const treatment of privateTreatments) {
-    const expected = treatment.treatment_key === "private-body-sculpt-intensive" ? 6 : 1;
+    const expected = treatment.treatment_key === "private-body-sculpt-intensive" ? 6 : treatment.treatment_key === "private-cryo-contour-intensive" ? 2 : 1;
     assert.equal(getPrivateProtocolSessionLimit(treatment.treatment_key), expected);
+  }
+});
+
+
+test("Cryo Contour permits two visits and locks out other protocols", async () => {
+  const member = { id: 1, package_key: "private" };
+  const cryo = { category_key: "private", treatment_key: "private-cryo-contour-intensive" };
+  const other = { category_key: "private", treatment_key: "private-hifu-total-face" };
+  for (const used of [0, 1, 2]) {
+    const db = createFakeDb(Array.from({ length: used }, () => cryo));
+    const result = await getTreatmentEntitlementsForMonth(member, cryo, "2026-10-01", db);
+    assert.equal(result.remaining.private, 2 - used);
+    assert.equal(result.privateProtocol.sessionLimit, 2);
+    if (used > 0) {
+      const locked = await getTreatmentEntitlementsForMonth(member, other, "2026-10-01", db);
+      assert.equal(locked.remaining.private, 0);
+      assert.equal(locked.privateProtocol.locked, true);
+    }
   }
 });
