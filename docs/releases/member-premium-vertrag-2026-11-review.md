@@ -1,6 +1,6 @@
 # Member Premium 2026-11 – Änderungen zur Freigabe
 
-Status: **lokal vorbereitet, nicht veröffentlicht**. Auftrag: Abschnitt 3 der Übergabe vom 28.10.2026. Gedruckte Flyer und deren Dateien wurden nicht verändert. Keine Commits, kein Push, keine Shop-/Datenbankänderung und kein Versand an echte E-Mail-Adressen.
+Status: **am 28.10.2026 mit ausdrücklicher Freigabe live veröffentlicht**. Auftrag: Abschnitt 3 der Übergabe vom 28.10.2026. Gedruckte Flyer und deren Dateien wurden nicht verändert. Die Prüfungen haben keine echten Anträge, Buchungen, Lastschriften oder E-Mails ausgelöst. Die anschließenden freigegebenen Veröffentlichungen sind unten dokumentiert.
 
 ## Sichtbare Änderungen
 
@@ -86,3 +86,16 @@ Erst nach ausdrücklicher Freigabe der Inhaberin: Patch gegen dann aktuellen Hau
 ## Freigabe und erneute Prüfung am 28.10.2026
 
 Die Inhaberin hat die Live-Veröffentlichung ausdrücklich freigegeben: „gut dann prüfe und danach live freigabe hast du“. Render-Arbeitsbereich „My Workspace“ anschließend ausdrücklich bestätigt. Ihre Klarstellung „es läuft alles über apntly“ wurde übernommen: keine Salonized-Änderung, keine Migration 014 und kein Katalog-Sync. Die kurzzeitig vorbereiteten lokalen Alt-Link-Korrekturen wurden vollständig zurückgenommen; in Produktion wurden sie nie angewendet.
+
+
+## Veröffentlichung und Live-Verifikation
+
+- Produktionscommit: `9df8b994704f06a71b847e1deee9a0e044a5eaef`; Render-Deploy `dep-dbh75ftig2qs73bp7l2g`: **live**. `/ping` HTTP 200; im abgefragten Zeitfenster keine neuen Error-Logs.
+- `CONTRACT_VERSION=2026-11` gesetzt. Migration 013: neuer Standard 4.900 Cent, bestehende Vertragsgebühren nachweislich unverändert. Keine Behandlungs-/Buchungsdaten verändert. Lesende Kontrolle des Rollout-Fensters: keine neuen 2026-11-Verträge mit abweichender Gebühr.
+- Shopify-Theme `204041519368`: ausschließlich die zwei Vertrags-Sections hochgeladen, erneut heruntergeladen und bytegleich mit dem geprüften Stand verglichen. Beide Rechtstextseiten veröffentlicht und textgleich nach HTML-Normalisierung verifiziert.
+- Browserprüfung live: Einrichtung 49 €, Monatsbeiträge 149/169/199/399 €, Version 2026-11, 24 Paragraphen, Anlagen 1 und 2 auf den jeweiligen Seiten. Kein horizontaler Überlauf bei 390 Pixeln. Kündigung ohne Login sichtbar; Widerrufs-Beschriftung korrekt. Öffentlicher Sicherheitsnachweis-Endpunkt HTTP 200.
+- 116 Backend-Tests im Release-Checkout bestanden; 36 gezielte Prüfungen zusätzlich bestanden; Office-Produktionsbuild erfolgreich mit bestehender Bündelgrößenwarnung.
+- Apntly unverändert. Shopify-Produkte korrekt: `Microneedling` (PURE, Produkt 11940633379080, Variante 57703058080008) und `Microneedling + Ausreinigung` (DEFINE, Produkt 11951950037256, Variante 57760193184008), jeweils 0 €. Member-Links und Premium-Behandlungsschlüssel stimmen überein. „No Payment“ wurde nicht in einem angemeldeten Apntly-Admin bestätigt oder geändert. Kein echter Kalenderabschluss.
+- Die automatische Freigabeprüfung lehnte absichtlich ungültige POST-Tests am produktiven Vertragsendpunkt wegen möglicher Speicher-/Versandwirkungen ab. Diese Tests wurden nicht ausgeführt. Die weitere Live-Prüfung erfolgte nur lesend; Schreibpfade sind lokal automatisiert getestet. Kein echter E-Mail-Zustelltest.
+- Ein zusätzlicher Dokumentationscommit wurde zunächst von der automatischen Prüfung wegen fehlender ausdrücklicher Commit-Freigabe blockiert. Anschließend hat die Inhaberin ausdrücklich freigegeben: „Ja, nur Dokumentation nachtragen“. README und Prüfbericht werden als reiner Dokumentationscommit mit `[skip render]` nachgetragen; der bereits laufende Produktionsstand bleibt unverändert.
+- Sicherungen: `backups/member-premium-2026-11/`; Screenshot: `output/review/member-premium-2026-11/live-sales-mobile.png`.

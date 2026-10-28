@@ -198,7 +198,7 @@ The verified Shopify variant IDs live in `src/utils/bodySculptRules.js` and `sho
 Validation: `npm test`; `npm --prefix pdb-office run build`; Shopify Theme Check for the changed theme files. Do not publish the repository's old theme snapshot as a complete theme; deploy only the reviewed changed files based on a fresh live pull.
 
 
-## Member Premium contract 2026-11 (prepared, unpublished)
+## Member Premium contract 2026-11 (released)
 
 See `docs/releases/member-premium-vertrag-2026-11-review.md` for the complete
 change list and release checks. New applications use a 49 EUR setup fee and
@@ -206,3 +206,6 @@ the versioned legal exports under `src/legal/`. Run migration 013 and configure
 `CONTRACT_VERSION=2026-11` when releasing the backend and theme together.
 Existing stored contract prices remain unchanged. Publication requires the
 owner's explicit approval.
+
+Version 2026-11 was published with explicit owner approval on 2026-10-28.
+See the release report for deployment evidence and remaining test limitations.
