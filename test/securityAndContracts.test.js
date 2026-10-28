@@ -10,7 +10,7 @@ test('PRIVATE offer includes 12 months and setup fee', () => {
     name: 'PRIVATE',
     monthlyPriceCents: 39900,
     monthlyClaim: '1 vollständiges PRIVATE-Protokoll',
-    minimumTotalCents: 482700
+    minimumTotalCents: 483700
   });
 });
 

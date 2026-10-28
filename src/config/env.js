@@ -17,7 +17,7 @@ export const env = {
   adminSessionHours: Number.isFinite(configuredAdminSessionHours)
     ? Math.min(Math.max(configuredAdminSessionHours, 1), 24)
     : 8,
-  contractVersion: process.env.CONTRACT_VERSION || '2026-08-11-v2',
+  contractVersion: process.env.CONTRACT_VERSION || '2026-11',
   shopifyShop: process.env.SHOPIFY_SHOP || '',
   shopifyClientId: process.env.SHOPIFY_CLIENT_ID || '',
   shopifyClientSecret: process.env.SHOPIFY_CLIENT_SECRET || '',

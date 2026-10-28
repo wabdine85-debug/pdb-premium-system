@@ -2159,6 +2159,113 @@ body.pdb-premium-page #wisy-hint-bubble{
   }
 }
 
+    /* Preview sales refinements: clear choices and a direct path to treatments. */
+    .pdb-premium-v4 .pdb-hero-photo{position:relative;height:172px;margin:-24px -24px 20px;overflow:hidden;background:#2a2420}
+    .pdb-premium-v4 .pdb-hero-photo img{width:100%;height:100%;object-fit:cover;object-position:center 48%}
+    .pdb-premium-v4 .pdb-hero-photo:after{content:"";position:absolute;inset:45% 0 0;background:linear-gradient(transparent,rgba(20,16,13,.72))}
+    .pdb-premium-v4 .pdb-hero-photo span{position:absolute;z-index:1;left:20px;bottom:15px;color:#fff;font-size:12px;font-weight:750;letter-spacing:.1em;text-transform:uppercase}
+    .pdb-premium-v4 .pdb-hero-terms{margin:16px 0 0;font-size:13px;line-height:1.5;color:#65584d}
+    .pdb-premium-v4 .pdb-tier-strip:last-child .pdb-tier-badge{background:#f3e4d8;color:#31251d}
+    .pdb-premium-v4 .pdb-plan-head{padding-bottom:8px}
+    .pdb-premium-v4 .pdb-plan-body{gap:14px}
+    .pdb-premium-v4 .pdb-plan .pdb-tag-row{display:none}
+    .pdb-premium-v4 .pdb-plan-facts{display:grid;gap:0;margin:0;border-top:1px solid rgba(0,0,0,.09)}
+    .pdb-premium-v4 .pdb-plan-facts div{padding:13px 0;border-bottom:1px solid rgba(0,0,0,.09)}
+    .pdb-premium-v4 .pdb-plan-facts dt{font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#8a6e59;margin-bottom:5px}
+    .pdb-premium-v4 .pdb-plan-facts dd{margin:0;color:#282522;font-size:13px;line-height:1.45;font-weight:600}
+    .pdb-premium-v4 .pdb-plan.private .pdb-plan-facts{border-color:rgba(255,255,255,.19)}
+    .pdb-premium-v4 .pdb-plan.private .pdb-plan-facts div{border-color:rgba(255,255,255,.19)}
+    .pdb-premium-v4 .pdb-plan.private .pdb-plan-facts dt{color:#dcbda5}
+    .pdb-premium-v4 .pdb-plan.private .pdb-plan-facts dd{color:#fff}
+    .pdb-premium-v4 .pdb-plan[data-package-card="pure"]{border-color:#e8dfd8}
+    .pdb-premium-v4 .pdb-plan[data-package-card="define"]{border-color:#d5c0ae}
+    .pdb-premium-v4 .pdb-plan[data-package-card="beyond"]{border-color:#b99477}
+    .pdb-premium-v4 .pdb-plan-choice.is-selected{outline:none}
+    .pdb-premium-v4 .pdb-plan-choice.is-selected .pdb-plan-cta a{box-shadow:0 0 0 2px #b99477}
+    .pdb-premium-v4 .pdb-plan.private.is-selected .pdb-plan-cta a{box-shadow:0 0 0 2px #e4cab5}
+    .pdb-premium-v4 .pdb-plan-browse{text-align:center;margin:18px 0 0;font-size:14px;font-weight:750;color:#49382d}
+    .pdb-premium-v4 .pdb-plan-browse a{display:inline-flex;gap:8px;align-items:center;border-bottom:1px solid #b89578;padding:0 2px 5px}
+    .pdb-premium-v4 .pdb-plan-browse a:focus-visible{outline:2px solid #171717;outline-offset:5px}
+    .pdb-premium-v4 .pdb-plan{transition:transform .45s cubic-bezier(.4,0,.2,1),box-shadow .45s cubic-bezier(.4,0,.2,1),border-color .45s cubic-bezier(.4,0,.2,1)}
+    @media (hover:hover) and (pointer:fine){
+      .pdb-premium-v4 .pdb-plan:hover,.pdb-premium-v4 .pdb-plan:focus-within{transform:translateY(-6px);box-shadow:0 28px 52px rgba(46,32,22,.15);border-color:rgba(185,144,111,.48)}
+      .pdb-premium-v4 .pdb-plan.private:hover,.pdb-premium-v4 .pdb-plan.private:focus-within{box-shadow:0 32px 62px rgba(18,17,16,.32)}
+    }
+    @media (prefers-reduced-motion:no-preference){
+      .pdb-premium-v4 .pdb-plan.is-in-view .pdb-plan-head,
+      .pdb-premium-v4 .pdb-plan.is-in-view .pdb-plan-body{animation:pdb-plan-arrive .6s cubic-bezier(.4,0,.2,1) both;animation-delay:var(--pdb-enter-delay,0ms)}
+      .pdb-premium-v4 .pdb-plan.is-in-view .pdb-plan-body{animation-delay:calc(var(--pdb-enter-delay,0ms) + 80ms)}
+      @keyframes pdb-plan-arrive{from{opacity:.3;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+    }
+    .pdb-premium-v4 .pdb-existing-member{background:#171513;color:#fff;padding:44px 0}
+    .pdb-premium-v4 .pdb-existing-member-inner,.pdb-premium-v4 .pdb-service-teaser-inner{display:flex;align-items:center;justify-content:space-between;gap:28px}
+    .pdb-premium-v4 .pdb-existing-member h2,.pdb-premium-v4 .pdb-existing-member p{color:#fff}
+    .pdb-premium-v4 .pdb-existing-member p{max-width:660px;margin:0;color:#d7cbc2}
+    .pdb-premium-v4 .pdb-existing-member .pdb-btn-secondary{white-space:nowrap;color:#171513!important}
+    .pdb-premium-v4 .pdb-service-teaser{padding:36px 0;border-bottom:1px solid #e8dfd8;background:#faf8f6}
+    .pdb-premium-v4 .pdb-service-teaser h2{font-size:clamp(25px,3vw,34px);margin-bottom:7px}
+    .pdb-premium-v4 .pdb-service-teaser p{margin:0;font-size:14px}
+    .pdb-premium-v4 .pdb-service-teaser-links{display:flex;flex-wrap:wrap;gap:12px}
+    .pdb-premium-v4 .pdb-service-teaser-links a{padding:12px 16px;border:1px solid #cab7a7;border-radius:12px;background:#fff;color:#3e3026;font-weight:750;font-size:13px}
+    .pdb-premium-v4 .pdb-service-teaser-links a:hover,.pdb-premium-v4 .pdb-service-teaser-links a:focus-visible{border-color:#8b6a52;outline:2px solid #d9bfa9;outline-offset:2px}
+    .pdb-premium-v4 #pdb-premium-pakete,.pdb-premium-v4 #pdb-premium-treatments,.pdb-premium-v4 #pdb-premium-contract{scroll-margin-top:120px}
+    @media(max-width:780px){
+      .pdb-premium-v4 .pdb-hero{padding-top:40px}
+      .pdb-premium-v4 .pdb-hero-photo{height:148px;margin:-20px -20px 18px}
+      .pdb-premium-v4 .pdb-existing-member-inner,.pdb-premium-v4 .pdb-service-teaser-inner{display:grid;gap:18px}
+      .pdb-premium-v4 .pdb-service-teaser-links{display:grid}
+      .pdb-premium-v4 .pdb-existing-member .pdb-btn-secondary{white-space:normal}
+      .pdb-premium-v4 .pdb-plan-facts{grid-template-columns:repeat(2,minmax(0,1fr));column-gap:14px}
+      .pdb-premium-v4 .pdb-plan-facts div:last-child{grid-column:1/-1}
+    }
+    .pdb-premium-v4 .pdb-value-proof{margin-top:28px}
+    .pdb-premium-v4 .pdb-value-proof summary{position:relative;isolation:isolate;overflow:hidden;display:flex;align-items:center;justify-content:space-between;gap:24px;padding:25px 28px;list-style:none;cursor:pointer;border:1px solid #a8876b;border-radius:18px;background:radial-gradient(ellipse at 0 0,rgba(217,191,169,.14),transparent 65%),linear-gradient(120deg,#312b27,#161616);color:#fffdfa;box-shadow:0 8px 24px rgba(35,32,30,.13),inset 0 1px 0 rgba(234,216,200,.18);transition:transform .25s ease,box-shadow .35s ease,border-color .35s ease}
+    .pdb-premium-v4 .pdb-value-proof summary::-webkit-details-marker{display:none}
+    .pdb-premium-v4 .pdb-value-proof summary::marker{content:''}
+    .pdb-premium-v4 .pdb-value-proof summary::after{content:'';position:absolute;z-index:-1;inset:-100% -30%;pointer-events:none;background:linear-gradient(110deg,transparent 38%,rgba(234,216,200,.13) 48%,transparent 58%);transform:translateX(-80%)}
+    .pdb-premium-v4 .pdb-proof-copy{display:grid;gap:6px}
+    .pdb-premium-v4 .pdb-proof-title{font-size:19px;font-weight:600;line-height:1.4;color:#fffdfa}
+    .pdb-premium-v4 .pdb-proof-hint{font-size:14px;font-weight:400;line-height:1.5;color:#d9bfa9}
+    .pdb-premium-v4 .pdb-proof-action{display:inline-flex;flex-shrink:0;align-items:center;justify-content:space-between;gap:18px;min-height:48px;padding:11px 15px 11px 19px;border-radius:10px;background:linear-gradient(110deg,#ead8c8,#d8b79a,#b58c6d);color:#211b17;font-size:14px;font-weight:600;line-height:1.4;box-shadow:0 3px 10px rgba(0,0,0,.18);transition:box-shadow .3s ease}
+    .pdb-premium-v4 .pdb-proof-icon{position:relative;display:block;width:22px;height:22px;border:1px solid rgba(33,27,23,.3);border-radius:50%}
+    .pdb-premium-v4 .pdb-proof-icon::before,.pdb-premium-v4 .pdb-proof-icon::after{content:'';position:absolute;background:currentColor;inset:9px 5px;height:1px}
+    .pdb-premium-v4 .pdb-proof-icon::after{transform:rotate(90deg);transition:transform .35s cubic-bezier(.4,0,.2,1)}
+    .pdb-premium-v4 .pdb-proof-close{display:none}
+    .pdb-premium-v4 .pdb-value-proof[open] .pdb-proof-open{display:none}
+    .pdb-premium-v4 .pdb-value-proof[open] .pdb-proof-close{display:inline}
+    .pdb-premium-v4 .pdb-value-proof[open] .pdb-proof-icon::after{transform:rotate(0)}
+    .pdb-premium-v4 .pdb-value-proof summary:focus-visible{outline:3px solid #8b6a52;outline-offset:5px}
+    @media(hover:hover){.pdb-premium-v4 .pdb-value-proof summary:hover{transform:translateY(-2px);border-color:#d9bfa9;box-shadow:0 12px 30px rgba(35,32,30,.2),0 0 20px rgba(184,149,120,.13)}.pdb-premium-v4 .pdb-value-proof summary:hover .pdb-proof-action{box-shadow:0 4px 18px rgba(217,191,169,.23)}}
+    @media(prefers-reduced-motion:no-preference){
+      .pdb-premium-v4 .pdb-value-proof.is-in-view summary::after{animation:pdb-proof-light 1.6s cubic-bezier(.4,0,.2,1) .2s both}
+      .pdb-premium-v4 .pdb-value-proof[open] .pdb-value-examples article{animation:pdb-proof-reveal .45s cubic-bezier(.2,0,0,1) both}
+      .pdb-premium-v4 .pdb-value-proof[open] .pdb-value-examples article:nth-child(2){animation-delay:.06s}
+      .pdb-premium-v4 .pdb-value-proof[open] .pdb-value-examples article:nth-child(3){animation-delay:.12s}
+      .pdb-premium-v4 .pdb-value-proof[open] .pdb-value-examples article:nth-child(4){animation-delay:.18s}
+    }
+    @keyframes pdb-proof-light{from{transform:translateX(-80%)}to{transform:translateX(80%)}}
+    @keyframes pdb-proof-reveal{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+    @media(max-width:640px){.pdb-premium-v4 .pdb-value-proof summary{align-items:stretch;flex-direction:column;gap:18px;padding:22px}.pdb-premium-v4 .pdb-proof-title{font-size:18px}.pdb-premium-v4 .pdb-proof-action{align-self:flex-start}}
+    @media(prefers-reduced-motion:reduce){.pdb-premium-v4 .pdb-value-proof summary,.pdb-premium-v4 .pdb-proof-action,.pdb-premium-v4 .pdb-proof-icon::after{transition:none;transform:none}.pdb-premium-v4 .pdb-value-proof summary::after{display:none}}
+    .pdb-premium-v4 .pdb-value-examples{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px;margin:24px 0 20px}
+    .pdb-premium-v4 .pdb-value-examples article{display:flex;flex-direction:column;min-width:0;padding:23px 20px 20px;border:1px solid #d8cbc0;border-radius:16px;background:linear-gradient(145deg,#fffdfa,#f8f4ef);box-shadow:0 6px 20px rgba(35,32,30,.06)}
+    .pdb-premium-v4 .pdb-value-examples h3{font-size:21px;font-weight:600;letter-spacing:.07em;line-height:1.3;margin:0 0 7px;color:#34281f}
+    .pdb-premium-v4 .pdb-value-examples .pdb-example-rule{font-size:13px;line-height:1.5;min-height:40px;margin:0 0 14px;color:#665d54}
+    .pdb-premium-v4 .pdb-example-treatments{display:grid;align-content:start;gap:13px;flex:1;list-style:none;margin:0 0 22px;padding:0}
+    .pdb-premium-v4 .pdb-example-treatments li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;font-size:13px;line-height:1.6}
+    .pdb-premium-v4 .pdb-example-treatments a{color:#34281f;text-decoration:underline;text-decoration-color:#b89578;text-underline-offset:3px;overflow-wrap:anywhere}
+    .pdb-premium-v4 .pdb-example-treatments strong{font-size:13px;font-weight:600;white-space:nowrap;color:#34281f}
+    .pdb-premium-v4 .pdb-example-totals{display:grid;gap:10px;margin:0;padding:17px 0;border-top:1px solid #d8cbc0}
+    .pdb-premium-v4 .pdb-example-totals div{display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-size:13px;line-height:1.5}
+    .pdb-premium-v4 .pdb-example-totals dt{font-weight:400;color:#665d54}
+    .pdb-premium-v4 .pdb-example-totals dd{margin:0;white-space:nowrap;font-weight:600;color:#34281f}
+    .pdb-premium-v4 .pdb-example-saving{display:grid;gap:3px;padding:17px 15px;border:1px solid #dfc8b5;border-radius:10px;background:linear-gradient(120deg,#ead8c8,#e4cbb5);color:#34281f}
+    .pdb-premium-v4 .pdb-example-saving strong{font-size:28px;line-height:1.2;font-weight:600;color:inherit;letter-spacing:-.02em}
+    .pdb-premium-v4 .pdb-example-saving span{font-size:12px;line-height:1.6;font-weight:500;color:inherit}
+    .pdb-premium-v4 .pdb-value-note{font-size:14px;line-height:1.7;margin:0 0 10px;color:#665d54}
+    .pdb-premium-v4 .pdb-value-examples a:focus-visible{outline:2px solid #8b6a52;outline-offset:3px}
+    @media(max-width:1100px){.pdb-premium-v4 .pdb-value-examples{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @media(max-width:640px){.pdb-premium-v4 .pdb-value-examples{grid-template-columns:1fr;gap:18px}.pdb-premium-v4 .pdb-value-examples .pdb-example-rule{min-height:0}}
   </style>
 
   <span id="pdb-premium-top" class="pdb-anchor"></span>
@@ -2168,10 +2275,10 @@ body.pdb-premium-page #wisy-hint-bubble{
       <div class="pdb-hero-shell">
         <div class="pdb-hero-grid">
           <div class="pdb-hero-copy">
-            <div class="pdb-eyebrow">PDB Premium Membership</div>
-            <h1>PDB PREMIUM.<br>Ihre Beauty-Routine. Klar geplant.</h1>
+            <div class="pdb-eyebrow">PDB Premium · Wiesbaden</div>
+            <h1>Ihre Behandlung.<br>Ihr Rhythmus.</h1>
             <p class="pdb-lead">
-              Vier Membership-Stufen – von verlässlicher Pflegeroutine bis zum ganzheitlichen PRIVATE-Protokoll.
+              Wählen Sie jeden Monat die Behandlungen, die zu Ihnen passen – von regelmäßiger Hautpflege bis zu exklusiven Technologie-Treatments. Persönlich begleitet im PDB Aesthetic Room.
             </p>
 
             <div class="pdb-hero-sub">
@@ -2193,21 +2300,20 @@ body.pdb-premium-page #wisy-hint-bubble{
             </div>
 
             <div class="pdb-actions">
-  <a href="#pdb-premium-contract" class="pdb-btn">Mitgliedschaft online abschließen</a>
-  <a href="#pdb-premium-pakete" class="pdb-btn-secondary">Pakete ansehen</a>
-  <a href="{% if customer %}#pdb-member-booking{% else %}{{ routes.storefront_login_url }}{% endif %}" class="pdb-btn-secondary pdb-btn-member">
-  {% if customer %}Meine Termine & Kontingente{% else %}Member-Login & Terminbuchung{% endif %}
-</a>
+  <a href="#pdb-premium-pakete" class="pdb-btn">Passendes Paket finden</a>
+  <a href="#pdb-premium-treatments" class="pdb-btn-secondary">Behandlungen ansehen</a>
 </div>
+            <p class="pdb-hero-terms">Ab 149 € im Monat · 12 Monate Mindestlaufzeit · einmalig 49 € Einrichtung</p>
           </div>
 
           <div class="pdb-hero-visual">
             <div class="pdb-glass-card">
-              <div class="pdb-eyebrow" style="margin-bottom:10px;">Membership Übersicht</div>
-              <h3 style="margin-bottom:8px;">Vier Stufen. Ein klares System.</h3>
-              <p style="margin-bottom:16px;">
-                Die neue Struktur ist einfacher zu verstehen, hochwertiger positioniert und deutlich attraktiver als eine klassische Standard-Mitgliedschaft.
-              </p>
+              <div class="pdb-hero-photo">
+                <img src="{{ 'pdb-premium-silhouettes-v1.jpg' | asset_url }}" width="1672" height="941" alt="Atmosphärisches Symbolbild: Silhouetten in einem ruhigen Studio" fetchpriority="high">
+                <span>Ein Raum für Ihre Auszeit</span>
+              </div>
+              <div class="pdb-eyebrow" style="margin-bottom:10px;">Vier Wege zu Ihrer Routine</div>
+              <h3 style="margin-bottom:8px;">Finden Sie Ihr Premium.</h3>
 
               <div class="pdb-tier-stack">
                 <div class="pdb-tier-strip">
@@ -2243,12 +2349,522 @@ body.pdb-premium-page #wisy-hint-bubble{
                 </div>
               </div>
 
-              <div class="pdb-note">
-                Jede Paketstufe ist klar gegliedert und orientiert sich an Anspruch, Technologie und Exklusivität.
-              </div>
+              <div class="pdb-note">Jede Stufe enthält ein festes Monatskontingent. Ihre Behandlung wählen Sie aus den Leistungen des gebuchten Pakets.</div>
             </div>
           </div>
         </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="pdb-section" id="pdb-premium-pakete">
+    <div class="pdb-wrap">
+      <div class="pdb-center-head">
+        <div class="pdb-eyebrow">Die vier Paketstufen</div>
+        <h2>PURE. DEFINE. BEYOND. PRIVATE.</h2>
+        <p>Vergleichen Sie Monatsumfang, Auswahl und Preis. Direkt darunter finden Sie alle enthaltenen Behandlungen.</p>
+      </div>
+
+      <div class="pdb-grid pdb-plan-grid">
+        <article class="pdb-plan pdb-plan-choice" data-package-card="pure">
+          <div class="pdb-plan-head">
+            <div class="pdb-eyebrow" style="margin-bottom:10px;">PDB PURE</div>
+            <h3>Pflege & Routine</h3>
+            <div class="pdb-plan-sub">Regelmäßige Pflege und ein fester Rhythmus.</div>
+            <div class="pdb-plan-price">
+              <strong>149 €</strong>
+              <span>pro Monat</span>
+            </div>
+          </div>
+
+          <div class="pdb-plan-body">
+            <dl class="pdb-plan-facts">
+              <div><dt>Pro Monat</dt><dd>3 PURE-Behandlungen</dd></div>
+              <div><dt>Zur Wahl</dt><dd>15 PURE-Behandlungen</dd></div>
+              <div><dt>Beispiele</dt><dd>Aquafacial, Gesichtsbehandlung, LED-Lichttherapie</dd></div>
+            </dl>
+
+            <div class="pdb-tag-row">
+              <span class="pdb-tag">Routine</span>
+              <span class="pdb-tag">Pflege</span>
+              <span class="pdb-tag">Glow</span>
+            </div>
+
+            <div class="pdb-plan-cta">
+              <a href="#pdb-premium-contract" class="pdb-btn-secondary" data-pdb-package="pure">PURE wählen</a>
+            </div>
+          </div>
+        </article>
+
+        <article class="pdb-plan pdb-plan-choice" data-package-card="define">
+
+          <div class="pdb-plan-head">
+            <div class="pdb-eyebrow" style="margin-bottom:10px;">PDB DEFINE</div>
+            <h3>Wirkung & Kombination</h3>
+            <div class="pdb-plan-sub">Pflege und eine intensivere Behandlung kombinieren.</div>
+            <div class="pdb-plan-price">
+              <strong>169 €</strong>
+              <span>pro Monat</span>
+            </div>
+          </div>
+
+          <div class="pdb-plan-body">
+            <dl class="pdb-plan-facts">
+              <div><dt>Pro Monat</dt><dd>2 Behandlungen: 1 aus PURE + 1 aus DEFINE</dd></div>
+              <div><dt>Zur Wahl</dt><dd>15 PURE- und 10 DEFINE-Behandlungen</dd></div>
+              <div><dt>Beispiele</dt><dd>Aquafacial plus FORMA oder HydraFacial</dd></div>
+            </dl>
+
+            <div class="pdb-tag-row">
+              <span class="pdb-tag">Upgrade</span>
+              <span class="pdb-tag">Kombination</span>
+              <span class="pdb-tag">Mehr Wirkung</span>
+            </div>
+
+            <div class="pdb-plan-cta">
+              <a href="#pdb-premium-contract" class="pdb-btn-secondary" data-pdb-package="define">DEFINE wählen</a>
+            </div>
+          </div>
+        </article>
+
+        <article class="pdb-plan featured pdb-plan-choice" data-package-card="beyond">
+          <span class="pdb-plan-mark">Beliebt</span>
+          <div class="pdb-plan-head">
+            <div class="pdb-eyebrow" style="margin-bottom:10px;">PDB BEYOND</div>
+            <h3>Exklusiv & High-End</h3>
+            <div class="pdb-plan-sub">Exklusive Technologie und intensive Treatments.</div>
+            <div class="pdb-plan-price">
+              <strong>199 €</strong>
+              <span>pro Monat</span>
+            </div>
+          </div>
+
+          <div class="pdb-plan-body">
+            <dl class="pdb-plan-facts">
+              <div><dt>Pro Monat</dt><dd>1 BEYOND-Behandlung oder enthaltene Serie</dd></div>
+              <div><dt>Zur Wahl</dt><dd>15 BEYOND-Behandlungen</dd></div>
+              <div><dt>Beispiele</dt><dd>MOTUS: 3 große Körperzonen an einem Tag; HIFU: 1 Gesichtsareal</dd></div>
+            </dl>
+
+            <div class="pdb-tag-row">
+              <span class="pdb-tag">Luxus</span>
+              <span class="pdb-tag">High-End</span>
+              <span class="pdb-tag">Exklusiv</span>
+            </div>
+
+            <div class="pdb-plan-cta">
+              <a href="#pdb-premium-contract" class="pdb-btn" data-pdb-package="beyond">BEYOND wählen</a>
+            </div>
+          </div>
+        </article>
+
+        <article class="pdb-plan private pdb-plan-choice" data-package-card="private">
+          <span class="pdb-plan-mark" style="background:#f3e4d8;color:#191614">Exklusiv</span>
+          <div class="pdb-plan-head">
+            <div class="pdb-eyebrow" style="margin-bottom:10px;">PDB PRIVATE</div>
+            <h3>Ganzheitlich & kompromisslos</h3>
+            <div class="pdb-plan-sub">Umfassende Behandlungen für Gesicht und Körper.</div>
+            <div class="pdb-plan-price">
+              <strong>399 €</strong>
+              <span>pro Monat</span>
+            </div>
+          </div>
+          <div class="pdb-plan-body">
+            <dl class="pdb-plan-facts">
+              <div><dt>Pro Monat</dt><dd>1 komplettes Behandlungspaket aus PRIVATE</dd></div>
+              <div><dt>Zur Wahl</dt><dd>10 PRIVATE-Protokolle</dd></div>
+              <div><dt>Beispiele</dt><dd>Morpheus8 oder HIFU für das Gesicht; Body Sculpt mit 4 Terminen</dd></div>
+            </dl>
+            <div class="pdb-tag-row">
+              <span class="pdb-tag">Full Face</span><span class="pdb-tag">Protokolle</span><span class="pdb-tag">Private</span>
+            </div>
+            <div class="pdb-plan-cta">
+              <a href="#pdb-premium-contract" class="pdb-btn" data-pdb-package="private">PRIVATE wählen</a>
+            </div>
+          </div>
+        </article>
+      </div>
+
+      <p class="pdb-plan-terms">
+        12 Monate Mindestlaufzeit · danach monatlich kündbar · einmalig 49 € für Erstberatung, Hautanalyse und Eignungsprüfung · SEPA-Einzug am ersten Bankarbeitstag
+      </p>
+      <p class="pdb-plan-browse"><a href="#pdb-premium-treatments">Alle enthaltenen Behandlungen ansehen <span aria-hidden="true">↓</span></a></p>
+
+      <details class="pdb-value-proof" id="pdb-premium-preisvorteil">
+        <summary>
+          <span class="pdb-proof-copy"><span class="pdb-proof-title">Über 50 % Preisvorteil möglich</span><span class="pdb-proof-hint">Vier Pakete. Vier Monatsbeispiele. Entdecken Sie Ihre mögliche Ersparnis.</span></span>
+          <span class="pdb-proof-action"><span class="pdb-proof-open">Beispiele ansehen</span><span class="pdb-proof-close">Beispiele schließen</span><span class="pdb-proof-icon" aria-hidden="true"></span></span>
+        </summary>
+        <div class="pdb-value-examples">
+          <article data-pdb-example="pure">
+            <h3>PURE</h3>
+            <p class="pdb-example-rule">3 Behandlungen in einem Monat</p>
+            <ul class="pdb-example-treatments">
+              <li><a href="/products/microneedling-behandlung?variant=42414728184055">Microneedling</a><strong>139 €</strong></li>
+              <li><a href="/products/hydra-beaute?variant=42396288024823">Aquafacial · 60 Minuten</a><strong>129 €</strong></li>
+              <li><a href="/products/alexandrit-deka?variant=50474349134088">Laser-Haarentfernung · kleine Zone (Achseln)</a><strong>79 €</strong></li>
+            </ul>
+            <dl class="pdb-example-totals">
+              <div><dt>Regulär einzeln</dt><dd>347 €</dd></div>
+              <div><dt>Mit PURE pro Monat</dt><dd>149 €</dd></div>
+            </dl>
+            <div class="pdb-example-saving"><strong>198 € Ersparnis</strong><span>57,1 % Preisvorteil in diesem Monat</span></div>
+          </article>
+          <article data-pdb-example="define">
+            <h3>DEFINE</h3>
+            <p class="pdb-example-rule">1 × PURE + 1 × DEFINE in einem Monat</p>
+            <ul class="pdb-example-treatments">
+              <li><span>Ultraschall aus PURE</span><strong>149 €</strong></li>
+              <li><a href="/products/forma%E2%84%A2-by-inmode-radiofrequenz-hautstraffung-in-wiesbaden?variant=57749524611336">FORMA aus DEFINE</a><strong>249 €</strong></li>
+            </ul>
+            <dl class="pdb-example-totals">
+              <div><dt>Regulär einzeln</dt><dd>398 €</dd></div>
+              <div><dt>Mit DEFINE pro Monat</dt><dd>169 €</dd></div>
+            </dl>
+            <div class="pdb-example-saving"><strong>229 € Ersparnis</strong><span>57,5 % Preisvorteil in diesem Monat</span></div>
+          </article>
+          <article data-pdb-example="beyond">
+            <h3>BEYOND</h3>
+            <p class="pdb-example-rule">1 enthaltene Serie in einem Monat</p>
+            <ul class="pdb-example-treatments">
+              <li><a href="/products/emsculpt?variant=42590239031543">3 × EMS-Sculpt à 169 €</a><strong>507 €</strong></li>
+            </ul>
+            <dl class="pdb-example-totals">
+              <div><dt>Regulär einzeln</dt><dd>507 €</dd></div>
+              <div><dt>Mit BEYOND pro Monat</dt><dd>199 €</dd></div>
+            </dl>
+            <div class="pdb-example-saving"><strong>308 € Ersparnis</strong><span>60,7 % Preisvorteil in diesem Monat</span></div>
+          </article>
+          <article data-pdb-example="private">
+            <h3>PRIVATE</h3>
+            <p class="pdb-example-rule">1 vollständige Behandlung in einem Monat</p>
+            <ul class="pdb-example-treatments">
+              <li><a href="/products/hifu-behandlung?variant=42446245691639">HIFU · gesamtes Gesicht</a><strong>899 €</strong></li>
+            </ul>
+            <dl class="pdb-example-totals">
+              <div><dt>Regulär einzeln</dt><dd>899 €</dd></div>
+              <div><dt>Mit PRIVATE pro Monat</dt><dd>399 €</dd></div>
+            </dl>
+            <div class="pdb-example-saving"><strong>500 € Ersparnis</strong><span>55,6 % Preisvorteil in diesem Monat</span></div>
+          </article>
+        </div>
+        <p class="pdb-value-note">Alle Preise inklusive MwSt. Die Beispiele beziehen sich jeweils auf einen vollständig genutzten Mitgliedschaftsmonat. Verglichen werden die regulären Einzelpreise der jeweils genannten Behandlungen und Ausführungen. Die einmalige Einrichtung von 49 € ist nicht eingerechnet; im ersten Monat reduziert sie die dargestellte Ersparnis um 49 €. Bei einer anderen Behandlungsauswahl kann der Preisvorteil geringer sein oder entfallen. Preisstand: 27. Oktober 2026.</p>
+      </details>
+
+
+    </div>
+  </section>
+
+  <section class="pdb-section pdb-treatments-section" id="pdb-premium-treatments">
+    <div class="pdb-wrap">
+      <div class="pdb-center-head">
+        <div class="pdb-eyebrow">Enthaltene Behandlungen</div>
+        <h2>Diese Treatments stehen je nach Paketstufe zur Verfügung</h2>
+        <p>
+          Die Behandlungsbereiche sind klar gegliedert, damit sofort sichtbar wird, welche Leistungen zu PURE, DEFINE, BEYOND und PRIVATE gehören.
+        </p>
+      </div>
+
+      <div class="pdb-cats">
+        <div class="pdb-cat active">
+          <button class="pdb-cat-btn" type="button" aria-expanded="true" aria-controls="pdb-pure-treatment-panel">
+            <div class="pdb-cat-btn-left">
+              <div class="pdb-cat-letter">P</div>
+              <div>
+                <h3>PURE Treatments</h3>
+                <p>15 Behandlungen · 3 pro Monat aus diesem Bereich</p>
+              </div>
+            </div>
+            <div class="pdb-cat-arrow" aria-hidden="true">+</div>
+          </button>
+
+          <div class="pdb-cat-panel" id="pdb-pure-treatment-panel">
+            <div class="pdb-treatment-grid">
+              <div class="pdb-treatment"><h4>Laser Haarentfernung – kleine Zone</h4><p>Geeignet für kleinere Areale als planbare Membership-Routine.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill pure">PURE</span></div></div>
+              <div class="pdb-treatment"><h4>Klassische Gesichtsbehandlung</h4><p>Die klassische Pflegebasis für Frische, Wohlgefühl und regelmäßige Hauterhaltung.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill pure">PURE</span></div></div>
+              <div class="pdb-treatment"><h4>Aquafacial</h4><p>Beliebt für gereinigte, frischer wirkende Haut und einen gepflegten Glow.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill pure">PURE</span></div></div>
+              <div class="pdb-treatment"><h4>Lymphdrainage</h4><p>Unterstützend für Leichtigkeit und ein strukturiertes Studio-Ritual.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill pure">PURE</span></div></div>
+              <div class="pdb-treatment"><h4>Dermaplaning</h4><p>Beliebte Ergänzung für ein glatteres Hautgefühl und ein gepflegtes Finish.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill pure">PURE</span></div></div>
+              <div class="pdb-treatment"><h4>Gesichtsmassage</h4><p>Entspannende Membership-Leistung für Regeneration, Pflege und Wohlbefinden.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill pure">PURE</span></div></div>
+              <div class="pdb-treatment"><h4>Microdermabrasion</h4><p>Routineorientierte Behandlung für ein feineres, gepflegteres Hautbild.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill pure">PURE</span></div></div>
+              <div class="pdb-treatment"><h4>Matrix Lifting Mask</h4><p>Pflegender Booster für Glow, Finish und einen luxuriösen Abschluss.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill pure">PURE</span></div></div>
+              <div class="pdb-treatment"><h4>Microneedling</h4><p>Aktiviert die Hauterneuerung und verfeinert das Hautbild sichtbar.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill pure">PURE</span></div></div>
+              <div class="pdb-treatment"><h4>Ausreinigung</h4><p>Klärt die Haut gründlich und reduziert verstopfte Poren.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill pure">PURE</span></div></div>
+              <div class="pdb-treatment"><h4>Ultraschall Behandlung</h4><p>Schleust Wirkstoffe ein und unterstützt ein frisches Hautgefühl.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill pure">PURE</span></div></div>
+              <div class="pdb-treatment"><h4>LED Licht Therapie</h4><p>Beruhigt die Haut und unterstützt Regeneration sowie Ausstrahlung.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill pure">PURE</span></div></div>
+              <div class="pdb-treatment"><h4>Madero – Gesicht, Hals oder Dekolleté</h4><p>Membership-Baustein mit strukturierter Pflege- und Ritualwirkung.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill pure">PURE</span></div></div>
+              <div class="pdb-treatment"><h4>OxyGeneo Behandlung</h4><p>Peeling und Wirkstoffpflege als Gesichtsbehandlung für einen frischen, gepflegten Teint.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill pure">PURE</span></div></div>
+              <div class="pdb-treatment"><h4>Radiofrequenz Behandlung</h4><p>Apparative Behandlung einer ausgewählten Zone mit kontrollierter Wärme.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill pure">PURE</span></div></div>
+            </div>
+            <button class="pdb-treatment-more" type="button" aria-expanded="false">
+              Alle 15 PURE Behandlungen anzeigen
+            </button>
+          </div>
+        </div>
+
+        <div class="pdb-cat">
+          <button class="pdb-cat-btn" type="button" aria-expanded="false" aria-controls="pdb-define-treatment-panel">
+            <div class="pdb-cat-btn-left">
+              <div class="pdb-cat-letter">D</div>
+              <div>
+                <h3>DEFINE Treatments</h3>
+                <p>10 Behandlungen · 1 aus PURE + 1 aus DEFINE pro Monat</p>
+              </div>
+            </div>
+            <div class="pdb-cat-arrow" aria-hidden="true">+</div>
+          </button>
+
+          <div class="pdb-cat-panel" id="pdb-define-treatment-panel">
+            <div class="pdb-treatment-grid">
+              <div class="pdb-treatment"><h4>Kryolipolyse</h4><p>Kontrollierte Kältebehandlung für eine ausgewählte Körperzone. Der Fokus liegt auf lokaler Konturierung und einer langfristig schlanker wirkenden Silhouette; die geeignete Zone wird vorab individuell beurteilt.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill define">DEFINE</span></div></div>
+              <div class="pdb-treatment"><h4>EMS-Sella Stuhl</h4><p>Nicht-invasive EMS-Anwendung im Sitzen zur intensiven Aktivierung der Beckenbodenmuskulatur. Geeignet als komfortable, bekleidete Behandlung für mehr Körperwahrnehmung und gezielte Muskelstimulation.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill define">DEFINE</span></div></div>
+              <div class="pdb-treatment"><h4>Microneedling + Ausreinigung</h4><p>Gründliche Porenreinigung und gezielte Needling-Impulse in einer kombinierten Behandlung. Das Konzept eignet sich bei Unreinheiten, vergrößert wirkenden Poren und dem Wunsch nach einer feineren, gleichmäßigeren Hautstruktur.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill define">DEFINE</span></div></div>
+              <div class="pdb-treatment"><h4>EMS-Sculpt Neo</h4><p>Intensive elektromagnetische Muskelstimulation für eine ausgewählte Körperzone. Die Anwendung unterstützt Muskelaktivierung und Körperkonturierung und eignet sich besonders als Ergänzung zu einem aktiven Lebensstil.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill define">DEFINE</span></div></div>
+              <div class="pdb-treatment"><h4>MOTUS PRO DEKA® – Haarentfernung große Zone</h4><p>Laser-Haarentfernung für größere Körperbereiche wie Beine, Rücken oder Arme.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill define">DEFINE</span></div></div>
+              <div class="pdb-treatment"><h4>FORMA by INMODE™ – Gesicht, Hals oder Dekolleté</h4><p>Kontrollierte Radiofrequenzwärme für eine ausgewählte Zone. Die Behandlung unterstützt Kollagenprozesse und eignet sich bei dem Wunsch nach einem glatter, fester und konturierter wirkenden Hautbild.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill define">DEFINE</span></div></div>
+              <div class="pdb-treatment"><h4>HYDRAFACIAL® Signature</h4><p>Mehrstufige Tiefenreinigung, sanfte Abtragung und intensive Wirkstoffversorgung. Das Signature-Ritual zielt auf gereinigte Poren, ein verfeinertes Hautgefühl und einen unmittelbar gepflegten Glow.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill define">DEFINE</span></div></div>
+              <div class="pdb-treatment"><h4>Ultraschall Titan – Gesicht, Hals oder Dekolleté</h4><p>Apparative Ultraschallbehandlung für eine ausgewählte Zone mit Fokus auf Wirkstoffversorgung und Festigkeit. Geeignet bei dem Wunsch nach frischerer Ausstrahlung und einem geglättet wirkenden Finish.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill define">DEFINE</span></div></div>
+              <div class="pdb-treatment"><h4>CIRCADIA® Premium Treatments</h4><p>Zum Beispiel Firming Peptide Mask Treatment, SWICH™ oder Oxygen RX; ohne Pflicht zum Kauf von Pflegeprodukten.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill define">DEFINE</span></div></div>
+              <div class="pdb-treatment"><h4>Carbon Laser Peeling</h4><p>Laserbasiertes Peeling mit Carbon-Lotion für intensive Reinigung und ein verfeinertes Hautbild. Besonders interessant bei öliger, zu Unreinheiten neigender Haut und sichtbar vergrößerten Poren.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill define">DEFINE</span></div></div>
+            </div>
+            <button class="pdb-treatment-more" type="button" aria-expanded="false">
+              Alle 10 DEFINE Behandlungen anzeigen
+            </button>
+          </div>
+        </div>
+
+        <div class="pdb-cat">
+          <button class="pdb-cat-btn" type="button" aria-expanded="false" aria-controls="pdb-beyond-treatment-panel">
+            <div class="pdb-cat-btn-left">
+              <div class="pdb-cat-letter">B</div>
+              <div>
+                <h3>BEYOND Treatments</h3>
+                <p>15 Behandlungen · 1 exklusive Behandlung pro Monat</p>
+              </div>
+            </div>
+            <div class="pdb-cat-arrow" aria-hidden="true">+</div>
+          </button>
+
+          <div class="pdb-cat-panel" id="pdb-beyond-treatment-panel">
+            <div class="pdb-treatment-grid">
+              <div class="pdb-treatment"><h4>Morpheus8™ – Gesichtsareal</h4><p>Fraktioniertes Radiofrequenz-Microneedling für ein gezielt ausgewähltes Gesichtsareal. Die Behandlung unterstützt festere Konturen, feinere Poren und eine gleichmäßigere Hautstruktur.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill beyond">BEYOND</span></div></div>
+              <div class="pdb-treatment"><h4>MOTUS PRO DEKA® – drei große Zonen an einem Behandlungstag</h4><p>Drei große Körperzonen werden an einem gemeinsam terminierten Behandlungstag behandelt. Die Zonen werden vorab abgestimmt.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill beyond">BEYOND</span></div></div>
+              <div class="pdb-treatment"><h4>HIFU – ein frei wählbares Gesichtsareal</h4><p>Sie wählen genau ein Gesichtsareal, zum Beispiel Jawline, Doppelkinn oder Augenbrauenbereich. Die geeignete Zone wird vor dem Termin besprochen.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill beyond">BEYOND</span></div></div>
+              <div class="pdb-treatment"><h4>RedTouch PRO – Gesicht</h4><p>Laserbehandlung für das Gesicht mit Fokus auf Kollagenstimulation und Hautqualität. Je nach Behandlungsplan kann sie zu einer gleichmäßigeren Struktur, frischerer Ausstrahlung und einem fester wirkenden Hautbild beitragen.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill beyond">BEYOND</span></div></div>
+              <div class="pdb-treatment"><h4>HydraFacial meets Forma</h4><p>HydraFacial reinigt und versorgt die Haut intensiv; FORMA ergänzt kontrollierte Radiofrequenzwärme. Die Kombination verbindet sichtbaren Glow mit einem glatter und fester wirkenden Finish.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill beyond">BEYOND</span></div></div>
+              <div class="pdb-treatment"><h4>Exosomen</h4><p>Äußerliche Wirkstoffanwendung im Gesicht, keine Injektion. Sie wird passend zum Hautzustand eingesetzt und eignet sich bei dem Wunsch nach ruhigerer, widerstandsfähiger und erholter wirkender Haut.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill beyond">BEYOND</span></div></div>
+              <div class="pdb-treatment"><h4>Polynukleotide</h4><p>Äußerliche Anwendung im Gesicht, keine Injektion. Ziel ist eine verbesserte Hautqualität mit glatter, elastischer und vitaler wirkendem Erscheinungsbild; die Eignung wird vorab geprüft.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill beyond">BEYOND</span></div></div>
+              <div class="pdb-treatment"><h4>Medical Needling</h4><p>Intensives Microneedling zur gezielten Aktivierung der Hauterneuerung. Besonders geeignet bei sichtbaren Strukturunregelmäßigkeiten, vergrößert wirkenden Poren und dem Wunsch nach einem festeren Hautbild.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill beyond">BEYOND</span></div></div>
+              <div class="pdb-treatment"><h4>MESO PEEL® MD</h4><p>Zum Beispiel blemiskin, azelan rx, phenTCA oder melanostop tranex als gehobene Peeling-Option.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill beyond">BEYOND</span></div></div>
+              <div class="pdb-treatment"><h4>HydraFacial meets Circadia</h4><p>Tiefenreinigung kombiniert mit Wirkstoffen für maximale Hauterneuerung und Glow.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill beyond">BEYOND</span></div></div>
+              <div class="pdb-treatment"><h4>3x Kryolipolyse</h4><p>Drei aufeinander abgestimmte Kälteanwendungen für eine geeignete Körperzone. Die Serie ermöglicht eine strukturierte Konturbehandlung mit ausreichendem Abstand und individueller Verlaufskontrolle.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill beyond">BEYOND</span></div></div>
+              <div class="pdb-treatment"><h4>3x EMS-Sella</h4><p>Drei nicht-invasive EMS-Anwendungen im Sitzen zur wiederholten Aktivierung der Beckenbodenmuskulatur. Die Serie schafft stärkere Trainingsreize als eine einzelne Behandlung.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill beyond">BEYOND</span></div></div>
+              <div class="pdb-treatment"><h4>2x Forma</h4><p>Zwei Radiofrequenzbehandlungen für dieselbe ausgewählte Zone. Die Wiederholung unterstützt einen kontinuierlicheren Behandlungsreiz mit Fokus auf glatter und fester wirkende Haut.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill beyond">BEYOND</span></div></div>
+              <div class="pdb-treatment"><h4>3x EMS-Sculpt</h4><p>Drei intensive Muskelstimulations-Termine für eine ausgewählte Körperzone. Die Serie unterstützt Muskelaktivierung und Körperkonturierung und eignet sich als Ergänzung zu Bewegung und ausgewogener Ernährung.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill beyond">BEYOND</span></div></div>
+            <div class="pdb-treatment"><h4>Ultraschall Titan – Gesicht, Hals und Dekolleté</h4><p>Ultraschall Titan für Gesicht, Hals und Dekolleté als gemeinsame BEYOND-Behandlung.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill beyond">BEYOND</span></div></div>
+</div>
+            <button class="pdb-treatment-more" type="button" aria-expanded="false">
+              Alle 15 BEYOND Behandlungen anzeigen
+            </button>
+          </div>
+        </div>
+
+        <div class="pdb-cat">
+          <button class="pdb-cat-btn" type="button" aria-expanded="false" aria-controls="pdb-private-treatment-panel">
+            <div class="pdb-cat-btn-left">
+              <div class="pdb-cat-letter" style="background:#171513;color:#f0d7c2">PR</div>
+              <div>
+                <h3>PRIVATE Treatments</h3>
+                <p>10 ganzheitliche Protokolle · 1 vollständiges Protokoll pro Monat</p>
+              </div>
+            </div>
+            <div class="pdb-cat-arrow" aria-hidden="true">+</div>
+          </button>
+          <div class="pdb-cat-panel" id="pdb-private-treatment-panel">
+            <div class="pdb-treatment-grid">
+              <div class="pdb-treatment"><h4>Morpheus8™ – gesamtes Gesicht</h4><p>Fraktioniertes Radiofrequenz-Microneedling für das gesamte Gesicht. Das Protokoll unterstützt ein straffer wirkendes Hautbild, feinere Poren und eine gleichmäßigere Hautstruktur; Intensität und Schwerpunkte werden an den individuellen Hautzustand angepasst.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill private">PRIVATE</span></div></div>
+              <div class="pdb-treatment"><h4>HIFU – Gesicht</h4><p>Fokussierter Ultraschall für das gesamte Gesicht mit Schwerpunkt auf Konturen und Festigkeit. Geeignet bei dem Wunsch nach definierter wirkender Jawline, gestraffterer Haut und einem natürlichen Lifting-Effekt ohne operativen Eingriff.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill private">PRIVATE</span></div></div>
+              <div class="pdb-treatment"><h4>RedTouch PRO – Gesicht, Hals und Dekolleté</h4><p>Das umfassende RedTouch-PRO-Protokoll behandelt Gesicht, Hals und Dekolleté als zusammenhängende Zone. Es kann die Kollagenneubildung unterstützen und lässt Hautstruktur, Spannkraft und Teint ebenmäßiger und frischer wirken.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill private">PRIVATE</span></div></div>
+              <div class="pdb-treatment"><h4>HydraForma Ultimate</h4><p>HydraForma Ultimate umfasst HydraFacial Signature, FORMA by INMODE™ für Gesicht und Hals, eine CIRCADIA-Maske und LED-Lichttherapie. Die vier Bestandteile werden in einer vollständigen 90-minütigen PRIVATE-Sitzung kombiniert.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill private">PRIVATE</span></div></div>
+              <div class="pdb-treatment"><h4>Regeneration Pro</h4><p>Medical Needling + Exosomen (äußerlich, keine Injektion) + LED-Lichttherapie.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill private">PRIVATE</span></div></div>
+              <div class="pdb-treatment"><h4>Glass Skin Protocol</h4><p>Dermaplaning + HydraFacial + Circadia Firming Peptide.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill private">PRIVATE</span></div></div>
+              <div class="pdb-treatment"><h4>Pigment & Texture Protocol</h4><p>Carbon Laser Peeling + HydraFacial + FORMA.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill private">PRIVATE</span></div></div>
+              <div class="pdb-treatment"><h4>Laser Complete</h4><p>Ganzkörper-Laserbehandlung mit MOTUS PRO DEKA® für eine langfristige Reduktion unerwünschter Haare. Die ausgewählten Körperzonen und Einstellungen werden individuell abgestimmt, um die Behandlung möglichst komfortabel und effizient zu gestalten.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill private">PRIVATE</span></div></div>
+              <div class="pdb-treatment"><h4>Body Sculpt Intensive</h4><p>4 Termine mit EMS-Sculpt. Bei zwei Terminen zusätzlich Lymphdrainage nach Wahl. EMS: 30 Min. · EMS + Lymphdrainage: 60 Min.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill private">PRIVATE · 4 Termine</span></div></div>
+              <div class="pdb-treatment"><h4>Cryo Contour Intensive</h4><p>2 Termine pro Monat, jeweils 1 × Kryolipolyse + 1 × EMS-Sculpt + 1 × Lymphdrainage.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill private">PRIVATE</span></div></div>
+            </div>
+            <button class="pdb-treatment-more" type="button" aria-expanded="false">Alle 10 PRIVATE Behandlungen anzeigen</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="pdb-section pdb-contract-section">
+    <div class="pdb-wrap">
+      <div class="pdb-contract-shell" id="pdb-premium-contract">
+        <div class="pdb-contract-head">
+          <div>
+            <div class="pdb-eyebrow">Sicher online abschließen</div>
+            <h2>Ihre Mitgliedschaft verbindlich bestellen</h2>
+            <p>Mit Ihrer Bestellung erteilen Sie zugleich das SEPA-Mandat. Der Vertrag kommt erst mit unserer ausdrücklichen Annahme nach Einrichtung des Einzugs im Naspa-Onlinebanking zustande.</p>
+          </div>
+          <div class="pdb-contract-total" aria-live="polite">
+            <strong id="pdb-contract-monthly">199 € / Monat</strong>
+            <span>monatlicher SEPA-Einzug</span>
+          </div>
+        </div>
+
+        <details class="pdb-contract-disclosure" id="pdb-contract-disclosure">
+          <summary>
+            <span class="pdb-contract-disclosure-copy">
+              <strong>Vertragsdaten &amp; SEPA-Mandat</strong>
+              <small>Persönliche Daten, Anschrift, IBAN und Pflichtbestätigungen sicher ergänzen.</small>
+            </span>
+            <span class="pdb-contract-disclosure-action" aria-hidden="true">
+              <span class="pdb-contract-disclosure-action-closed">Formular öffnen</span>
+              <span class="pdb-contract-disclosure-action-open">Formular schließen</span>
+            </span>
+          </summary>
+          <div class="pdb-contract-disclosure-body">
+
+        {% if customer %}
+          <form class="pdb-contract-form" id="pdb-membership-contract-form" novalidate>
+            <div class="pdb-contract-fields">
+              <div class="pdb-contract-field">
+                <label for="pdb-package">Paket <span class="pdb-required-mark" aria-hidden="true">*</span></label>
+                <select id="pdb-package" name="package_key" required>
+                  <option value="pure">PURE · 149 € / Monat</option>
+                  <option value="define">DEFINE · 169 € / Monat</option>
+                  <option value="beyond" selected>BEYOND · 199 € / Monat</option>
+                  <option value="private">PRIVATE · 399 € / Monat</option>
+                </select>
+              </div>
+              <div class="pdb-contract-field">
+                <label for="pdb-start">Vertragsbeginn <span class="pdb-required-mark" aria-hidden="true">*</span></label>
+                <input id="pdb-start" name="starts_on" type="date" required>
+              </div>
+              <div class="pdb-contract-field">
+                <label for="pdb-first-name">Vorname <span class="pdb-required-mark" aria-hidden="true">*</span></label>
+                <input id="pdb-first-name" name="first_name" value="{{ customer.first_name | escape }}" autocomplete="given-name" required>
+              </div>
+              <div class="pdb-contract-field">
+                <label for="pdb-last-name">Nachname <span class="pdb-required-mark" aria-hidden="true">*</span></label>
+                <input id="pdb-last-name" name="last_name" value="{{ customer.last_name | escape }}" autocomplete="family-name" required>
+              </div>
+              <div class="pdb-contract-field full">
+                <label for="pdb-email">E-Mail-Adresse <span class="pdb-required-mark" aria-hidden="true">*</span></label>
+                <input id="pdb-email" name="email" type="email" value="{{ customer.email | escape }}" autocomplete="email" required>
+              </div>
+              <div class="pdb-contract-field full">
+                <label for="pdb-address">Straße und Hausnummer <span class="pdb-required-mark" aria-hidden="true">*</span></label>
+                <input id="pdb-address" name="address_line1" autocomplete="street-address" pattern=".*[0-9].*" title="Bitte geben Sie Straße und Hausnummer ein, zum Beispiel Rheinstraße 59." required>
+              </div>
+              <div class="pdb-contract-field">
+                <label for="pdb-postal">PLZ <span class="pdb-required-mark" aria-hidden="true">*</span></label>
+                <input id="pdb-postal" name="postal_code" inputmode="numeric" autocomplete="postal-code" minlength="3" maxlength="12" required>
+              </div>
+              <div class="pdb-contract-field">
+                <label for="pdb-city">Ort <span class="pdb-required-mark" aria-hidden="true">*</span></label>
+                <input id="pdb-city" name="city" autocomplete="address-level2" required>
+              </div>
+              <div class="pdb-contract-field full">
+                <label for="pdb-iban">IBAN für den monatlichen SEPA-Einzug <span class="pdb-required-mark" aria-hidden="true">*</span></label>
+                <input id="pdb-iban" name="iban" inputmode="text" autocomplete="off" autocapitalize="characters" spellcheck="false" minlength="15" maxlength="42" aria-describedby="pdb-iban-help" placeholder="DE00 0000 0000 0000 0000 00" required>
+                <p class="pdb-field-help" id="pdb-iban-help">Die Schreibweise und Prüfsumme der IBAN werden vor dem Absenden geprüft.</p>
+              </div>
+              <input type="hidden" name="debit_day" value="1">
+              <input type="hidden" name="contract_version" value="2026-11">
+            </div>
+            <p class="pdb-required-note"><span class="pdb-required-mark" aria-hidden="true">*</span> Pflichtfelder</p>
+
+            <div class="pdb-contract-checks">
+              <label class="pdb-contract-check"><input type="checkbox" name="confirm_age_18" required><span>Ich bestätige, dass ich mindestens 18 Jahre alt und zur Abgabe dieser Vertragserklärung berechtigt bin.</span></label>
+              <label class="pdb-contract-check"><input type="checkbox" name="accept_agb" required><span>Ich akzeptiere die <a href="/pages/premium-vertragsbedingungen" target="_blank">Mitgliedschaftsbedingungen mit Leistungsverzeichnis (Version 2026-11)</a>. Kündigung erstmals zum Ende der 12 Monate mit einem Monat Frist; danach jederzeit mit einem Monat Frist.</span></label>
+              <label class="pdb-contract-check"><input type="checkbox" name="accept_withdrawal" required><span>Ich habe die <a href="/pages/premium-widerruf" target="_blank">Widerrufsbelehrung und das Widerrufsformular (Anlage 2, Version 2026-11)</a> erhalten und konnte sie speichern.</span></label>
+              <div class="pdb-contract-mandate"><strong>SEPA-Basislastschriftmandat</strong>Zahlungsempfänger: PDB Aesthetic Room, Inhaberin Noureen Hussain, Rheinstraße 59, 65185 Wiesbaden · Gläubiger-ID: DE73ZZZ00002018874 · Mandatsreferenz: wird nach dem Abschluss mitgeteilt. Ich ermächtige PDB Aesthetic Room, Inhaberin Noureen Hussain, wiederkehrende Zahlungen aus dieser Mitgliedschaft sowie die einmalige Einrichtungsgebühr von meinem Konto einzuziehen. Zugleich weise ich mein Kreditinstitut an, die Lastschriften einzulösen. Ich kann innerhalb von acht Wochen ab Belastungsdatum die Erstattung des belasteten Betrags verlangen; es gelten die mit meinem Kreditinstitut vereinbarten Bedingungen.</div>
+              <label class="pdb-contract-check"><input type="checkbox" name="account_holder_confirmed" required><span>Ich bestätige, dass ich Kontoinhaber/in der angegebenen IBAN bin. Als Kontoinhaber wird mein oben angegebener Vor- und Nachname verwendet.</span></label>
+              <label class="pdb-contract-check"><input type="checkbox" name="accept_sepa" required><span>Ich erteile das oben beschriebene SEPA-Basislastschriftmandat. Fälligkeit: erster Bankarbeitstag des Beitragsmonats; Vorabankündigung mindestens zwei Kalendertage vor dem Einzug.</span></label>
+              <label class="pdb-contract-check"><input type="checkbox" name="request_early_start"><span>Optional: Ich verlange ausdrücklich, dass PDB bereits vor Ablauf der 14-tägigen Widerrufsfrist mit der Leistung beginnt. Bei einem Widerruf schulde ich Wertersatz für die bis dahin erbrachten Leistungen.</span></label>
+            </div>
+
+            <div class="pdb-contract-security">Ihre IBAN wird verschlüsselt in unserem Vertragssystem gespeichert und nicht in Shopify-Kundennotizen oder Kundentags abgelegt.</div>
+            <p class="pdb-plan-terms">Informationen zur Verarbeitung Ihrer Vertrags- und Zahlungsdaten finden Sie in unserer <a href="{{ shop.privacy_policy.url }}" target="_blank">Datenschutzerklärung</a>.</p>
+            <div class="pdb-contract-progress" id="pdb-contract-progress" role="status" aria-live="polite" hidden>
+              <span>Vertrag wird sicher übermittelt… Bitte lassen Sie diese Seite geöffnet.</span>
+              <span class="pdb-contract-progress-track" aria-hidden="true"><span class="pdb-contract-progress-bar"></span></span>
+            </div>
+            <div class="pdb-contract-status" id="pdb-contract-status" role="status" aria-live="polite"></div>
+            <section class="pdb-contract-success" id="pdb-contract-success" role="status" aria-live="polite" tabindex="-1" hidden>
+              <span class="pdb-contract-success-icon" aria-hidden="true">✓</span>
+              <div class="pdb-contract-success-copy">
+                <span class="pdb-contract-success-kicker">Sicher übermittelt</span>
+                <h3>Ihre Bestellung ist eingegangen</h3>
+                <p class="pdb-contract-success-lead">Vielen Dank. Ihre Angaben wurden gespeichert. Der Vertrag kommt erst mit unserer ausdrücklichen Annahme nach Einrichtung des SEPA-Einzugs zustande.</p>
+                <div class="pdb-contract-success-details" aria-label="Zusammenfassung Ihrer Bestellung">
+                  <div class="pdb-contract-success-detail"><span>Mandatsreferenz</span><strong id="pdb-success-reference">–</strong></div>
+                  <div class="pdb-contract-success-detail"><span>Status</span><strong>Annahme ausstehend</strong></div>
+                  <div class="pdb-contract-success-detail"><span>Paket</span><strong id="pdb-success-package">–</strong></div>
+                  <div class="pdb-contract-success-detail"><span>Vertragsbeginn</span><strong id="pdb-success-start">–</strong></div>
+                  <div class="pdb-contract-success-detail"><span>Monatlicher Beitrag</span><strong id="pdb-success-monthly">–</strong></div>
+                  <div class="pdb-contract-success-detail"><span>IBAN</span><strong id="pdb-success-iban">–</strong></div>
+                </div>
+                <p class="pdb-contract-success-next"><strong>Wie geht es weiter?</strong><span id="pdb-success-email-note">Ihre Eingangsbestätigung wird per E-Mail versendet.</span> Nach Einrichtung des SEPA-Einzugs nehmen wir den Vertrag an und schalten anschließend den Mitgliederbereich frei.</p>
+                <div class="pdb-contract-success-actions">
+                  <a class="pdb-btn-secondary" id="pdb-success-download" href="#" hidden>Eingangsbestätigung herunterladen</a>
+                  <a class="pdb-btn-secondary" href="/pages/premium?view=premium-member">Zum Mitgliederbereich</a>
+                </div>
+              </div>
+            </section>
+            <div class="pdb-order-summary" aria-live="polite">
+              <h3>Ihre Zahlungsübersicht</h3>
+              <div class="pdb-order-row"><span>Gewähltes Paket</span><strong id="pdb-order-package">BEYOND</strong></div>
+              <div class="pdb-order-row"><span>Monatlicher Beitrag</span><strong id="pdb-order-monthly">199,00 €</strong></div>
+              <div class="pdb-order-row"><span>Einmalige Einrichtung</span><strong>49,00 €</strong></div>
+              <div class="pdb-order-row"><span>Mindestlaufzeit</span><strong>12 Monate</strong></div>
+              <div class="pdb-order-row total"><span>Rechnerischer Gesamtbetrag über 12 Monate</span><strong id="pdb-contract-total">2.437,00 €</strong></div>
+              <p class="pdb-order-summary-note">Gesetzliche Preisinformation: 12 Monatsbeiträge inklusive einmalig 49 € Einrichtung. Dieser Betrag wird nicht auf einmal abgebucht.</p>
+            </div>
+            <button class="pdb-btn" id="pdb-contract-submit" type="submit">Zahlungspflichtig bestellen</button>
+          </form>
+        {% else %}
+          <div class="pdb-contract-preview">
+            <div class="pdb-contract-fields">
+              <div class="pdb-contract-field full">
+                <label for="pdb-public-package">Paket auswählen</label>
+                <select id="pdb-public-package" name="public_package_key">
+                  <option value="pure">PURE · 149 € / Monat</option>
+                  <option value="define">DEFINE · 169 € / Monat</option>
+                  <option value="beyond" selected>BEYOND · 199 € / Monat</option>
+                  <option value="private">PRIVATE · 399 € / Monat</option>
+                </select>
+              </div>
+              <div class="pdb-order-summary" aria-live="polite">
+                <h3>Preisvorschau</h3>
+                <div class="pdb-order-row"><span>Gewähltes Paket</span><strong id="pdb-public-order-package">BEYOND</strong></div>
+                <div class="pdb-order-row"><span>Monatlicher Beitrag</span><strong id="pdb-public-order-monthly">199,00 €</strong></div>
+                <div class="pdb-order-row"><span>Einmalige Einrichtung</span><strong>49,00 €</strong></div>
+                <div class="pdb-order-row"><span>Mindestlaufzeit</span><strong>12 Monate</strong></div>
+                <p class="pdb-order-summary-note">Der Beitrag wird monatlich per SEPA eingezogen. Die vollständige gesetzliche Zahlungsübersicht erscheint nach der Anmeldung direkt vor dem verbindlichen Abschluss.</p>
+              </div>
+            </div>
+            <div class="pdb-contract-preview-copy">
+              <h3>Persönliche Daten sicher ergänzen</h3>
+              <p>Nach der Paketauswahl melden Sie sich an. Erst danach erfassen wir Vertragsdaten und IBAN eindeutig für Ihr Kundenkonto.</p>
+              <a class="pdb-btn" id="pdb-contract-login-link" href="{{ routes.storefront_login_url }}">Anmelden & Abschluss fortsetzen</a>
+            </div>
+          </div>
+        {% endif %}
+        {% if section.settings.show_legal_links %}
+          <p class="pdb-plan-terms">
+            Vor dem Abschluss einsehbar:
+            <a href="/pages/premium-vertragsbedingungen" target="_blank">PDB PREMIUM Vertragsbedingungen</a>
+            ·
+            <a href="/pages/premium-widerruf" target="_blank">Widerrufsbelehrung und Widerrufsformular</a>
+          </p>
+        {% endif %}
+          </div>
+        </details>
       </div>
     </div>
   </section>
@@ -2291,321 +2907,6 @@ body.pdb-premium-page #wisy-hint-bubble{
     </div>
   </section>
 
-  <section class="pdb-section" id="pdb-premium-pakete">
-    <div class="pdb-wrap">
-      <div class="pdb-center-head">
-        <div class="pdb-eyebrow">Die vier Paketstufen</div>
-        <h2>PURE. DEFINE. BEYOND. PRIVATE.</h2>
-        <p>
-          Jede Stufe hat eine klare Aufgabe: regelmäßige Pflege, gezielte Kombination oder exklusive High-End Behandlung.
-        </p>
-      </div>
-
-      <div class="pdb-grid pdb-plan-grid">
-        <article class="pdb-plan pdb-plan-choice" data-package-card="pure">
-          <div class="pdb-plan-head">
-            <div class="pdb-eyebrow" style="margin-bottom:10px;">PDB PURE</div>
-            <h3>Pflege & Routine</h3>
-            <div class="pdb-plan-sub">Der strukturierte Einstieg in regelmäßige Behandlungen.</div>
-            <div class="pdb-plan-price">
-              <strong>149 €</strong>
-              <span>pro Monat</span>
-            </div>
-            <p class="pdb-plan-copy">
-              Für Kundinnen, die auf regelmäßige Pflege, Erhaltung, Glow und planbare Beauty-Routinen setzen.
-            </p>
-          </div>
-
-          <div class="pdb-plan-body">
-            <ul class="pdb-list">
-              <li>3 Behandlungen pro Monat aus dem PURE Bereich</li>
-              <li>Ideal für regelmäßige Studio-Pflege und Beauty-Routine</li>
-              <li>Perfekt für Pflege, Frische und Erhaltung</li>
-              <li>Der cleane Einstieg in das PDB Membership-System</li>
-            </ul>
-
-            <div class="pdb-tag-row">
-              <span class="pdb-tag">Routine</span>
-              <span class="pdb-tag">Pflege</span>
-              <span class="pdb-tag">Glow</span>
-            </div>
-
-            <div class="pdb-plan-cta">
-              <a href="#pdb-premium-contract" class="pdb-btn-secondary" data-pdb-package="pure">PURE wählen</a>
-            </div>
-          </div>
-        </article>
-
-        <article class="pdb-plan featured pdb-plan-choice" data-package-card="define">
-          <span class="pdb-plan-mark">Beliebt</span>
-
-          <div class="pdb-plan-head">
-            <div class="pdb-eyebrow" style="margin-bottom:10px;">PDB DEFINE</div>
-            <h3>Wirkung & Kombination</h3>
-            <div class="pdb-plan-sub">Pflege und gezieltere Intensiv-Leistung sinnvoll kombiniert.</div>
-            <div class="pdb-plan-price">
-              <strong>169 €</strong>
-              <span>pro Monat</span>
-            </div>
-            <p class="pdb-plan-copy">
-              Für Kundinnen, die mehr als reine Routine möchten und eine Pflegeleistung mit einer intensiveren Behandlung verbinden wollen.
-            </p>
-          </div>
-
-          <div class="pdb-plan-body">
-            <ul class="pdb-list">
-              <li>1 Behandlung aus PURE + 1 Behandlung aus DEFINE pro Monat</li>
-              <li>Perfekt für den Mix aus Pflege und gezielter Verbesserung</li>
-              <li>Sehr attraktive Mittelstufe mit klarem Upgrade-Gefühl</li>
-              <li>Ideal für Kundinnen mit stärkerem Ergebnisfokus</li>
-            </ul>
-
-            <div class="pdb-tag-row">
-              <span class="pdb-tag">Upgrade</span>
-              <span class="pdb-tag">Kombination</span>
-              <span class="pdb-tag">Mehr Wirkung</span>
-            </div>
-
-            <div class="pdb-plan-cta">
-              <a href="#pdb-premium-contract" class="pdb-btn" data-pdb-package="define">DEFINE wählen</a>
-            </div>
-          </div>
-        </article>
-
-        <article class="pdb-plan pdb-plan-choice" data-package-card="beyond">
-          <div class="pdb-plan-head">
-            <div class="pdb-eyebrow" style="margin-bottom:10px;">PDB BEYOND</div>
-            <h3>Exklusiv & High-End</h3>
-            <div class="pdb-plan-sub">Für besonders hochwertige Treatments und Premium-Technologien.</div>
-            <div class="pdb-plan-price">
-              <strong>199 €</strong>
-              <span>pro Monat</span>
-            </div>
-            <span class="pdb-price-future">Preis für Neuverträge steigt künftig auf 249 €</span>
-            <p class="pdb-plan-copy">
-              Für Kundinnen mit Premium-Anspruch, die bewusst eine exklusive High-End Behandlung pro Monat wählen möchten.
-            </p>
-          </div>
-
-          <div class="pdb-plan-body">
-            <ul class="pdb-list">
-              <li>1 exklusive Behandlung pro Monat aus dem BEYOND Bereich</li>
-              <li>Luxus-, Geräte- und Signature-Treatments statt Standard-Routine</li>
-              <li>Stark positioniert für moderne Premium-Technologien</li>
-              <li>High-End Auswahl mit besonders starkem Preis-Leistungs-Verhältnis</li>
-            </ul>
-
-            <div class="pdb-tag-row">
-              <span class="pdb-tag">Luxus</span>
-              <span class="pdb-tag">High-End</span>
-              <span class="pdb-tag">Exklusiv</span>
-            </div>
-
-            <div class="pdb-plan-cta">
-              <a href="#pdb-premium-contract" class="pdb-btn-secondary" data-pdb-package="beyond">BEYOND für 199 € sichern</a>
-            </div>
-          </div>
-        </article>
-
-        <article class="pdb-plan private pdb-plan-choice" data-package-card="private">
-          <span class="pdb-plan-mark" style="background:#f3e4d8;color:#191614">Exklusiv</span>
-          <div class="pdb-plan-head">
-            <div class="pdb-eyebrow" style="margin-bottom:10px;">PDB PRIVATE</div>
-            <h3>Ganzheitlich & kompromisslos</h3>
-            <div class="pdb-plan-sub">Umfassende Gesichts- und Body-Protokolle statt einzelner Areale.</div>
-            <div class="pdb-plan-price">
-              <strong>399 €</strong>
-              <span>pro Monat</span>
-            </div>
-            <p class="pdb-plan-copy">Für Kundinnen, die nicht zwischen kleinen Arealen wählen möchten, sondern eine vollständige, sinnvoll kombinierte Behandlung erwarten.</p>
-          </div>
-          <div class="pdb-plan-body">
-            <ul class="pdb-list">
-              <li>1 vollständiges PRIVATE-Protokoll pro Monat</li>
-              <li>Morpheus8 gesamtes Gesicht oder HIFU Gesicht als Auswahl</li>
-              <li>RedTouch PRO für Gesicht, Hals und Dekolleté</li>
-              <li>Weitere kombinierte Gesichts- und Body-Protokolle</li>
-            </ul>
-            <div class="pdb-tag-row">
-              <span class="pdb-tag">Full Face</span><span class="pdb-tag">Protokolle</span><span class="pdb-tag">Private</span>
-            </div>
-            <div class="pdb-plan-cta">
-              <a href="#pdb-premium-contract" class="pdb-btn" data-pdb-package="private">PRIVATE wählen</a>
-            </div>
-          </div>
-        </article>
-      </div>
-
-      <p class="pdb-plan-terms">
-        12 Monate Mindestlaufzeit · danach monatlich kündbar · einmalig 39 € Einrichtung · monatlicher SEPA-Einzug
-      </p>
-
-      <div class="pdb-contract-shell" id="pdb-premium-contract">
-        <div class="pdb-contract-head">
-          <div>
-            <div class="pdb-eyebrow">Sicher online abschließen</div>
-            <h2>Ihre Mitgliedschaft verbindlich bestellen</h2>
-            <p>Mit Ihrer Bestellung erteilen Sie zugleich das SEPA-Mandat. Der Vertrag kommt erst mit unserer ausdrücklichen Annahme nach Einrichtung des Einzugs im Naspa-Onlinebanking zustande.</p>
-          </div>
-          <div class="pdb-contract-total" aria-live="polite">
-            <strong id="pdb-contract-monthly">169 € / Monat</strong>
-            <span>monatlicher SEPA-Einzug</span>
-          </div>
-        </div>
-
-        <details class="pdb-contract-disclosure" id="pdb-contract-disclosure">
-          <summary>
-            <span class="pdb-contract-disclosure-copy">
-              <strong>Vertragsdaten &amp; SEPA-Mandat</strong>
-              <small>Persönliche Daten, Anschrift, IBAN und Pflichtbestätigungen sicher ergänzen.</small>
-            </span>
-            <span class="pdb-contract-disclosure-action" aria-hidden="true">
-              <span class="pdb-contract-disclosure-action-closed">Formular öffnen</span>
-              <span class="pdb-contract-disclosure-action-open">Formular schließen</span>
-            </span>
-          </summary>
-          <div class="pdb-contract-disclosure-body">
-
-        {% if customer %}
-          <form class="pdb-contract-form" id="pdb-membership-contract-form" novalidate>
-            <div class="pdb-contract-fields">
-              <div class="pdb-contract-field">
-                <label for="pdb-package">Paket <span class="pdb-required-mark" aria-hidden="true">*</span></label>
-                <select id="pdb-package" name="package_key" required>
-                  <option value="pure">PURE · 149 € / Monat</option>
-                  <option value="define" selected>DEFINE · 169 € / Monat</option>
-                  <option value="beyond">BEYOND · aktuell 199 € / Monat</option>
-                  <option value="private">PRIVATE · 399 € / Monat</option>
-                </select>
-              </div>
-              <div class="pdb-contract-field">
-                <label for="pdb-start">Vertragsbeginn <span class="pdb-required-mark" aria-hidden="true">*</span></label>
-                <input id="pdb-start" name="starts_on" type="date" required>
-              </div>
-              <div class="pdb-contract-field">
-                <label for="pdb-first-name">Vorname <span class="pdb-required-mark" aria-hidden="true">*</span></label>
-                <input id="pdb-first-name" name="first_name" value="{{ customer.first_name | escape }}" autocomplete="given-name" required>
-              </div>
-              <div class="pdb-contract-field">
-                <label for="pdb-last-name">Nachname <span class="pdb-required-mark" aria-hidden="true">*</span></label>
-                <input id="pdb-last-name" name="last_name" value="{{ customer.last_name | escape }}" autocomplete="family-name" required>
-              </div>
-              <div class="pdb-contract-field full">
-                <label for="pdb-email">E-Mail-Adresse <span class="pdb-required-mark" aria-hidden="true">*</span></label>
-                <input id="pdb-email" name="email" type="email" value="{{ customer.email | escape }}" autocomplete="email" required>
-              </div>
-              <div class="pdb-contract-field full">
-                <label for="pdb-address">Straße und Hausnummer <span class="pdb-required-mark" aria-hidden="true">*</span></label>
-                <input id="pdb-address" name="address_line1" autocomplete="street-address" pattern=".*[0-9].*" title="Bitte geben Sie Straße und Hausnummer ein, zum Beispiel Rheinstraße 59." required>
-              </div>
-              <div class="pdb-contract-field">
-                <label for="pdb-postal">PLZ <span class="pdb-required-mark" aria-hidden="true">*</span></label>
-                <input id="pdb-postal" name="postal_code" inputmode="numeric" autocomplete="postal-code" minlength="3" maxlength="12" required>
-              </div>
-              <div class="pdb-contract-field">
-                <label for="pdb-city">Ort <span class="pdb-required-mark" aria-hidden="true">*</span></label>
-                <input id="pdb-city" name="city" autocomplete="address-level2" required>
-              </div>
-              <div class="pdb-contract-field full">
-                <label for="pdb-iban">IBAN für den monatlichen SEPA-Einzug <span class="pdb-required-mark" aria-hidden="true">*</span></label>
-                <input id="pdb-iban" name="iban" inputmode="text" autocomplete="off" autocapitalize="characters" spellcheck="false" minlength="15" maxlength="42" aria-describedby="pdb-iban-help" placeholder="DE00 0000 0000 0000 0000 00" required>
-                <p class="pdb-field-help" id="pdb-iban-help">Die Schreibweise und Prüfsumme der IBAN werden vor dem Absenden geprüft.</p>
-              </div>
-              <input type="hidden" name="debit_day" value="1">
-            </div>
-            <p class="pdb-required-note"><span class="pdb-required-mark" aria-hidden="true">*</span> Pflichtfelder</p>
-
-            <div class="pdb-contract-checks">
-              <label class="pdb-contract-check"><input type="checkbox" name="confirm_age_18" required><span>Ich bestätige, dass ich mindestens 18 Jahre alt und zur Abgabe dieser Vertragserklärung berechtigt bin.</span></label>
-              <label class="pdb-contract-check"><input type="checkbox" name="accept_agb" required><span>Ich akzeptiere die <a href="/pages/premium-vertragsbedingungen" target="_blank">AGB und Vertragsbedingungen</a>. Mindestlaufzeit: 12 Monate; danach unbefristet mit 1 Monat Kündigungsfrist.</span></label>
-              <label class="pdb-contract-check"><input type="checkbox" name="accept_withdrawal" required><span>Ich habe die <a href="/pages/premium-widerruf" target="_blank">Widerrufsbelehrung und das Widerrufsformular</a> erhalten und konnte sie speichern.</span></label>
-              <div class="pdb-contract-mandate"><strong>SEPA-Basislastschriftmandat</strong>Zahlungsempfänger: PDB – AESTHETIC ROOM, Rheinstraße 59, 65185 Wiesbaden · Gläubiger-ID: DE73ZZZ00002018874 · Mandatsreferenz: wird nach dem Abschluss mitgeteilt. Ich ermächtige PDB – AESTHETIC ROOM, wiederkehrende Zahlungen aus dieser Mitgliedschaft sowie die einmalige Einrichtungsgebühr von meinem Konto einzuziehen. Zugleich weise ich mein Kreditinstitut an, die Lastschriften einzulösen. Ich kann innerhalb von acht Wochen ab Belastungsdatum die Erstattung des belasteten Betrags verlangen; es gelten die mit meinem Kreditinstitut vereinbarten Bedingungen.</div>
-              <label class="pdb-contract-check"><input type="checkbox" name="account_holder_confirmed" required><span>Ich bestätige, dass ich Kontoinhaber/in der angegebenen IBAN bin. Als Kontoinhaber wird mein oben angegebener Vor- und Nachname verwendet.</span></label>
-              <label class="pdb-contract-check"><input type="checkbox" name="accept_sepa" required><span>Ich erteile das oben beschriebene SEPA-Basislastschriftmandat.</span></label>
-              <label class="pdb-contract-check"><input type="checkbox" name="request_early_start"><span>Optional: Ich verlange ausdrücklich, dass PDB bereits vor Ablauf der 14-tägigen Widerrufsfrist mit der Leistung beginnt. Bei einem Widerruf schulde ich Wertersatz für die bis dahin erbrachten Leistungen.</span></label>
-            </div>
-
-            <div class="pdb-contract-security">Ihre IBAN wird verschlüsselt in unserem Vertragssystem gespeichert und nicht in Shopify-Kundennotizen oder Kundentags abgelegt.</div>
-            <p class="pdb-plan-terms">Informationen zur Verarbeitung Ihrer Vertrags- und Zahlungsdaten finden Sie in unserer <a href="{{ shop.privacy_policy.url }}" target="_blank">Datenschutzerklärung</a>.</p>
-            <div class="pdb-contract-progress" id="pdb-contract-progress" role="status" aria-live="polite" hidden>
-              <span>Vertrag wird sicher übermittelt… Bitte lassen Sie diese Seite geöffnet.</span>
-              <span class="pdb-contract-progress-track" aria-hidden="true"><span class="pdb-contract-progress-bar"></span></span>
-            </div>
-            <div class="pdb-contract-status" id="pdb-contract-status" role="status" aria-live="polite"></div>
-            <section class="pdb-contract-success" id="pdb-contract-success" role="status" aria-live="polite" tabindex="-1" hidden>
-              <span class="pdb-contract-success-icon" aria-hidden="true">✓</span>
-              <div class="pdb-contract-success-copy">
-                <span class="pdb-contract-success-kicker">Sicher übermittelt</span>
-                <h3>Ihre Bestellung ist eingegangen</h3>
-                <p class="pdb-contract-success-lead">Vielen Dank. Ihre Angaben wurden gespeichert. Der Vertrag kommt erst mit unserer ausdrücklichen Annahme nach Einrichtung des SEPA-Einzugs zustande.</p>
-                <div class="pdb-contract-success-details" aria-label="Zusammenfassung Ihrer Bestellung">
-                  <div class="pdb-contract-success-detail"><span>Mandatsreferenz</span><strong id="pdb-success-reference">–</strong></div>
-                  <div class="pdb-contract-success-detail"><span>Status</span><strong>Annahme ausstehend</strong></div>
-                  <div class="pdb-contract-success-detail"><span>Paket</span><strong id="pdb-success-package">–</strong></div>
-                  <div class="pdb-contract-success-detail"><span>Vertragsbeginn</span><strong id="pdb-success-start">–</strong></div>
-                  <div class="pdb-contract-success-detail"><span>Monatlicher Beitrag</span><strong id="pdb-success-monthly">–</strong></div>
-                  <div class="pdb-contract-success-detail"><span>IBAN</span><strong id="pdb-success-iban">–</strong></div>
-                </div>
-                <p class="pdb-contract-success-next"><strong>Wie geht es weiter?</strong><span id="pdb-success-email-note">Ihre Eingangsbestätigung wird per E-Mail versendet.</span> Nach Einrichtung des SEPA-Einzugs nehmen wir den Vertrag an und schalten anschließend den Mitgliederbereich frei.</p>
-                <div class="pdb-contract-success-actions">
-                  <a class="pdb-btn-secondary" id="pdb-success-download" href="#" hidden>Eingangsbestätigung herunterladen</a>
-                  <a class="pdb-btn-secondary" href="#pdb-member-booking">Zum Mitgliederbereich</a>
-                </div>
-              </div>
-            </section>
-            <div class="pdb-order-summary" aria-live="polite">
-              <h3>Ihre Zahlungsübersicht</h3>
-              <div class="pdb-order-row"><span>Gewähltes Paket</span><strong id="pdb-order-package">DEFINE</strong></div>
-              <div class="pdb-order-row"><span>Monatlicher Beitrag</span><strong id="pdb-order-monthly">169,00 €</strong></div>
-              <div class="pdb-order-row"><span>Einmalige Einrichtung</span><strong>39,00 €</strong></div>
-              <div class="pdb-order-row"><span>Mindestlaufzeit</span><strong>12 Monate</strong></div>
-              <div class="pdb-order-row total"><span>Rechnerischer Gesamtbetrag über 12 Monate</span><strong id="pdb-contract-total">2.067,00 €</strong></div>
-              <p class="pdb-order-summary-note">Gesetzliche Preisinformation: 12 Monatsbeiträge inklusive einmalig 39 € Einrichtung. Dieser Betrag wird nicht auf einmal abgebucht.</p>
-            </div>
-            <button class="pdb-btn" id="pdb-contract-submit" type="submit">Zahlungspflichtig bestellen</button>
-          </form>
-        {% else %}
-          <div class="pdb-contract-preview">
-            <div class="pdb-contract-fields">
-              <div class="pdb-contract-field full">
-                <label for="pdb-public-package">Paket auswählen</label>
-                <select id="pdb-public-package" name="public_package_key">
-                  <option value="pure">PURE · 149 € / Monat</option>
-                  <option value="define" selected>DEFINE · 169 € / Monat</option>
-                  <option value="beyond">BEYOND · aktuell 199 € / Monat</option>
-                  <option value="private">PRIVATE · 399 € / Monat</option>
-                </select>
-              </div>
-              <div class="pdb-order-summary" aria-live="polite">
-                <h3>Preisvorschau</h3>
-                <div class="pdb-order-row"><span>Gewähltes Paket</span><strong id="pdb-public-order-package">DEFINE</strong></div>
-                <div class="pdb-order-row"><span>Monatlicher Beitrag</span><strong id="pdb-public-order-monthly">169,00 €</strong></div>
-                <div class="pdb-order-row"><span>Einmalige Einrichtung</span><strong>39,00 €</strong></div>
-                <div class="pdb-order-row"><span>Mindestlaufzeit</span><strong>12 Monate</strong></div>
-                <p class="pdb-order-summary-note">Der Beitrag wird monatlich per SEPA eingezogen. Die vollständige gesetzliche Zahlungsübersicht erscheint nach der Anmeldung direkt vor dem verbindlichen Abschluss.</p>
-              </div>
-            </div>
-            <div class="pdb-contract-preview-copy">
-              <h3>Persönliche Daten sicher ergänzen</h3>
-              <p>Nach der Paketauswahl melden Sie sich an. Erst danach erfassen wir Vertragsdaten und IBAN eindeutig für Ihr Kundenkonto.</p>
-              <a class="pdb-btn" id="pdb-contract-login-link" href="{{ routes.storefront_login_url }}">Anmelden & Abschluss fortsetzen</a>
-            </div>
-          </div>
-        {% endif %}
-        {% if section.settings.show_legal_links %}
-          <p class="pdb-plan-terms">
-            Vor dem Abschluss einsehbar:
-            <a href="/pages/premium-vertragsbedingungen" target="_blank">PDB PREMIUM Vertragsbedingungen</a>
-            ·
-            <a href="/pages/premium-widerruf" target="_blank">Widerrufsbelehrung und Widerrufsformular</a>
-          </p>
-        {% endif %}
-          </div>
-        </details>
-      </div>
-    </div>
-  </section>
-
   <section class="pdb-section pdb-how-section">
     <div class="pdb-wrap">
       <div class="pdb-center-head">
@@ -2633,154 +2934,6 @@ body.pdb-premium-page #wisy-hint-bubble{
           <div class="pdb-step-no">3</div>
           <h3>Monatlich nutzen</h3>
           <p>Je nach Paket wählen Sie Ihre enthaltenen monatlichen Treatments aus dem jeweiligen Bereich.</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section class="pdb-section pdb-treatments-section" id="pdb-premium-treatments">
-    <div class="pdb-wrap">
-      <div class="pdb-center-head">
-        <div class="pdb-eyebrow">Enthaltene Behandlungen</div>
-        <h2>Diese Treatments stehen je nach Paketstufe zur Verfügung</h2>
-        <p>
-          Die Behandlungsbereiche sind klar gegliedert, damit sofort sichtbar wird, welche Leistungen zu PURE, DEFINE, BEYOND und PRIVATE gehören.
-        </p>
-      </div>
-
-      <div class="pdb-cats">
-        <div class="pdb-cat active">
-          <button class="pdb-cat-btn" type="button" aria-expanded="true" aria-controls="pdb-pure-treatment-panel">
-            <div class="pdb-cat-btn-left">
-              <div class="pdb-cat-letter">P</div>
-              <div>
-                <h3>PURE Treatments</h3>
-                <p>14 Behandlungen · 3 pro Monat aus diesem Bereich</p>
-              </div>
-            </div>
-            <div class="pdb-cat-arrow" aria-hidden="true">+</div>
-          </button>
-
-          <div class="pdb-cat-panel" id="pdb-pure-treatment-panel">
-            <div class="pdb-treatment-grid">
-              <div class="pdb-treatment"><h4>Laser Haarentfernung – kleine Zone</h4><p>Geeignet für kleinere Areale als planbare Membership-Routine.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill pure">PURE</span></div></div>
-              <div class="pdb-treatment"><h4>Klassische Gesichtsbehandlung</h4><p>Die klassische Pflegebasis für Frische, Wohlgefühl und regelmäßige Hauterhaltung.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill pure">PURE</span></div></div>
-              <div class="pdb-treatment"><h4>Aquafacial</h4><p>Beliebt für gereinigte, frischer wirkende Haut und einen gepflegten Glow.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill pure">PURE</span></div></div>
-              <div class="pdb-treatment"><h4>Lymphdrainage</h4><p>Unterstützend für Leichtigkeit und ein strukturiertes Studio-Ritual.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill pure">PURE</span></div></div>
-              <div class="pdb-treatment"><h4>Dermaplaning</h4><p>Beliebte Ergänzung für ein glatteres Hautgefühl und ein gepflegtes Finish.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill pure">PURE</span></div></div>
-              <div class="pdb-treatment"><h4>Gesichtsmassage</h4><p>Entspannende Membership-Leistung für Regeneration, Pflege und Wohlbefinden.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill pure">PURE</span></div></div>
-              <div class="pdb-treatment"><h4>Microdermabrasion</h4><p>Routineorientierte Behandlung für ein feineres, gepflegteres Hautbild.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill pure">PURE</span></div></div>
-              <div class="pdb-treatment"><h4>Hautaufhellung</h4><p>Geeignet als Membership-Baustein bei dem Wunsch nach mehr Ebenmäßigkeit.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill pure">PURE</span></div></div>
-              <div class="pdb-treatment"><h4>Matrix Lifting Mask</h4><p>Pflegender Booster für Glow, Finish und einen luxuriösen Abschluss.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill pure">PURE</span></div></div>
-              <div class="pdb-treatment"><h4>Microneedling</h4><p>Aktiviert die Hauterneuerung und verfeinert das Hautbild sichtbar.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill pure">PURE</span></div></div>
-              <div class="pdb-treatment"><h4>Ausreinigung</h4><p>Klärt die Haut gründlich und reduziert verstopfte Poren.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill pure">PURE</span></div></div>
-              <div class="pdb-treatment"><h4>Ultraschall</h4><p>Schleust Wirkstoffe ein und unterstützt ein frisches Hautgefühl.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill pure">PURE</span></div></div>
-              <div class="pdb-treatment"><h4>LED Lichttherapie</h4><p>Beruhigt die Haut und unterstützt Regeneration sowie Ausstrahlung.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill pure">PURE</span></div></div>
-              <div class="pdb-treatment"><h4>Madero – Gesicht, Hals oder Dekolleté</h4><p>Membership-Baustein mit strukturierter Pflege- und Ritualwirkung.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill pure">PURE</span></div></div>
-            </div>
-            <button class="pdb-treatment-more" type="button" aria-expanded="false">
-              Alle 14 PURE Behandlungen anzeigen
-            </button>
-          </div>
-        </div>
-
-        <div class="pdb-cat">
-          <button class="pdb-cat-btn" type="button" aria-expanded="false" aria-controls="pdb-define-treatment-panel">
-            <div class="pdb-cat-btn-left">
-              <div class="pdb-cat-letter">D</div>
-              <div>
-                <h3>DEFINE Treatments</h3>
-                <p>15 Behandlungen · 1 aus PURE + 1 aus DEFINE pro Monat</p>
-              </div>
-            </div>
-            <div class="pdb-cat-arrow" aria-hidden="true">+</div>
-          </button>
-
-          <div class="pdb-cat-panel" id="pdb-define-treatment-panel">
-            <div class="pdb-treatment-grid">
-              <div class="pdb-treatment"><h4>Kryolipolyse</h4><p>Kontrollierte Kältebehandlung für eine ausgewählte Körperzone. Der Fokus liegt auf lokaler Konturierung und einer langfristig schlanker wirkenden Silhouette; die geeignete Zone wird vorab individuell beurteilt.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill define">DEFINE</span></div></div>
-              <div class="pdb-treatment"><h4>EMS-Sella Stuhl</h4><p>Nicht-invasive EMS-Anwendung im Sitzen zur intensiven Aktivierung der Beckenbodenmuskulatur. Geeignet als komfortable, bekleidete Behandlung für mehr Körperwahrnehmung und gezielte Muskelstimulation.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill define">DEFINE</span></div></div>
-              <div class="pdb-treatment"><h4>Microneedling + Ausreinigung</h4><p>Gründliche Porenreinigung und gezielte Needling-Impulse in einer kombinierten Behandlung. Das Konzept eignet sich bei Unreinheiten, vergrößert wirkenden Poren und dem Wunsch nach einer feineren, gleichmäßigeren Hautstruktur.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill define">DEFINE</span></div></div>
-              <div class="pdb-treatment"><h4>EMS-Sculpt Neo</h4><p>Intensive elektromagnetische Muskelstimulation für eine ausgewählte Körperzone. Die Anwendung unterstützt Muskelaktivierung und Körperkonturierung und eignet sich besonders als Ergänzung zu einem aktiven Lebensstil.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill define">DEFINE</span></div></div>
-              <div class="pdb-treatment"><h4>Aknebehandlung</h4><p>Gezielte Behandlung für unreine Haut, verstopfte Poren und ein klarer wirkendes Hautbild.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill define">DEFINE</span></div></div>
-              <div class="pdb-treatment"><h4>Hautverjüngung</h4><p>Individuell ausgewählte apparative Behandlung mit Fokus auf Frische, Spannkraft und eine verfeinerte Hautstruktur. Die eingesetzte Methode richtet sich nach Hautzustand, Empfindlichkeit und gewünschtem Behandlungsschwerpunkt.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill define">DEFINE</span></div></div>
-              <div class="pdb-treatment"><h4>OxyGeneo</h4><p>Peeling, Sauerstoffaktivierung und Wirkstoffversorgung werden in einem Gesichtsritual verbunden. Das Ergebnis ist ein glatter, frischer und sichtbar vitaler wirkendes Hautbild mit gepflegtem Glow.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill define">DEFINE</span></div></div>
-              <div class="pdb-treatment"><h4>Radiofrequenz</h4><p>Strafft die Haut sanft und unterstützt neue Spannkraft.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill define">DEFINE</span></div></div>
-              <div class="pdb-treatment"><h4>G8 Cellulite</h4><p>Mechanische Gewebemassage für ausgewählte Körperzonen. Sie unterstützt die Durchblutung und Lymphaktivität und zielt auf ein gelockertes, glatter und gleichmäßiger wirkendes Haut- und Gewebebild.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill define">DEFINE</span></div></div>
-              <div class="pdb-treatment"><h4>MOTUS PRO DEKA® – Haarentfernung große Zone</h4><p>Laser-Haarentfernung für größere Körperbereiche wie Beine, Rücken oder Arme.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill define">DEFINE</span></div></div>
-              <div class="pdb-treatment"><h4>FORMA by INMODE™ – Gesicht, Hals oder Dekolleté</h4><p>Kontrollierte Radiofrequenzwärme für eine ausgewählte Zone. Die Behandlung unterstützt Kollagenprozesse und eignet sich bei dem Wunsch nach einem glatter, fester und konturierter wirkenden Hautbild.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill define">DEFINE</span></div></div>
-              <div class="pdb-treatment"><h4>HYDRAFACIAL® Signature (ohne Maske)</h4><p>Mehrstufige Tiefenreinigung, sanfte Abtragung und intensive Wirkstoffversorgung. Das Signature-Ritual zielt auf gereinigte Poren, ein verfeinertes Hautgefühl und einen unmittelbar gepflegten Glow.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill define">DEFINE</span></div></div>
-              <div class="pdb-treatment"><h4>Ultraschall Titan – Gesicht, Hals oder Dekolleté</h4><p>Apparative Ultraschallbehandlung für eine ausgewählte Zone mit Fokus auf Wirkstoffversorgung und Festigkeit. Geeignet bei dem Wunsch nach frischerer Ausstrahlung und einem geglättet wirkenden Finish.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill define">DEFINE</span></div></div>
-              <div class="pdb-treatment"><h4>CIRCADIA® Premium Treatments</h4><p>Zum Beispiel Firming Peptide Mask Treatment, SWICH™ oder Oxygen RX als gehobene Membership-Option.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill define">DEFINE</span></div></div>
-              <div class="pdb-treatment"><h4>Carbon Laser Peeling</h4><p>Laserbasiertes Peeling mit Carbon-Lotion für intensive Reinigung und ein verfeinertes Hautbild. Besonders interessant bei öliger, zu Unreinheiten neigender Haut und sichtbar vergrößerten Poren.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill define">DEFINE</span></div></div>
-            </div>
-            <button class="pdb-treatment-more" type="button" aria-expanded="false">
-              Alle 15 DEFINE Behandlungen anzeigen
-            </button>
-          </div>
-        </div>
-
-        <div class="pdb-cat">
-          <button class="pdb-cat-btn" type="button" aria-expanded="false" aria-controls="pdb-beyond-treatment-panel">
-            <div class="pdb-cat-btn-left">
-              <div class="pdb-cat-letter">B</div>
-              <div>
-                <h3>BEYOND Treatments</h3>
-                <p>14 Behandlungen · 1 exklusive Behandlung pro Monat</p>
-              </div>
-            </div>
-            <div class="pdb-cat-arrow" aria-hidden="true">+</div>
-          </button>
-
-          <div class="pdb-cat-panel" id="pdb-beyond-treatment-panel">
-            <div class="pdb-treatment-grid">
-              <div class="pdb-treatment"><h4>Morpheus8™ – Gesichtsareal</h4><p>Fraktioniertes Radiofrequenz-Microneedling für ein gezielt ausgewähltes Gesichtsareal. Die Behandlung unterstützt festere Konturen, feinere Poren und eine gleichmäßigere Hautstruktur.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill beyond">BEYOND</span></div></div>
-              <div class="pdb-treatment"><h4>MOTUS PRO DEKA® – Laser Haarentfernung für drei große Zonen</h4><p>Laser-Haarentfernung für drei große Körperzonen in einer Sitzung mit maximalem Komfort und effizienter Anwendung.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill beyond">BEYOND</span></div></div>
-              <div class="pdb-treatment"><h4>HIFU – gezielte Areale (z. B. Jawline, Doppelkinn, Augenbrauenlifting)</h4><p>Hochintensive Ultraschall-Technologie zur präzisen Straffung kleiner, definierter Gesichtsbereiche – für sichtbar festere Konturen ohne chirurgischen Eingriff.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill beyond">BEYOND</span></div></div>
-              <div class="pdb-treatment"><h4>RedTouch PRO</h4><p>Lasertechnologie mit Fokus auf Kollagenstimulation und Hautqualität. Je nach Behandlungsplan kann sie zu einer gleichmäßigeren Struktur, frischerer Ausstrahlung und einem fester wirkenden Hautbild beitragen.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill beyond">BEYOND</span></div></div>
-              <div class="pdb-treatment"><h4>HydraFacial meets Forma</h4><p>HydraFacial reinigt und versorgt die Haut intensiv; FORMA ergänzt kontrollierte Radiofrequenzwärme. Die Kombination verbindet sichtbaren Glow mit einem glatter und fester wirkenden Finish.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill beyond">BEYOND</span></div></div>
-              <div class="pdb-treatment"><h4>Exosomen</h4><p>Regenerationsorientierte Wirkstoffanwendung zur Unterstützung der Hauterneuerung. Sie wird passend zum Hautzustand eingesetzt und eignet sich bei dem Wunsch nach ruhigerer, widerstandsfähiger und erholter wirkender Haut.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill beyond">BEYOND</span></div></div>
-              <div class="pdb-treatment"><h4>Polynukleotide</h4><p>Auf Hautregeneration und Feuchtigkeitsbalance ausgerichtetes Behandlungskonzept. Ziel ist eine verbesserte Hautqualität mit glatter, elastischer und vitaler wirkendem Erscheinungsbild; die Eignung wird vorab geprüft.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill beyond">BEYOND</span></div></div>
-              <div class="pdb-treatment"><h4>Medical Needling</h4><p>Intensives Microneedling zur gezielten Aktivierung der Hauterneuerung. Besonders geeignet bei sichtbaren Strukturunregelmäßigkeiten, vergrößert wirkenden Poren und dem Wunsch nach einem festeren Hautbild.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill beyond">BEYOND</span></div></div>
-              <div class="pdb-treatment"><h4>MESO PEEL® MD</h4><p>Zum Beispiel blemiskin, azelan rx, phenTCA oder melanostop tranex als gehobene Peeling-Option.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill beyond">BEYOND</span></div></div>
-              <div class="pdb-treatment"><h4>HydraFacial meets Circadia</h4><p>Tiefenreinigung kombiniert mit Wirkstoffen für maximale Hauterneuerung und Glow.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill beyond">BEYOND</span></div></div>
-              <div class="pdb-treatment"><h4>3x Kryolipolyse</h4><p>Drei aufeinander abgestimmte Kälteanwendungen für eine geeignete Körperzone. Die Serie ermöglicht eine strukturierte Konturbehandlung mit ausreichendem Abstand und individueller Verlaufskontrolle.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill beyond">BEYOND</span></div></div>
-              <div class="pdb-treatment"><h4>3x EMS-Sella</h4><p>Drei nicht-invasive EMS-Anwendungen im Sitzen zur wiederholten Aktivierung der Beckenbodenmuskulatur. Die Serie schafft stärkere Trainingsreize als eine einzelne Behandlung.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill beyond">BEYOND</span></div></div>
-              <div class="pdb-treatment"><h4>2x Forma</h4><p>Zwei Radiofrequenzbehandlungen für dieselbe ausgewählte Zone. Die Wiederholung unterstützt einen kontinuierlicheren Behandlungsreiz mit Fokus auf glatter und fester wirkende Haut.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill beyond">BEYOND</span></div></div>
-              <div class="pdb-treatment"><h4>3x EMS-Sculpt</h4><p>Drei intensive Muskelstimulations-Termine für eine ausgewählte Körperzone. Die Serie unterstützt Muskelaktivierung und Körperkonturierung und eignet sich als Ergänzung zu Bewegung und ausgewogener Ernährung.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill beyond">BEYOND</span></div></div>
-            </div>
-            <button class="pdb-treatment-more" type="button" aria-expanded="false">
-              Alle 14 BEYOND Behandlungen anzeigen
-            </button>
-          </div>
-        </div>
-
-        <div class="pdb-cat">
-          <button class="pdb-cat-btn" type="button" aria-expanded="false" aria-controls="pdb-private-treatment-panel">
-            <div class="pdb-cat-btn-left">
-              <div class="pdb-cat-letter" style="background:#171513;color:#f0d7c2">PR</div>
-              <div>
-                <h3>PRIVATE Treatments</h3>
-                <p>10 ganzheitliche Protokolle · 1 vollständiges Protokoll pro Monat</p>
-              </div>
-            </div>
-            <div class="pdb-cat-arrow" aria-hidden="true">+</div>
-          </button>
-          <div class="pdb-cat-panel" id="pdb-private-treatment-panel">
-            <div class="pdb-treatment-grid">
-              <div class="pdb-treatment"><h4>Morpheus8™ – gesamtes Gesicht</h4><p>Fraktioniertes Radiofrequenz-Microneedling für das gesamte Gesicht. Das Protokoll unterstützt ein straffer wirkendes Hautbild, feinere Poren und eine gleichmäßigere Hautstruktur; Intensität und Schwerpunkte werden an den individuellen Hautzustand angepasst.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill private">PRIVATE</span></div></div>
-              <div class="pdb-treatment"><h4>HIFU – Gesicht</h4><p>Fokussierter Ultraschall für das gesamte Gesicht mit Schwerpunkt auf Konturen und Festigkeit. Geeignet bei dem Wunsch nach definierter wirkender Jawline, gestraffterer Haut und einem natürlichen Lifting-Effekt ohne operativen Eingriff.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill private">PRIVATE</span></div></div>
-              <div class="pdb-treatment"><h4>RedTouch PRO – Gesicht, Hals und Dekolleté</h4><p>Das umfassende RedTouch-PRO-Protokoll behandelt Gesicht, Hals und Dekolleté als zusammenhängende Zone. Es kann die Kollagenneubildung unterstützen und lässt Hautstruktur, Spannkraft und Teint ebenmäßiger und frischer wirken.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill private">PRIVATE</span></div></div>
-              <div class="pdb-treatment"><h4>HydraForma Ultimate</h4><p>HydraFacial-Tiefenreinigung und intensive Wirkstoffversorgung treffen auf die wärmende Radiofrequenz von FORMA by INMODE™. Die Kombination zielt auf sofortige Frische und Glow sowie ein glatter und fester wirkendes Finish.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill private">PRIVATE</span></div></div>
-              <div class="pdb-treatment"><h4>Regeneration Pro</h4><p>Medical Needling wird mit einer regenerationsorientierten Exosomen-Anwendung verbunden. Das Protokoll unterstützt die Hauterneuerung und eignet sich besonders bei dem Wunsch nach verfeinerter Struktur, mehr Widerstandskraft und einem erholteren Hautbild.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill private">PRIVATE</span></div></div>
-              <div class="pdb-treatment"><h4>Glass Skin Protocol</h4><p>Dermaplaning entfernt oberflächliche Verhornungen, HydraFacial reinigt und versorgt die Haut, OxyGeneo rundet das Ritual mit Sauerstoffaktivierung ab. Das Ziel ist ein besonders glattes, klares und lichtreflektierendes Glass-Skin-Finish.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill private">PRIVATE</span></div></div>
-              <div class="pdb-treatment"><h4>Pigment & Texture Protocol</h4><p>MESO PEEL® MD wird mit einer zum Hautbild passenden apparativen Technologie kombiniert. So können unruhiger Teint, sichtbare Pigmentierungen und eine ungleichmäßige Hautstruktur gezielt in einem abgestimmten Behandlungskonzept adressiert werden.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill private">PRIVATE</span></div></div>
-              <div class="pdb-treatment"><h4>Laser Complete</h4><p>Ganzkörper-Laserbehandlung mit MOTUS PRO DEKA® für eine langfristige Reduktion unerwünschter Haare. Die ausgewählten Körperzonen und Einstellungen werden individuell abgestimmt, um die Behandlung möglichst komfortabel und effizient zu gestalten.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill private">PRIVATE</span></div></div>
-              <div class="pdb-treatment"><h4>Body Sculpt Intensive</h4><p>4 Termine mit EMS-Sculpt. Bei zwei Terminen zusätzlich Lymphdrainage nach Wahl. EMS: 30 Min. · EMS + Lymphdrainage: 60 Min.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill private">PRIVATE · 4 Termine</span></div></div>
-              <div class="pdb-treatment"><h4>Cryo Contour Intensive</h4><p>Kryolipolyse, G8-Gewebemassage und Lymphdrainage werden als abgestimmtes Konturprotokoll kombiniert. Der Fokus liegt auf ausgewählten Körperzonen, einer geglättet wirkenden Gewebestruktur und der Unterstützung natürlicher Drainageprozesse.</p><div class="pdb-tier-pill-row"><span class="pdb-tier-pill private">PRIVATE</span></div></div>
-            </div>
-            <button class="pdb-treatment-more" type="button" aria-expanded="false">Alle 10 PRIVATE Behandlungen anzeigen</button>
-          </div>
         </div>
       </div>
     </div>
@@ -2870,181 +3023,30 @@ body.pdb-premium-page #wisy-hint-bubble{
     </div>
   </section>
 
-{% assign is_logged_in = false %}
-{% assign is_pure = false %}
-{% assign is_define = false %}
-{% assign is_beyond = false %}
-{% assign is_private = false %}
-
-{% if customer %}
-  {% assign is_logged_in = true %}
-
-  {% if customer.tags contains 'premium-pure' %}
-    {% assign is_pure = true %}
-  {% endif %}
-
-  {% if customer.tags contains 'premium-define' %}
-    {% assign is_define = true %}
-    {% assign is_pure = true %}
-  {% endif %}
-
-  {% if customer.tags contains 'premium-beyond' %}
-    {% assign is_beyond = true %}
-  {% endif %}
-
-  {% if customer.tags contains 'premium-private' %}
-    {% assign is_private = true %}
-  {% endif %}
-{% endif %}
-
-<section class="pdb-section" id="pdb-member-booking">
-  <div class="pdb-wrap">
-    <div class="pdb-member-gate">
-      <div class="pdb-member-gate-grid">
-
-        <div class="pdb-member-gate-card">
-          <div class="pdb-eyebrow">Mitgliederbereich</div>
-          <h2>Premium-Buchung für aktive Mitglieder</h2>
-          <p class="pdb-lead">
-            Je nach freigeschaltetem Paket sehen eingeloggte Mitglieder hier ihre passenden Buchungsoptionen für PURE, DEFINE, BEYOND oder PRIVATE.
-          </p>
-
-          {% unless is_logged_in %}
-            <div class="pdb-member-booking-card">
-              <h3>Bitte zuerst einloggen</h3>
-              <p>
-                Nur eingeloggte Mitglieder mit aktivem Premium-Status sehen ihre freigeschalteten Buchungsbereiche.
-              </p>
-              <a href="{{ routes.storefront_login_url }}" class="pdb-btn">
-                Login zum Mitgliederbereich
-              </a>
-            </div>
-
-            <div id="pdb-premium-api-status" class="pdb-premium-api-status">
-              Premium-Daten werden geladen...
-            </div>
-          {% else %}
-            {% if is_logged_in %}
-              <div class="pdb-member-booking-card" id="pdb-premium-member-summary">
-  <span class="pdb-member-badge">Premium-Status wird geprüft...</span>
-  <h3>Mitgliederbereich wird geladen</h3>
-  <p>Ihre Premium-Daten werden gerade geprüft.</p>
-</div>
-            {% else %}
-              <div class="pdb-member-booking-card">
-                <span class="pdb-member-badge">Kein aktiver Premium-Status</span>
-                <h3>Ihr Konto ist aktuell nicht freigeschaltet</h3>
-                <p>
-                  Sie sind eingeloggt, aber Ihrem Kundenkonto ist derzeit keine aktive PDB PREMIUM Mitgliedschaft zugeordnet.
-                  Bitte kontaktieren Sie uns, falls Ihr Zugang bereits freigeschaltet sein sollte.
-                </p>
-                <a href="/pages/contact?behandlung=Pr%C3%BCfung%20PDB%20PREMIUM%20Mitgliedschaft" class="pdb-btn-secondary">
-                  Kontakt aufnehmen
-                </a>
-              </div>
-            {% endif %}
-          {% endunless %}
-
-          {% unless is_logged_in %}
-            <div class="pdb-member-info">
-              Die Buchung ist ausschließlich für aktive Mitglieder freigeschaltet. Ohne Login werden auf dieser Seite nur die regulären Anfrage- und Beratungsmöglichkeiten angezeigt.
-            </div>
-          {% endunless %}
-        </div>
-
-        <div class="pdb-member-gate-card">
-          <div class="pdb-member-gate-stack">
-
-            {% unless is_logged_in %}
-              <div class="pdb-member-booking-card">
-                <h3>Buchungszugang nach Login</h3>
-                <p>
-                  Nach dem Login werden automatisch die zu Ihrem Paket passenden Buchungsoptionen angezeigt.
-                </p>
-              </div>
-            {% else %}
-              <div class="pdb-member-booking-card" id="pdb-premium-treatment-card" hidden>
-                <h3>PREMIUM MEMBER</h3>
-                <p>
-                  Hier werden automatisch alle aktuell verfügbaren Behandlungen basierend auf Ihrem Paket angezeigt.
-                </p>
-
-                <div class="pdb-booking-scroll">
-  <div id="pdb-premium-booking-app"></div>
-</div>
-              </div>
-
-              <div class="pdb-member-booking-card-wrap">
-                <div class="pdb-member-booking-card">
-                  <h3>Wichtige Hinweise</h3>
-                  <ul class="pdb-member-list">
-                    <li>Nicht genutzte Behandlungen verfallen am Monatsende.</li>
-                    <li>Leistungen sind nicht auf den Folgemonat übertragbar.</li>
-                    <li>Buchungsoptionen erscheinen nur für eingeloggte Kundenkonten mit aktivem Paket.</li>
-                    <li>Bitte buchen Sie ausschließlich die Leistungen, die in Ihrem aktiven Paket enthalten sind.</li>
-                  </ul>
-                </div>
-              </div>
-            {% endunless %}
-          </div>
-        </div>
-
-      </div>
+<section class="pdb-section pdb-existing-member" id="pdb-member-booking">
+  <div class="pdb-wrap pdb-existing-member-inner">
+    <div>
+      <div class="pdb-eyebrow">Bereits Mitglied?</div>
+      <h2>Ihre Termine und Kontingente</h2>
+      <p>Im persönlichen Premium-Bereich sehen Sie Ihre enthaltenen Behandlungen und buchen den nächsten Termin.</p>
     </div>
+    <a class="pdb-btn-secondary" href="/pages/premium?view=premium-member">Mein Premium öffnen <span aria-hidden="true">↗</span></a>
   </div>
 </section>
 
-  <section class="pdb-section pdb-contract-service" id="pdb-contract-actions">
-    <div class="pdb-wrap">
-      <div class="pdb-service-intro">
-        <div class="pdb-service-intro-copy">
-          <div class="pdb-eyebrow">Vertragsservice</div>
-          <h2>Vertrag online verwalten</h2>
-          <p>Widerruf und Kündigung sind jederzeit direkt möglich. Die Formulare öffnen sich erst nach Ihrer Auswahl.</p>
-        </div>
-      </div>
-      <div class="pdb-service-grid">
-        <details class="pdb-service-card" id="pdb-withdrawal-card">
-          <summary>Vertrag widerrufen</summary>
-          <p>Während der gesetzlichen Widerrufsfrist können Sie Ihre Vertragserklärung hier eindeutig widerrufen.</p>
-          <form class="pdb-service-form" id="pdb-withdrawal-form" data-action-type="withdrawal" novalidate>
-            <label>Vorname <input name="first_name" autocomplete="given-name" maxlength="80" required></label>
-            <label>Nachname <input name="last_name" autocomplete="family-name" maxlength="80" required></label>
-            <label class="full">E-Mail des Vertrags <input name="email" type="email" autocomplete="email" maxlength="160" required></label>
-            <label class="full">Mandatsreferenz / Vertragskennung <span>(falls vorhanden)</span><input name="mandate_reference" maxlength="80" placeholder="PDB-2026-…"></label>
-            <label class="full">Mitgliedschaft beschreiben <span>(wenn keine Vertragskennung vorliegt)</span><input name="contract_description" maxlength="160" placeholder="z. B. PDB PREMIUM BEYOND, Vertragsbeginn August 2026"></label>
-            <label class="full">E-Mail für die Eingangsbestätigung <input name="communication_email" type="email" autocomplete="email" maxlength="160" required></label>
-            <div hidden aria-hidden="true"><label>Website <input name="contact_website" tabindex="-1" autocomplete="off"></label></div>
-            <div class="pdb-service-status" role="status" aria-live="polite"></div>
-            <button class="pdb-btn" type="submit">Widerruf bestätigen</button>
-          </form>
-        </details>
-        <details class="pdb-service-card" id="pdb-cancellation-card">
-          <summary>Verträge hier kündigen</summary>
-          <p>Erklären Sie eine ordentliche oder außerordentliche Kündigung. Ohne Wunschdatum gilt der nächstmögliche Zeitpunkt.</p>
-          <form class="pdb-service-form" id="pdb-public-cancellation-form" data-action-type="cancellation" novalidate>
-            <label>Vorname <input name="first_name" autocomplete="given-name" maxlength="80" required></label>
-            <label>Nachname <input name="last_name" autocomplete="family-name" maxlength="80" required></label>
-            <label class="full">E-Mail des Vertrags <input name="email" type="email" autocomplete="email" maxlength="160" required></label>
-            <label class="full">Mandatsreferenz / Vertragskennung <span>(falls vorhanden)</span><input name="mandate_reference" maxlength="80" placeholder="PDB-2026-…"></label>
-            <label class="full">Mitgliedschaft beschreiben <span>(wenn keine Vertragskennung vorliegt)</span><input name="contract_description" maxlength="160" placeholder="z. B. PDB PREMIUM BEYOND, Vertragsbeginn August 2026"></label>
-            <label>Art der Kündigung
-              <select name="cancellation_type">
-                <option value="ordinary">Ordentlich</option>
-                <option value="extraordinary">Außerordentlich</option>
-              </select>
-            </label>
-            <label>Gewünschtes Vertragsende <input name="requested_end_on" type="date"></label>
-            <label class="full" data-extraordinary-reason hidden>Begründung der außerordentlichen Kündigung <textarea name="cancellation_reason" maxlength="500"></textarea></label>
-            <label class="full">E-Mail für die Eingangsbestätigung <input name="communication_email" type="email" autocomplete="email" maxlength="160" required></label>
-            <div hidden aria-hidden="true"><label>Website <input name="contact_website" tabindex="-1" autocomplete="off"></label></div>
-            <div class="pdb-service-status" role="status" aria-live="polite"></div>
-            <button class="pdb-btn" type="submit">Jetzt kündigen</button>
-          </form>
-        </details>
-      </div>
+<section class="pdb-section pdb-service-teaser" id="pdb-contract-actions">
+  <div class="pdb-wrap pdb-service-teaser-inner">
+    <div>
+      <div class="pdb-eyebrow">Vertragsservice</div>
+      <h2>Alles zu Ihrem Vertrag</h2>
+      <p>Widerruf und Kündigung sind ohne Mitglieder-Login öffentlich erreichbar.</p>
     </div>
-  </section>
+    <div class="pdb-service-teaser-links">
+      <a href="/pages/premium?view=premium-service&amp;contract_action=withdrawal#pdb-withdrawal-card">Vertrag widerrufen</a>
+      <a href="/pages/premium?view=premium-service&amp;contract_action=cancel#pdb-cancellation-card">Verträge hier kündigen</a>
+    </div>
+  </div>
+</section>
 
   <section class="pdb-section pdb-faq-section">
     <div class="pdb-wrap">
@@ -3078,14 +3080,14 @@ body.pdb-premium-page #wisy-hint-bubble{
         <details class="pdb-faq">
           <summary>Was ist im BEYOND Paket enthalten?</summary>
           <div class="pdb-faq-content">
-            <p>BEYOND beinhaltet 1 exklusive Behandlung pro Monat aus dem BEYOND Bereich. Diese Stufe ist für hochwertige High-End und Premium-Treatments reserviert.</p>
+            <p>Sie wählen pro Mitgliedsmonat 1 der 15 BEYOND-Behandlungen. Bei MOTUS PRO DEKA® werden 3 große Körperzonen an einem Behandlungstag behandelt. Bei HIFU wählen Sie genau 1 Gesichtsareal. Serienbehandlungen umfassen die jeweils angegebene Anzahl an Terminen.</p>
           </div>
         </details>
 
         <details class="pdb-faq">
           <summary>Was ist im PRIVATE Paket enthalten?</summary>
           <div class="pdb-faq-content">
-            <p>PRIVATE beinhaltet ein vollständiges Protokoll pro Monat. Die meisten Protokolle bestehen aus einer 90-minütigen Sitzung. Body Sculpt Intensive umfasst vier Termine mit je 1 × EMS-Sculpt (30 Minuten). Bei zwei Terminen wählen Sie zusätzlich eine Lymphdrainage (60 Minuten). Mit der ersten Buchung wird das gewählte PRIVATE-Protokoll für diesen Monat festgelegt.</p>
+            <p>PRIVATE beinhaltet ein vollständiges Protokoll pro Monat. Die meisten Protokolle bestehen aus einer 90-minütigen Sitzung. Body Sculpt Intensive umfasst vier Termine mit je 1 × EMS-Sculpt (30 Minuten). Bei zwei dieser Termine wählen Sie zusätzlich eine Lymphdrainage; diese Kombination dauert 60 Minuten. Die Auswahl erfolgt bei der Onlinebuchung. Cryo Contour Intensive umfasst zwei Termine, jeweils mit 1 × Kryolipolyse, 1 × EMS-Sculpt und 1 × Lymphdrainage. Mit der ersten Buchung wird das gewählte PRIVATE-Protokoll für diesen Monat festgelegt.</p>
           </div>
         </details>
 
@@ -3099,7 +3101,7 @@ body.pdb-premium-page #wisy-hint-bubble{
         <details class="pdb-faq">
           <summary>Was passiert mit nicht genutzten Behandlungen?</summary>
           <div class="pdb-faq-content">
-            <p>Nicht genutzte Behandlungen verfallen am Monatsende und sind nicht auf den Folgemonat übertragbar.</p>
+            <p>Nicht genutzte Behandlungen verfallen grundsätzlich am Monatsende. Konnte PDB trotz rechtzeitiger Anfrage bis zum 20. des Beitragsmonats keine Behandlung ermöglichen, wird sie nach § 7 Abs. 3 in die zwei folgenden Beitragsmonate übertragen. War die Nachholung erneut aus Gründen auf Seiten von PDB unmöglich, bleibt der Anspruch bestehen.</p>
           </div>
         </details>
 
@@ -3113,7 +3115,7 @@ body.pdb-premium-page #wisy-hint-bubble{
         <details class="pdb-faq">
           <summary>Wie kann ich kündigen?</summary>
           <div class="pdb-faq-content">
-            <p>Die Mindestlaufzeit beträgt 12 Monate. Danach läuft die Mitgliedschaft unbefristet weiter und kann jederzeit mit einer Frist von einem Monat über „Verträge hier kündigen“ oder in Textform gekündigt werden.</p>
+            <p>Die Kündigung ist erstmals zum Ende der 12 Monate mit einem Monat Frist möglich. Danach läuft die Mitgliedschaft unbefristet weiter und kann mit einer Frist von einem Monat gekündigt werden. <a href="/pages/premium?view=premium-service&amp;contract_action=cancel#pdb-cancellation-card">Verträge hier kündigen</a> ist ohne Login erreichbar.</p>
           </div>
         </details>
       </div>
@@ -3127,10 +3129,10 @@ body.pdb-premium-page #wisy-hint-bubble{
         <h2>Mitgliedschaft & Bedingungen</h2>
         <p>
           Die Mindestlaufzeit der PDB Aesthetic Room PREMIUM Mitgliedschaft beträgt 12 Monate und beginnt zum 1. des gewählten Monats.
-          Danach läuft der Vertrag unbefristet weiter und kann jederzeit mit einer Frist von einem Monat gekündigt werden.
+          Die Kündigung ist erstmals zum Ende der Mindestlaufzeit mit einer Frist von einem Monat möglich. Danach läuft der Vertrag unbefristet weiter und kann jederzeit mit einer Frist von einem Monat gekündigt werden.
         </p>
         <p>
-          Nicht in Anspruch genommene Behandlungen sind nicht auf den Folgemonat übertragbar und verfallen am Monatsende.
+          Nicht genutzte Behandlungen verfallen grundsätzlich am Monatsende. Konnte PDB trotz rechtzeitiger Anfrage bis zum 20. des Beitragsmonats die Behandlung nicht ermöglichen, gilt der Übertrag in die zwei folgenden Beitragsmonate nach § 7 Abs. 3; bei erneuter Verhinderung auf Seiten von PDB bleibt der Anspruch bestehen.
           Muss eine Behandlung aus sachlichem oder gesundheitlichem Grund ersetzt werden, wird eine mindestens gleichwertige Alternative innerhalb des gebuchten Pakets angeboten.
         </p>
       </div>
@@ -3185,12 +3187,12 @@ body.pdb-premium-page #wisy-hint-bubble{
       {
         "@type":"Question",
         "name":"Was ist im BEYOND Paket enthalten?",
-        "acceptedAnswer":{"@type":"Answer","text":"BEYOND beinhaltet 1 exklusive Behandlung pro Monat aus dem BEYOND Bereich. Diese Stufe ist für hochwertige High-End und Premium-Treatments reserviert."}
+        "acceptedAnswer":{"@type":"Answer","text":"BEYOND umfasst 1 Behandlung aus 15 Optionen pro Mitgliedsmonat. MOTUS PRO DEKA behandelt 3 große Körperzonen an einem Behandlungstag; bei HIFU wird genau 1 Gesichtsareal gewählt. Serienbehandlungen umfassen die jeweils angegebene Anzahl an Terminen."}
       },
       {
         "@type":"Question",
         "name":"Was ist im PRIVATE Paket enthalten?",
-        "acceptedAnswer":{"@type":"Answer","text":"PRIVATE beinhaltet 1 vollständiges Gesichts- oder Body-Protokoll pro Monat. Die meisten Protokolle bestehen aus einer 90-minütigen Sitzung; Body Sculpt Intensive umfasst vier Termine mit je 1 × EMS-Sculpt (30 Minuten). Bei zwei Terminen wählen Sie zusätzlich eine Lymphdrainage (60 Minuten)."}
+        "acceptedAnswer":{"@type":"Answer","text":"PRIVATE beinhaltet 1 vollständiges Gesichts- oder Body-Protokoll pro Monat. Die meisten Protokolle bestehen aus einer 90-minütigen Sitzung; Body Sculpt Intensive umfasst vier Termine mit je 1 × EMS-Sculpt (30 Minuten). Bei zwei dieser Termine wählen Sie zusätzlich eine Lymphdrainage; diese Kombination dauert 60 Minuten. Die Auswahl erfolgt bei der Onlinebuchung. Cryo Contour Intensive umfasst zwei Termine, jeweils mit 1 × Kryolipolyse, 1 × EMS-Sculpt und 1 × Lymphdrainage."}
       },
       {
         "@type":"Question",
@@ -3200,7 +3202,7 @@ body.pdb-premium-page #wisy-hint-bubble{
       {
         "@type":"Question",
         "name":"Was passiert mit nicht genutzten Behandlungen?",
-        "acceptedAnswer":{"@type":"Answer","text":"Nicht genutzte Behandlungen verfallen am Monatsende und sind nicht auf den Folgemonat übertragbar."}
+        "acceptedAnswer":{"@type":"Answer","text":"Nicht genutzte Behandlungen verfallen grundsätzlich am Monatsende. Konnte PDB trotz rechtzeitiger Anfrage bis zum 20. des Beitragsmonats keine Behandlung ermöglichen, wird sie nach § 7 Abs. 3 in die zwei folgenden Beitragsmonate übertragen. War die Nachholung erneut aus Gründen auf Seiten von PDB unmöglich, bleibt der Anspruch bestehen."}
       },
       {
         "@type":"Question",
@@ -3210,7 +3212,7 @@ body.pdb-premium-page #wisy-hint-bubble{
       {
         "@type":"Question",
         "name":"Wie kann ich kündigen?",
-        "acceptedAnswer":{"@type":"Answer","text":"Nach 12 Monaten Mindestlaufzeit läuft die Mitgliedschaft unbefristet weiter und kann jederzeit mit einer Frist von einem Monat gekündigt werden."}
+        "acceptedAnswer":{"@type":"Answer","text":"Die Kündigung ist erstmals zum Ende der 12 Monate mit einem Monat Frist möglich. Danach läuft die Mitgliedschaft unbefristet weiter und kann jederzeit mit einer Frist von einem Monat gekündigt werden."}
       }
     ]
   }
@@ -3253,7 +3255,32 @@ body.pdb-premium-page #wisy-hint-bubble{
     var shopifyCustomerId = '{{ customer.id | default: "" }}';
 
     var isLoggedIn = !!shopifyCustomerId;
-    var isPremiumMember = false;
+
+    if ('IntersectionObserver' in window && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      var planObserver = new IntersectionObserver(function (entries, observer) {
+        entries.forEach(function (entry) {
+          if (!entry.isIntersecting) return;
+          entry.target.classList.add('is-in-view');
+          observer.unobserve(entry.target);
+        });
+      }, { threshold: 0.12 });
+      root.querySelectorAll('.pdb-plan').forEach(function (plan, index) {
+        plan.style.setProperty('--pdb-enter-delay', (index * 70) + 'ms');
+        planObserver.observe(plan);
+      });
+    }
+
+    var valueProof = root.querySelector('.pdb-value-proof');
+    if (valueProof && 'IntersectionObserver' in window && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      var proofObserver = new IntersectionObserver(function (entries, observer) {
+        entries.forEach(function (entry) {
+          if (!entry.isIntersecting) return;
+          entry.target.classList.add('is-in-view');
+          observer.unobserve(entry.target);
+        });
+      }, { threshold: 0.25 });
+      proofObserver.observe(valueProof);
+    }
 
     var cats = root.querySelectorAll('.pdb-cat');
     if (cats.length) {
@@ -3362,10 +3389,10 @@ body.pdb-premium-page #wisy-hint-bubble{
     var contractDisclosure = document.getElementById('pdb-contract-disclosure');
     var selectedPackageStorageKey = 'pdb_selected_package';
     var packageOffers = {
-      pure: { name: 'PURE', monthly: '149,00 €', monthlyHero: '149 € / Monat', total: '1.827,00 €' },
-      define: { name: 'DEFINE', monthly: '169,00 €', monthlyHero: '169 € / Monat', total: '2.067,00 €' },
-      beyond: { name: 'BEYOND', monthly: '199,00 €', monthlyHero: '199 € / Monat', total: '2.427,00 €' },
-      private: { name: 'PRIVATE', monthly: '399,00 €', monthlyHero: '399 € / Monat', total: '4.827,00 €' }
+      pure: { name: 'PURE', monthly: '149,00 €', monthlyHero: '149 € / Monat', total: '1.837,00 €' },
+      define: { name: 'DEFINE', monthly: '169,00 €', monthlyHero: '169 € / Monat', total: '2.077,00 €' },
+      beyond: { name: 'BEYOND', monthly: '199,00 €', monthlyHero: '199 € / Monat', total: '2.437,00 €' },
+      private: { name: 'PRIVATE', monthly: '399,00 €', monthlyHero: '399 € / Monat', total: '4.837,00 €' }
     };
     var updatePublicPackage;
 
@@ -3443,7 +3470,7 @@ body.pdb-premium-page #wisy-hint-bubble{
       : getStoredPackage();
     var initialPackage = packageOffers[preferredPackage]
       ? preferredPackage
-      : (packageSelect ? packageSelect.value : (publicPackageSelect ? publicPackageSelect.value : 'define'));
+      : (packageSelect ? packageSelect.value : (publicPackageSelect ? publicPackageSelect.value : 'beyond'));
     updateSelectedPackage(initialPackage);
 
     var shouldContinueContract = isLoggedIn && contractShell && (
@@ -3616,6 +3643,7 @@ body.pdb-premium-page #wisy-hint-bubble{
           }
           if (!response.ok || !result.ok) {
             var messages = {
+              CONTRACT_VERSION_CHANGED: 'Die Vertragsbedingungen wurden aktualisiert. Bitte laden Sie die Seite neu und prüfen Sie die neuen Bedingungen.',
               INVALID_IBAN: 'Bitte prüfen Sie die IBAN.',
               INVALID_CONTACT_DATA: 'Bitte füllen Sie Name, E-Mail und Anschrift vollständig aus. Straße und Hausnummer müssen gemeinsam angegeben werden.',
               INVALID_START_DATE: 'Bitte wählen Sie den ersten Tag eines kommenden Monats.',
@@ -3644,572 +3672,10 @@ body.pdb-premium-page #wisy-hint-bubble{
       });
     }
 
-    function initializeContractActionForm(form) {
-      if (!form) return;
-      var actionType = form.getAttribute('data-action-type');
-      var status = form.querySelector('.pdb-service-status');
-      var submit = form.querySelector('button[type="submit"]');
-      var contractEmail = form.elements.email;
-      var communicationEmail = form.elements.communication_email;
-      var cancellationType = form.elements.cancellation_type;
-      var mandateReference = form.elements.mandate_reference;
-      var contractDescription = form.elements.contract_description;
-      var reasonWrap = form.querySelector('[data-extraordinary-reason]');
-      var reasonInput = form.elements.cancellation_reason;
-
-      if (contractEmail && communicationEmail) {
-        contractEmail.addEventListener('blur', function () {
-          if (!communicationEmail.value) communicationEmail.value = contractEmail.value;
-        });
-      }
-
-      function updateCancellationReason() {
-        if (!cancellationType || !reasonWrap || !reasonInput) return;
-        var required = cancellationType.value === 'extraordinary';
-        reasonWrap.hidden = !required;
-        reasonInput.required = required;
-        if (!required) reasonInput.value = '';
-      }
-      if (cancellationType) {
-        cancellationType.addEventListener('change', updateCancellationReason);
-        updateCancellationReason();
-      }
-
-      function updateContractDescription() {
-        contractDescription.required = !mandateReference.value.trim();
-      }
-      mandateReference.addEventListener('input', updateContractDescription);
-      updateContractDescription();
-
-      form.addEventListener('submit', async function (event) {
-        event.preventDefault();
-        if (!form.reportValidity()) return;
-        submit.disabled = true;
-        var originalText = submit.textContent;
-        submit.textContent = 'Erklärung wird übermittelt…';
-        status.className = 'pdb-service-status is-visible';
-        status.textContent = 'Ihre Erklärung wird sicher erfasst.';
-
-        var payload = Object.fromEntries(new FormData(form).entries());
-        payload.action_type = actionType;
-
-        try {
-          var tokenResponse = await fetch('/apps/pdb/contracts/action-token', { cache: 'no-store' });
-          var tokenResult = await tokenResponse.json();
-          if (!tokenResponse.ok || !tokenResult.ok || !tokenResult.action_token) {
-            throw new Error('Der Sicherheitsnachweis konnte nicht geladen werden. Bitte erneut versuchen.');
-          }
-          await new Promise(function (resolve) { window.setTimeout(resolve, 2100); });
-          payload.action_token = tokenResult.action_token;
-          var response = await fetch('/apps/pdb/contracts/action', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-          });
-          var result = await response.json();
-          if (!response.ok || !result.ok) {
-            var actionMessages = {
-              INVALID_ACTION_DATA: 'Bitte prüfen Sie Namen und E-Mail-Adressen.',
-              CANCELLATION_REASON_REQUIRED: 'Bitte geben Sie den wichtigen Grund für die außerordentliche Kündigung an.',
-              INVALID_END_DATE: 'Bitte prüfen Sie das gewünschte Vertragsende.',
-              CONTRACT_DESCRIPTION_REQUIRED: 'Bitte geben Sie Ihre Vertragskennung oder eine Beschreibung der Mitgliedschaft an.',
-              INVALID_ACTION_TOKEN: 'Der Sicherheitsnachweis ist abgelaufen. Bitte versuchen Sie es erneut.',
-              TOO_MANY_REQUESTS: 'Zu viele Versuche. Bitte versuchen Sie es später erneut oder senden Sie Ihre Erklärung per E-Mail.'
-            };
-            throw new Error(actionMessages[result.error] || 'Die Erklärung konnte nicht gespeichert werden.');
-          }
-
-          status.className = 'pdb-service-status is-visible';
-          status.innerHTML = '<strong>Ihre Erklärung ist eingegangen.</strong><br>Vorgangsnummer: ' + (result.request.reference || result.request.id) +
-            '<br>Eingang: ' + new Date(result.request.received_at).toLocaleString('de-DE') +
-            (result.confirmation_email_sent ? '<br>Die Eingangsbestätigung wurde per E-Mail versendet.' : '<br>Der Eingangsbeleg wurde automatisch zum Speichern bereitgestellt.') +
-            '<br><a href="' + result.receipt_url + '">Eingangsbeleg erneut herunterladen</a>';
-          triggerSecureDownload(result.receipt_url);
-          form.querySelectorAll('input,select,textarea,button').forEach(function (field) { field.disabled = true; });
-        } catch (error) {
-          status.className = 'pdb-service-status is-visible is-error';
-          status.textContent = error.message || 'Technischer Fehler bei der Übermittlung.';
-          submit.disabled = false;
-          submit.textContent = originalText;
-        }
-      });
-    }
-
-    var withdrawalForm = document.getElementById('pdb-withdrawal-form');
-    var publicCancellationForm = document.getElementById('pdb-public-cancellation-form');
-    initializeContractActionForm(withdrawalForm);
-    initializeContractActionForm(publicCancellationForm);
-
-    var contractAction = new URLSearchParams(window.location.search).get('contract_action');
-    var actionCard = contractAction === 'withdrawal'
-      ? document.getElementById('pdb-withdrawal-card')
-      : contractAction === 'cancel'
-        ? document.getElementById('pdb-cancellation-card')
-        : null;
-    if (actionCard) {
-      actionCard.open = true;
-      window.setTimeout(function () {
-        actionCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        var firstField = actionCard.querySelector('input');
-        if (firstField) firstField.focus({ preventScroll: true });
-      }, 180);
-    }
-
-    var statusBox = document.createElement('div');
-    statusBox.id = 'pdb-premium-api-status';
-    statusBox.style.marginTop = '18px';
-    statusBox.style.padding = '14px 16px';
-    statusBox.style.borderRadius = '14px';
-    statusBox.style.background = '#f8f4ef';
-    statusBox.style.border = '1px solid rgba(0,0,0,.08)';
-    statusBox.style.fontSize = '14px';
-    statusBox.style.lineHeight = '1.6';
-    statusBox.style.color = '#171717';
-    statusBox.setAttribute('role', 'status');
-    statusBox.setAttribute('aria-live', 'polite');
-    statusBox.innerHTML = 'Premium-Daten werden geladen...';
-
-    var bookingApp = document.getElementById('pdb-premium-booking-app');
-    var memberSummary = document.getElementById('pdb-premium-member-summary');
-    var treatmentCard = document.getElementById('pdb-premium-treatment-card');
-    var memberArea =
-      root.querySelector('.pdb-member-gate') ||
-      root.querySelector('.pdb-member-booking-card') ||
-      root.querySelector('.pdb-member-gate-card') ||
-      root;
-
-    if (memberArea && new URLSearchParams(window.location.search).get('booking') === 'confirmed') {
-      var bookingConfirmation = document.createElement('div');
-      bookingConfirmation.className = 'pdb-member-booking-card';
-      bookingConfirmation.setAttribute('role', 'status');
-      bookingConfirmation.innerHTML = '<span class="pdb-member-badge">Termin bestätigt</span><h3>Ihre PREMIUM-Buchung war erfolgreich</h3><p>Der Termin wurde übernommen und Ihr verfügbares Kontingent wird unten aktuell angezeigt.</p>';
-      memberArea.insertAdjacentElement('afterbegin', bookingConfirmation);
-
-      var cleanBookingParams = new URLSearchParams(window.location.search);
-      cleanBookingParams.delete('booking');
-      var cleanBookingUrl = window.location.pathname + (cleanBookingParams.toString() ? '?' + cleanBookingParams.toString() : '') + '#pdb-member-booking';
-      window.history.replaceState({}, '', cleanBookingUrl);
-    }
-
-    async function loadContractManagement() {
-      if (!isLoggedIn || !memberArea) return;
-      try {
-        var response = await fetch('/apps/pdb/contracts/mine?pdb_ts=' + Date.now());
-        var result = await response.json();
-        if (!response.ok || !result.ok || !result.application) return;
-        var application = result.application;
-
-        if (application.status === 'sepa_pending') {
-          showContractSuccess(
-            { application: application },
-            {
-              package_key: application.package_key,
-              starts_on: application.starts_on,
-              email: application.email
-            },
-            '/apps/pdb/contracts/confirmation-latest',
-            false
-          );
-          var pending = document.createElement('div');
-          pending.id = 'pdb-contract-application-status';
-          pending.className = isPremiumMember ? 'pdb-member-info' : 'pdb-member-booking-card';
-          pending.innerHTML = isPremiumMember
-            ? '<span class="pdb-member-badge">Bestehender Zugang bleibt aktiv</span><h3>Zusätzlicher ' + String(application.package_key).toUpperCase() + '-Antrag ausstehend</h3><p>Ihre aktive Mitgliedschaft und Ihre Buchungsfreigabe bleiben unverändert bestehen. Nur der neue Antrag mit der Mandatsreferenz ' + application.mandate_reference + ' wartet noch auf unsere Annahme.</p><a class="pdb-btn-secondary" href="/apps/pdb/contracts/confirmation-latest">Eingangsbestätigung herunterladen</a>'
-            : '<span class="pdb-member-badge">Annahme ausstehend</span><h3>Ihre verbindliche Bestellung ist eingegangen</h3><p>Mandatsreferenz: ' + application.mandate_reference + '. Der Vertrag kommt mit unserer ausdrücklichen Annahme nach Einrichtung des SEPA-Einzugs zustande.</p><a class="pdb-btn-secondary" href="/apps/pdb/contracts/confirmation-latest">Eingangsbestätigung herunterladen</a>';
-
-          if (isPremiumMember && memberSummary && memberSummary.parentNode) {
-            memberSummary.insertAdjacentElement('afterend', pending);
-          } else {
-            memberArea.appendChild(pending);
-          }
-          return;
-        }
-
-        if (application.status !== 'active') return;
-        var card = document.createElement('div');
-        card.className = 'pdb-member-booking-card';
-        card.id = 'pdb-contract-documents';
-        card.innerHTML =
-          '<h3>Vertragsunterlagen</h3>' +
-          '<p>Vertrag ' + application.mandate_reference + ' · Paket ' + String(application.package_key).toUpperCase() + '</p>' +
-          '<a class="pdb-btn-secondary" href="/apps/pdb/contracts/confirmation-latest">Vertragsbestätigung herunterladen</a>';
-        memberArea.appendChild(card);
-      } catch (error) {
-        console.error('Vertragsverwaltung konnte nicht geladen werden:', error);
-      }
-    }
-
-    if (memberSummary) {
-      memberSummary.insertAdjacentElement('afterend', statusBox);
-    } else {
-      memberArea.appendChild(statusBox);
-    }
-
-    function formatPremiumMonth(value) {
-      var match = String(value || '').match(/^(\d{4})-(\d{2})(?:-\d{2})?$/);
-
-      if (!match) return '';
-
-      var year = Number(match[1]);
-      var month = Number(match[2]);
-
-      if (month < 1 || month > 12) return '';
-
-      return new Intl.DateTimeFormat('de-DE', {
-        month: 'long',
-        timeZone: 'Europe/Berlin'
-      }).format(new Date(year, month - 1, 1, 12, 0, 0));
-    }
-
-    function renderTreatments(treatments) {
-      if (!bookingApp) return;
-
-      if (!Array.isArray(treatments) || !treatments.length) {
-        bookingApp.innerHTML =
-          '<div style="padding:14px 16px;border-radius:14px;background:#fff;border:1px solid rgba(0,0,0,.08);font-size:14px;line-height:1.6;color:#171717;">' +
-          'Aktuell sind für diesen Monat keine weiteren Premium-Behandlungen verfügbar.' +
-          '</div>';
-        return;
-      }
-
-      var html = '<div style="display:grid;gap:12px;">';
-
-      treatments.forEach(function (t) {
-        html +=
-          '<div style="padding:14px 16px;border-radius:14px;background:#fff;border:1px solid rgba(0,0,0,.08);">' +
-          '<div style="font-weight:600;font-size:15px;line-height:1.5;color:#171717;">' +
-          (t.title || 'Behandlung') +
-          '</div>' +
-          '<button class="pdb-btn pdb-book-treatment" data-treatment-key="' + t.treatment_key + '" style="margin-top:10px;">' +
-          'Termin buchen' +
-          '</button>' +
-          '</div>';
-      });
-
-      html += '</div>';
-      bookingApp.innerHTML = html;
-    }
-
-      var PDB_PREMIUM_TAGS = [
-  {% if is_private %}
-    'premium-private'
-  {% elsif is_beyond %}
-    'premium-beyond'
-  {% elsif is_define %}
-    'premium-define'
-  {% elsif is_pure %}
-    'premium-pure'
-  {% endif %}
-].filter(Boolean);
-
-    async function loadAllowedTreatments() {
-      try {
-        if (!isLoggedIn) {
-          if (statusBox) {
-            statusBox.innerHTML = 'Bitte logge dich ein, um deine Premium-Mitgliedschaft zu nutzen.';
-          }
-
-          if (bookingApp) {
-            bookingApp.innerHTML = '';
-          }
-
-          return;
-        }
-
-        var res = await fetch(
-          '/apps/pdb/allowed?pdb_ts=' + Date.now(),
-          {
-            method: 'GET'
-          }
-        );
-
-        var data = await res.json();
-        console.log('PDB Premium allowed treatments response:', data);
-
-        if (!data.ok) {
-          console.error('API returned error:', data);
-
-          var accessNotVerified =
-            data.error === 'PREMIUM_ACCESS_NOT_VERIFIED' ||
-            data.error === 'PREMIUM_TAG_REQUIRED';
-
-          if (accessNotVerified) {
-            if (memberSummary) {
-              memberSummary.innerHTML =
-                '<span class="pdb-member-badge">Noch nicht freigeschaltet</span>' +
-                '<h3>Kein aktiver Buchungszugang</h3>' +
-                '<p>Ihre Bestellung ist eingegangen, wurde aber noch nicht als Mitgliedschaft angenommen. Buchungen werden erst nach unserer Freischaltung möglich.</p>';
-            }
-            statusBox.innerHTML =
-              '<strong>Buchungsfreigabe ausstehend</strong><br>' +
-              'Nach Einrichtung des SEPA-Einzugs und unserer Vertragsannahme wird Ihr passendes PREMIUM-Paket hier automatisch freigeschaltet.';
-          } else {
-            statusBox.innerHTML =
-              'Premium-Daten konnten aktuell nicht geladen werden. Bitte versuchen Sie es später erneut.';
-          }
-
-          if (treatmentCard) treatmentCard.hidden = true;
-
-          if (bookingApp) {
-            bookingApp.innerHTML = '';
-          }
-
-          return;
-        }
-
-        var member = data.member || null;
-
-        isPremiumMember =
-          !!member &&
-          member.status === 'active' &&
-          ['pure', 'define', 'beyond', 'private'].includes(member.package_key);
-
-        if (!isPremiumMember) {
-          if (treatmentCard) treatmentCard.hidden = true;
-          statusBox.innerHTML =
-            '<strong>PDB PREMIUM</strong><br>' +
-            'Für dieses Kundenkonto wurde aktuell keine aktive Premium-Mitgliedschaft gefunden.';
-
-          if (bookingApp) {
-            bookingApp.innerHTML = '';
-          }
-
-          return;
-        }
-
-        root.querySelectorAll('.pdb-member-booking-card').forEach(function (card) {
-          var cardText = String(card.textContent || '').toLowerCase();
-          if (
-            cardText.includes('kein buchungszugang aktiv') ||
-            cardText.includes('kein freigeschaltetes premium-paket zugeordnet')
-          ) {
-            card.hidden = true;
-          }
-        });
-
-        if (data.bookingAccess && !data.bookingAccess.allowed) {
-          if (treatmentCard) treatmentCard.hidden = true;
-          var availableLabel = data.bookingAccess.available_at
-            ? new Date(data.bookingAccess.available_at).toLocaleDateString('de-DE')
-            : '';
-          statusBox.innerHTML = data.bookingAccess.reason === 'CONTRACT_NOT_STARTED'
-            ? '<strong>Mitgliedschaft vorgemerkt</strong><br>Ihre Buchungsfreigabe beginnt am ' + availableLabel + '.'
-            : '<strong>Widerrufsfrist läuft</strong><br>Da kein vorzeitiger Leistungsbeginn verlangt wurde, ist die Buchung ab ' + availableLabel + ' freigeschaltet.';
-          if (bookingApp) bookingApp.innerHTML = '';
-          return;
-        }
-
-        console.log('Member:', data.member);
-        console.log('Entitlements:', data.entitlements);
-        console.log('Treatments:', data.treatments);
-
-        var packageKey = data.member && data.member.package_key ? data.member.package_key.toUpperCase() : '-';
-        if (treatmentCard) treatmentCard.hidden = false;
-
-        if (memberSummary) {
-  var summaryText = '';
-
-  if (packageKey === 'PURE') {
-    summaryText = 'Sie können pro Kalendermonat 3 frei wählbare Behandlungen aus der PURE Kollektion buchen. Mehrfachbuchungen derselben Behandlung sind möglich. Nicht genutzte Leistungen verfallen am Monatsende.';
-  } else if (packageKey === 'DEFINE') {
-    summaryText = 'Sie können pro Kalendermonat 1 Behandlung aus PURE und 1 Behandlung aus DEFINE buchen. Nicht genutzte Leistungen verfallen am Monatsende.';
-  } else if (packageKey === 'BEYOND') {
-    summaryText = 'Sie können pro Kalendermonat 1 exklusive Behandlung aus der BEYOND Kollektion buchen. Nicht genutzte Leistungen verfallen am Monatsende.';
-  } else if (packageKey === 'PRIVATE') {
-    summaryText = 'Sie können pro Kalendermonat 1 vollständiges Protokoll aus der PRIVATE Kollektion buchen. Nicht genutzte Leistungen verfallen am Monatsende.';
-  }
-
-  memberSummary.innerHTML =
-    '<span class="pdb-member-badge">Aktiver Status: ' + packageKey + ' aktiv</span>' +
-    '<h3>Ihr freigeschalteter Mitgliederbereich</h3>' +
-    '<p>' + summaryText + '</p>';
-}
-
-        var remainingPure = data.entitlements && data.entitlements.remaining ? data.entitlements.remaining.pure : 0;
-        var remainingDefine = data.entitlements && data.entitlements.remaining ? data.entitlements.remaining.define : 0;
-        var remainingBeyond = data.entitlements && data.entitlements.remaining ? data.entitlements.remaining.beyond : 0;
-        var remainingPrivate = data.entitlements && data.entitlements.remaining ? data.entitlements.remaining.private : 0;
-        var nextRemainingPure = data.nextMonthEntitlements && data.nextMonthEntitlements.remaining ? data.nextMonthEntitlements.remaining.pure : 0;
-        var nextRemainingDefine = data.nextMonthEntitlements && data.nextMonthEntitlements.remaining ? data.nextMonthEntitlements.remaining.define : 0;
-        var nextRemainingBeyond = data.nextMonthEntitlements && data.nextMonthEntitlements.remaining ? data.nextMonthEntitlements.remaining.beyond : 0;
-        var nextRemainingPrivate = data.nextMonthEntitlements && data.nextMonthEntitlements.remaining ? data.nextMonthEntitlements.remaining.private : 0;
-        var treatmentCount = Array.isArray(data.treatments) ? data.treatments.length : 0;
-        var currentQuotaText = '';
-        var nextQuotaText = '';
-        var currentRemainingTotal = 0;
-        var nextRemainingTotal = 0;
-
-        if (packageKey === 'PURE') {
-          currentQuotaText = remainingPure + ' PURE';
-          nextQuotaText = nextRemainingPure + ' PURE';
-          currentRemainingTotal = remainingPure;
-          nextRemainingTotal = nextRemainingPure;
-        } else if (packageKey === 'DEFINE') {
-          currentQuotaText = remainingPure + ' PURE · ' + remainingDefine + ' DEFINE';
-          nextQuotaText = nextRemainingPure + ' PURE · ' + nextRemainingDefine + ' DEFINE';
-          currentRemainingTotal = remainingPure + remainingDefine;
-          nextRemainingTotal = nextRemainingPure + nextRemainingDefine;
-        } else if (packageKey === 'BEYOND') {
-          currentQuotaText = remainingBeyond + ' BEYOND';
-          nextQuotaText = nextRemainingBeyond + ' BEYOND';
-          currentRemainingTotal = remainingBeyond;
-          nextRemainingTotal = nextRemainingBeyond;
-        } else {
-          currentQuotaText = remainingPrivate + ' PRIVATE';
-          nextQuotaText = nextRemainingPrivate + ' PRIVATE';
-          currentRemainingTotal = remainingPrivate;
-          nextRemainingTotal = nextRemainingPrivate;
-        }
-
-        var currentMonthLabel = formatPremiumMonth(
-          data.entitlements && data.entitlements.month
-        );
-        var nextMonthLabel = formatPremiumMonth(
-          data.nextMonthEntitlements && data.nextMonthEntitlements.month
-        );
-        var guidanceHtml = '';
-
-        if (
-          currentRemainingTotal === 0 &&
-          nextRemainingTotal > 0 &&
-          currentMonthLabel &&
-          nextMonthLabel
-        ) {
-          var treatmentLabel = packageKey === 'PRIVATE'
-            ? 'PRIVATE-Protokoll'
-            : packageKey === 'BEYOND' ? 'BEYOND-Behandlung' : 'Premium-Behandlung';
-
-          guidanceHtml =
-            '<div class="pdb-booking-guidance">' +
-            '<strong>' + currentMonthLabel + ' bereits genutzt</strong>' +
-            '<span>Ihre nächste ' + treatmentLabel + ' können Sie für ' + nextMonthLabel + ' buchen.</span>' +
-            '</div>';
-        }
-
-        statusBox.innerHTML =
-          '<strong>Dein Kontingent</strong>' +
-          '<div class="pdb-quota-row"><span>Aktueller Monat</span><strong>' + currentQuotaText + '</strong></div>' +
-          '<div class="pdb-quota-row"><span>Nächster Monat</span><strong>' + nextQuotaText + '</strong></div>' +
-          '<div class="pdb-quota-row"><span>Buchbare Behandlungen</span><strong>' + treatmentCount + '</strong></div>' +
-          guidanceHtml;
-
-        renderTreatments(data.treatments);
-      } catch (error) {
-        console.error('Fehler beim Laden der erlaubten Treatments:', error);
-        statusBox.innerHTML = 'Technischer Fehler beim Laden der Premium-Daten.';
-
-        if (bookingApp) {
-          bookingApp.innerHTML = '';
-        }
-      }
-    }
-
-    async function loadPremiumMemberArea() {
-      await loadAllowedTreatments();
-      await loadContractManagement();
-    }
-
-    loadPremiumMemberArea();
-
-    document.addEventListener('click', async function (e) {
-      var btn = e.target.closest('.pdb-book-treatment');
-      if (!btn) return;
-
-      if (!isPremiumMember) {
-        if (statusBox) {
-          statusBox.innerHTML =
-            '<strong>PDB PREMIUM</strong><br>' +
-            'Du hast aktuell keine aktive Premium-Mitgliedschaft.<br><br>' +
-            'Als Mitglied erhältst du monatlich exklusive Behandlungen und direkten Zugang zur Online-Buchung.';
-        }
-
-        if (bookingApp) {
-          bookingApp.innerHTML =
-            '<div style="text-align:center; padding:24px;">' +
-            '<a href="/pages/premium" style="display:inline-block; background:#d9bfa9; color:#fff; padding:12px 20px; border-radius:10px; text-decoration:none; font-weight:600;">' +
-            'Mitgliedschaft ansehen' +
-            '</a>' +
-            '</div>';
-        }
-
-        return;
-      }
-
-      var key = btn.getAttribute('data-treatment-key');
-      if (!key) return;
-
-      btn.disabled = true;
-      var originalText = btn.innerText;
-      btn.innerText = 'Wird geöffnet...';
-
-      try {
-        var res = await fetch('/apps/pdb/bookings/create', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            treatment_key: key,
-            shopify_customer_id: shopifyCustomerId
-          })
-        });
-
-        var data = await res.json();
-
-        if (!data.ok || !data.token) {
-          var message = 'Buchung aktuell nicht möglich.';
-
-          if (data.error === 'LIMIT_REACHED') {
-            message = 'Dein monatliches Kontingent für dieses Paket ist bereits aufgebraucht.';
-          } else if (data.error === 'TREATMENT_NOT_ALLOWED') {
-            message = 'Diese Behandlung ist in deinem aktuellen Paket nicht enthalten.';
-          } else if (data.error === 'MEMBER_NOT_FOUND') {
-            message = 'Für dein Kundenkonto wurde keine aktive Premium-Mitgliedschaft gefunden.';
-          } else if (data.error === 'TREATMENT_KEY_REQUIRED') {
-            message = 'Die Behandlung konnte nicht korrekt übergeben werden.';
-          } else if (data.error === 'WITHDRAWAL_PERIOD_ACTIVE') {
-            message = 'Die Buchung ist nach Ablauf der 14-tägigen Widerrufsfrist möglich.';
-          } else if (data.error === 'CONTRACT_NOT_STARTED') {
-            message = 'Die Mitgliedschaft hat noch nicht begonnen.';
-          }
-
-          alert(message);
-          btn.disabled = false;
-          btn.innerText = originalText;
-          return;
-        }
-
-        if (!data.booking_url) {
-          alert('Die Buchungsseite ist für diese Behandlung noch nicht hinterlegt.');
-          btn.disabled = false;
-          btn.innerText = originalText;
-          return;
-        }
-
-        window.location.assign(data.booking_url);
-      } catch (err) {
-        console.error(err);
-        alert('Technischer Fehler bei der Buchung.');
-        btn.disabled = false;
-        btn.innerText = originalText;
-      }
-    });
   })();
 </script>
 
-<script>
-document.addEventListener("click", function (e) {
-  var btn = e.target.closest(".pdb-book-treatment");
-  if (!btn) return;
 
-  e.preventDefault();
-  e.stopPropagation();
-  e.stopImmediatePropagation();
-
-  var key = btn.getAttribute("data-treatment-key");
-  if (!key) return;
-
-  window.location.href = "/products/" + key;
-}, true);
-</script>
 
 
 {% schema %}
@@ -4226,7 +3692,7 @@ document.addEventListener("click", function (e) {
       "type": "text",
       "id": "deployment_revision",
       "label": "Deployment-Revision",
-      "default": "2026-08-10"
+      "default": "2026-11"
     }
   ],
   "presets": [

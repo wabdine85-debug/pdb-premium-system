@@ -63,6 +63,7 @@ export async function ensureContractActionSchema(db = pool) {
     CHECK (body_sculpt_option IN ('ems', 'ems_lymph'))`);
 
 
+  await db.query('ALTER TABLE membership_applications ALTER COLUMN setup_fee_cents SET DEFAULT 4900');
 }
 
 export async function ensureContractActionRateLimitSchema(db = pool) {

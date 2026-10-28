@@ -199,7 +199,8 @@ test('contract document escaping covers all HTML control characters', () => {
 test('contract action schema bootstrap is additive and idempotent SQL', async () => {
   const queries = [];
   await ensureContractActionSchema({ query: async (sql) => queries.push(sql) });
-  assert.equal(queries.length, 12);
+  assert.equal(queries.length, 13);
+  assert.match(queries[12], /ALTER COLUMN setup_fee_cents SET DEFAULT 4900/);
   assert.ok(queries.some(sql => sql.includes("reserved_booking_month")));
   assert.equal(queries.filter(sql => sql.includes("ADD COLUMN IF NOT EXISTS body_sculpt_option")).length, 2);
   assert.match(queries[0], /CREATE TABLE IF NOT EXISTS contract_action_requests/);

@@ -1,0 +1,210 @@
+<section class="pdb-service-page" id="pdb-contract-actions" aria-labelledby="pdb-service-title">
+  <style>
+    .pdb-service-page{--sand:#d9bfa9;--ink:#171513;--muted:#625a53;box-sizing:border-box;background:#faf8f6;color:var(--ink);padding:70px 20px 90px;font-family:inherit}
+    .pdb-service-page *{box-sizing:border-box}
+    .pdb-service-page [hidden]{display:none!important}
+    .pdb-service-page__wrap{max-width:1120px;margin:auto}
+    .pdb-service-page__back{display:inline-block;margin-bottom:44px;color:#6d5543;text-decoration:none;font-size:13px;font-weight:750}
+    .pdb-service-page__back:hover,.pdb-service-page__back:focus-visible{text-decoration:underline;outline-offset:5px}
+    .pdb-service-page__intro{max-width:750px;margin-bottom:34px}
+    .pdb-service-page__eyebrow{display:inline-block;margin-bottom:16px;color:#765c48;font-size:11px;font-weight:800;letter-spacing:.18em;text-transform:uppercase}
+    .pdb-service-page h1{margin:0 0 18px;color:var(--ink);font-size:clamp(40px,5vw,72px);line-height:1.04;letter-spacing:-.04em}
+    .pdb-service-page__intro p{max-width:690px;margin:0;color:var(--muted);font-size:18px;line-height:1.6}
+    .pdb-service-page__assurance{display:flex;flex-wrap:wrap;gap:10px;margin-top:24px}
+    .pdb-service-page__assurance span{border:1px solid #e0d3c8;border-radius:99px;padding:8px 12px;background:#fff;color:#58483d;font-size:12px;font-weight:650}
+    .pdb-service-page .pdb-service-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;align-items:start}
+    .pdb-service-page .pdb-service-card{scroll-margin-top:140px;border:1px solid #ded0c4;border-radius:22px;background:#fff;padding:24px;box-shadow:0 15px 35px rgba(40,25,15,.05)}
+    .pdb-service-page .pdb-service-card summary{display:flex;align-items:center;justify-content:space-between;gap:14px;list-style:none;cursor:pointer;color:var(--ink);font-size:21px;font-weight:800;line-height:1.2}
+    .pdb-service-page .pdb-service-card summary::-webkit-details-marker{display:none}
+    .pdb-service-page .pdb-service-card summary:after{content:'+';display:grid;place-items:center;flex:0 0 32px;width:32px;height:32px;border-radius:50%;background:#f5ece5;color:#70543e;font-size:24px;font-weight:400}
+    .pdb-service-page .pdb-service-card[open] summary:after{content:'−'}
+    .pdb-service-page .pdb-service-card summary:focus-visible{outline:3px solid var(--sand);outline-offset:6px;border-radius:4px}
+    .pdb-service-page .pdb-service-card > p{margin:14px 0 0;color:var(--muted);font-size:14px;line-height:1.6}
+    .pdb-service-page .pdb-service-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:20px;padding-top:20px;border-top:1px solid #ece3dc}
+    .pdb-service-page .pdb-service-form .full,.pdb-service-page .pdb-service-status{grid-column:1/-1}
+    .pdb-service-page .pdb-service-form label{display:grid;align-content:start;gap:7px;color:#3b332d;font-size:13px;font-weight:700}
+    .pdb-service-page .pdb-service-form label span{font-weight:400}
+    .pdb-service-page .pdb-service-form input,.pdb-service-page .pdb-service-form select,.pdb-service-page .pdb-service-form textarea{width:100%;min-height:45px;padding:11px 12px;border:1px solid #cfc1b7;border-radius:10px;background:#fff;color:var(--ink);font:inherit}
+    .pdb-service-page .pdb-service-form textarea{min-height:96px;resize:vertical}
+    .pdb-service-page .pdb-service-form input:focus-visible,.pdb-service-page .pdb-service-form select:focus-visible,.pdb-service-page .pdb-service-form textarea:focus-visible{outline:2px solid #a77f61;outline-offset:2px}
+    .pdb-service-page .pdb-service-form button{justify-self:start;min-height:48px;padding:11px 22px;border:0;border-radius:10px;background:var(--ink);color:#fff;font:inherit;font-size:13px;font-weight:800;cursor:pointer}
+    .pdb-service-page .pdb-service-form button:hover,.pdb-service-page .pdb-service-form button:focus-visible{background:#4e3d30;outline:2px solid var(--sand);outline-offset:2px}
+    .pdb-service-page .pdb-service-form button:disabled{opacity:.65;cursor:wait}
+    .pdb-service-page .pdb-service-status{display:none;padding:14px 16px;border-radius:10px;background:#eef7ef;border:1px solid #bad5be;color:#24512b;line-height:1.5}
+    .pdb-service-page .pdb-service-status.is-visible{display:block}
+    .pdb-service-page .pdb-service-status.is-error{background:#fff5f3;border-color:#e7b9b0;color:#7b2d22}
+    .pdb-service-page .pdb-service-status a{display:inline-block;margin-top:8px;color:inherit;text-decoration:underline;font-weight:750}
+    .pdb-service-page__help{margin:30px 0 0;color:var(--muted);font-size:14px}
+    .pdb-service-page__help a{color:#614832;text-decoration:underline}
+    @media(max-width:760px){.pdb-service-page{padding:45px 16px 65px}.pdb-service-page__back{margin-bottom:28px}.pdb-service-page__intro p{font-size:16px}.pdb-service-page .pdb-service-grid{grid-template-columns:1fr}.pdb-service-page .pdb-service-card{padding:20px}.pdb-service-page .pdb-service-form{grid-template-columns:1fr}.pdb-service-page .pdb-service-form .full,.pdb-service-page .pdb-service-status{grid-column:1}}
+  </style>
+
+  <div class="pdb-service-page__wrap">
+    <a class="pdb-service-page__back" href="/pages/premium">← Zurück zu PDB Premium</a>
+    <header class="pdb-service-page__intro">
+      <span class="pdb-service-page__eyebrow">PDB Premium · Vertragsservice</span>
+      <h1 id="pdb-service-title">Ihren Vertrag verwalten.</h1>
+      <p>Widerruf und Kündigung können Sie hier direkt erklären. Wählen Sie den passenden Vorgang und erhalten Sie eine Eingangsbestätigung.</p>
+      <div class="pdb-service-page__assurance"><span>Ohne Mitglieder-Login</span><span>Direkte Eingangsbestätigung</span></div>
+    </header>
+      <div class="pdb-service-grid">
+        <details class="pdb-service-card" id="pdb-withdrawal-card">
+          <summary>Vertrag widerrufen</summary>
+          <p>Während der gesetzlichen Widerrufsfrist können Sie Ihre Vertragserklärung hier eindeutig widerrufen.</p>
+          <form class="pdb-service-form" id="pdb-withdrawal-form" data-action-type="withdrawal" novalidate>
+            <label>Vorname <input name="first_name" autocomplete="given-name" maxlength="80" required></label>
+            <label>Nachname <input name="last_name" autocomplete="family-name" maxlength="80" required></label>
+            <label class="full">E-Mail des Vertrags <input name="email" type="email" autocomplete="email" maxlength="160" required></label>
+            <label class="full">Mandatsreferenz / Vertragskennung <span>(falls vorhanden)</span><input name="mandate_reference" maxlength="80" placeholder="PDB-2026-…"></label>
+            <label class="full">Mitgliedschaft beschreiben <span>(wenn keine Vertragskennung vorliegt)</span><input name="contract_description" maxlength="160" placeholder="z. B. PDB PREMIUM BEYOND, Vertragsbeginn August 2026"></label>
+            <label class="full">E-Mail für die Eingangsbestätigung <input name="communication_email" type="email" autocomplete="email" maxlength="160" required></label>
+            <div hidden aria-hidden="true"><label>Website <input name="contact_website" tabindex="-1" autocomplete="off"></label></div>
+            <div class="pdb-service-status" role="status" aria-live="polite"></div>
+            <button class="pdb-btn" type="submit">Widerruf bestätigen</button>
+          </form>
+        </details>
+        <details class="pdb-service-card" id="pdb-cancellation-card">
+          <summary>Verträge hier kündigen</summary>
+          <p>Erklären Sie eine ordentliche oder außerordentliche Kündigung. Ohne Wunschdatum gilt der nächstmögliche Zeitpunkt.</p>
+          <form class="pdb-service-form" id="pdb-public-cancellation-form" data-action-type="cancellation" novalidate>
+            <label>Vorname <input name="first_name" autocomplete="given-name" maxlength="80" required></label>
+            <label>Nachname <input name="last_name" autocomplete="family-name" maxlength="80" required></label>
+            <label class="full">E-Mail des Vertrags <input name="email" type="email" autocomplete="email" maxlength="160" required></label>
+            <label class="full">Mandatsreferenz / Vertragskennung <span>(falls vorhanden)</span><input name="mandate_reference" maxlength="80" placeholder="PDB-2026-…"></label>
+            <label class="full">Mitgliedschaft beschreiben <span>(wenn keine Vertragskennung vorliegt)</span><input name="contract_description" maxlength="160" placeholder="z. B. PDB PREMIUM BEYOND, Vertragsbeginn August 2026"></label>
+            <label>Art der Kündigung
+              <select name="cancellation_type">
+                <option value="ordinary">Ordentlich</option>
+                <option value="extraordinary">Außerordentlich</option>
+              </select>
+            </label>
+            <label>Gewünschtes Vertragsende <input name="requested_end_on" type="date"></label>
+            <label class="full" data-extraordinary-reason hidden>Begründung der außerordentlichen Kündigung <textarea name="cancellation_reason" maxlength="500"></textarea></label>
+            <label class="full">E-Mail für die Eingangsbestätigung <input name="communication_email" type="email" autocomplete="email" maxlength="160" required></label>
+            <div hidden aria-hidden="true"><label>Website <input name="contact_website" tabindex="-1" autocomplete="off"></label></div>
+            <div class="pdb-service-status" role="status" aria-live="polite"></div>
+            <button class="pdb-btn" type="submit">jetzt kündigen</button>
+          </form>
+        </details>
+      </div>
+    <p class="pdb-service-page__help">Fragen zu Ihrem Vertrag? <a href="/pages/contact">Kontakt aufnehmen</a>.</p>
+  </div>
+</section>
+
+<script>
+(function () {
+  var page = document.getElementById('pdb-contract-actions');
+  if (!page) return;
+
+  function safeReceiptUrl(url) {
+    return typeof url === 'string' && /^\/apps\/pdb\/contracts\/[a-z-]+\?(?:token|id)=[A-Za-z0-9_%.-]+$/.test(url) ? url : '';
+  }
+
+  function initializeActionForm(form) {
+    if (!form) return;
+    var status = form.querySelector('.pdb-service-status');
+    var submit = form.querySelector('button[type="submit"]');
+    var contractEmail = form.elements.email;
+    var communicationEmail = form.elements.communication_email;
+    var cancellationType = form.elements.cancellation_type;
+    var reasonWrap = form.querySelector('[data-extraordinary-reason]');
+    var reasonInput = form.elements.cancellation_reason;
+    var mandateReference = form.elements.mandate_reference;
+    var contractDescription = form.elements.contract_description;
+
+    if (contractEmail && communicationEmail) {
+      contractEmail.addEventListener('blur', function () {
+        if (!communicationEmail.value) communicationEmail.value = contractEmail.value;
+      });
+    }
+    function updateReason() {
+      if (!cancellationType || !reasonWrap || !reasonInput) return;
+      var required = cancellationType.value === 'extraordinary';
+      reasonWrap.hidden = !required;
+      reasonInput.required = required;
+      if (!required) reasonInput.value = '';
+    }
+    if (cancellationType) cancellationType.addEventListener('change', updateReason);
+    updateReason();
+    function updateDescription() { contractDescription.required = !mandateReference.value.trim(); }
+    mandateReference.addEventListener('input', updateDescription);
+    updateDescription();
+
+    form.addEventListener('submit', async function (event) {
+      event.preventDefault();
+      if (!form.reportValidity()) return;
+      var originalText = submit.textContent;
+      submit.disabled = true;
+      submit.textContent = 'Erklärung wird übermittelt…';
+      status.className = 'pdb-service-status is-visible';
+      status.textContent = 'Ihre Erklärung wird sicher erfasst.';
+      var payload = Object.fromEntries(new FormData(form).entries());
+      payload.action_type = form.dataset.actionType;
+
+      try {
+        var tokenResponse = await fetch('/apps/pdb/contracts/action-token', { cache: 'no-store' });
+        var tokenResult = await tokenResponse.json();
+        if (!tokenResponse.ok || !tokenResult.ok || !tokenResult.action_token) throw new Error('Der Sicherheitsnachweis konnte nicht geladen werden. Bitte erneut versuchen.');
+        await new Promise(function (resolve) { window.setTimeout(resolve, 2100); });
+        payload.action_token = tokenResult.action_token;
+        var response = await fetch('/apps/pdb/contracts/action', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        var result = await response.json();
+        if (!response.ok || !result.ok) {
+          var messages = {
+            INVALID_ACTION_DATA: 'Bitte prüfen Sie Namen und E-Mail-Adressen.',
+            CANCELLATION_REASON_REQUIRED: 'Bitte geben Sie den wichtigen Grund für die außerordentliche Kündigung an.',
+            INVALID_END_DATE: 'Bitte prüfen Sie das gewünschte Vertragsende.',
+            CONTRACT_DESCRIPTION_REQUIRED: 'Bitte geben Sie Ihre Vertragskennung oder eine Beschreibung der Mitgliedschaft an.',
+            INVALID_ACTION_TOKEN: 'Der Sicherheitsnachweis ist abgelaufen. Bitte versuchen Sie es erneut.',
+            TOO_MANY_REQUESTS: 'Zu viele Versuche. Bitte versuchen Sie es später erneut oder senden Sie Ihre Erklärung per E-Mail.'
+          };
+          throw new Error(messages[result.error] || 'Die Erklärung konnte nicht gespeichert werden. Bitte prüfen Sie Ihre Angaben.');
+        }
+        status.className = 'pdb-service-status is-visible';
+        status.replaceChildren();
+        var title = document.createElement('strong');
+        title.textContent = 'Ihre Erklärung ist eingegangen.';
+        status.appendChild(title);
+        var details = document.createElement('p');
+        details.textContent = 'Vorgangsnummer: ' + (result.request.reference || result.request.id) + ' · Eingang: ' + new Intl.DateTimeFormat('de-DE', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(result.request.received_at));
+        status.appendChild(details);
+        var delivery = document.createElement('p');
+        delivery.textContent = result.confirmation_email_sent === true
+          ? 'Die Eingangsbestätigung wurde per E-Mail versendet.'
+          : 'Der E-Mail-Versand konnte nicht bestätigt werden. Ihre Erklärung ist gespeichert. Bitte laden Sie den Eingangsbeleg herunter und kontaktieren Sie uns bei Rückfragen unter info@palaisdebeaute.de.';
+        status.appendChild(delivery);
+        var receiptUrl = safeReceiptUrl(result.receipt_url);
+        if (receiptUrl) {
+          var receipt = document.createElement('a');
+          receipt.href = receiptUrl;
+          receipt.textContent = 'Eingangsbeleg herunterladen';
+          status.appendChild(receipt);
+        }
+        form.querySelectorAll('input,select,textarea,button').forEach(function (field) { field.disabled = true; });
+      } catch (error) {
+        status.className = 'pdb-service-status is-visible is-error';
+        status.textContent = error.message || 'Technischer Fehler bei der Übermittlung. Bitte versuchen Sie es erneut.';
+        submit.disabled = false;
+        submit.textContent = originalText;
+      }
+    });
+  }
+
+  initializeActionForm(page.querySelector('#pdb-withdrawal-form'));
+  initializeActionForm(page.querySelector('#pdb-public-cancellation-form'));
+  var action = new URLSearchParams(window.location.search).get('contract_action');
+  var card = action === 'withdrawal' ? page.querySelector('#pdb-withdrawal-card') : action === 'cancel' ? page.querySelector('#pdb-cancellation-card') : null;
+  if (card) {
+    card.open = true;
+    window.setTimeout(function () { card.scrollIntoView({ block: 'start' }); }, 120);
+  }
+}());
+</script>
+
+{% schema %}
+{
+  "name": "PDB Vertragsservice",
+  "settings": [],
+  "presets": [{ "name": "PDB Vertragsservice" }]
+}
+{% endschema %}

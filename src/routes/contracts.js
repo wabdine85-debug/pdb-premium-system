@@ -1,3 +1,5 @@
+import { MEMBER_PREMIUM_VERSION } from '../utils/memberPremiumLegal.js';
+import { isValidContractStart, hasPrenotificationLeadTime } from '../utils/contractSchedule.js';
 import crypto from 'node:crypto';
 import express from 'express';
 import { env } from '../config/env.js';
@@ -69,15 +71,7 @@ function isEmail(value) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 }
 
-function isValidStartDate(value) {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
-  const date = new Date(`${value}T00:00:00Z`);
-  if (Number.isNaN(date.getTime()) || date.getUTCDate() !== 1) return false;
-  const today = new Date();
-  const earliest = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), 1);
-  const latest = earliest + 180 * 24 * 60 * 60 * 1000;
-  return date.getTime() >= earliest && date.getTime() <= latest;
-}
+
 
 function isValidIsoDate(value) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
@@ -154,13 +148,16 @@ router.post(
       const debitDay = Number(req.body.debit_day);
 
       if (!offer) return res.status(400).json({ ok: false, error: 'INVALID_PACKAGE' });
+      if (env.contractVersion !== MEMBER_PREMIUM_VERSION || req.body.contract_version !== MEMBER_PREMIUM_VERSION) {
+        return res.status(409).json({ ok: false, error: 'CONTRACT_VERSION_CHANGED' });
+      }
       if (!firstName || !lastName || !isEmail(email) || !addressLine1 || !hasHouseNumber(addressLine1) || !postalCode || !city) {
         return res.status(400).json({ ok: false, error: 'INVALID_CONTACT_DATA' });
       }
-      if (!isValidStartDate(startsOn)) {
+      if (!isValidContractStart(startsOn)) {
         return res.status(400).json({ ok: false, error: 'INVALID_START_DATE' });
       }
-      if (!Number.isInteger(debitDay) || debitDay < 1 || debitDay > 28) {
+      if (debitDay !== 1) {
         return res.status(400).json({ ok: false, error: 'INVALID_DEBIT_DAY' });
       }
       if (!hasRequiredContractConsents(req.body)) {
@@ -597,6 +594,10 @@ router.post('/admin/:id/activate', requireAdminAccess, async (req, res) => {
     const application = await findApplicationForAdmin(req.params.id, client);
     if (!application || application.status !== 'sepa_pending') {
       return res.status(409).json({ ok: false, error: 'APPLICATION_NOT_ACTIVATABLE' });
+    }
+
+    if (application.contract_version === MEMBER_PREMIUM_VERSION && !hasPrenotificationLeadTime(application)) {
+      return res.status(409).json({ ok: false, error: 'PRENOTIFICATION_TOO_LATE', message: 'Die erste Lastschrift liegt weniger als zwei Kalendertage entfernt. Vertragsbeginn und Einzug vor Annahme neu abstimmen.' });
     }
 
     await setPremiumCustomerTag(application.shopify_customer_id, application.package_key);

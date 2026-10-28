@@ -196,3 +196,13 @@ The native Apntly variant and duration are checked before booking. Successful sl
 The verified Shopify variant IDs live in `src/utils/bodySculptRules.js` and `shopify-theme-premium-dummy-clean/assets/pdb-premium-body-sculpt.js`. If variants are recreated, update both mappings and verify native Apntly service duration. Set the frontend helper asset live before switching the product template. Existing unrelated treatment hooks are preserved.
 
 Validation: `npm test`; `npm --prefix pdb-office run build`; Shopify Theme Check for the changed theme files. Do not publish the repository's old theme snapshot as a complete theme; deploy only the reviewed changed files based on a fresh live pull.
+
+
+## Member Premium contract 2026-11 (prepared, unpublished)
+
+See `docs/releases/member-premium-vertrag-2026-11-review.md` for the complete
+change list and release checks. New applications use a 49 EUR setup fee and
+the versioned legal exports under `src/legal/`. Run migration 013 and configure
+`CONTRACT_VERSION=2026-11` when releasing the backend and theme together.
+Existing stored contract prices remain unchanged. Publication requires the
+owner's explicit approval.
