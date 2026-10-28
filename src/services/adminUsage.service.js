@@ -1,3 +1,4 @@
+import { BODY_SCULPT_KEY, getBodySculptBookingError } from '../utils/bodySculptRules.js';
 import dayjs from 'dayjs';
 import { getTreatmentEntitlementsForMonth } from './entitlement.service.js';
 import { getAllowedCategoriesForPackage } from '../utils/packageRules.js';
@@ -104,6 +105,10 @@ export async function recordManualUsage(memberId, input, db) {
     throw new AdminUsageError('LIMIT_REACHED', 409);
   }
 
+  const bodySculptOption = input?.body_sculpt_option ?? null;
+  const optionError = getBodySculptBookingError(treatmentKey, bodySculptOption, before);
+  if (optionError) throw new AdminUsageError(optionError, 409);
+
   const bookingResult = await db.query(
     `INSERT INTO bookings (
        member_id,
@@ -114,11 +119,12 @@ export async function recordManualUsage(memberId, input, db) {
        source,
        admin_actor,
        admin_reason,
-       booked_at
-     ) VALUES ($1, $2, $3, $4, 'confirmed', 'admin_manual', $5, $6, NOW())
+       booked_at,
+       body_sculpt_option
+     ) VALUES ($1, $2, $3, $4, 'confirmed', 'admin_manual', $5, $6, NOW(), $7)
      RETURNING id, member_id, treatment_id, booking_month, appointment_date, status, source,
        admin_actor, admin_reason, booked_at, cancelled_at`,
-    [member.id, treatment.id, bookingMonth, appointmentDate, actor, reason]
+    [member.id, treatment.id, bookingMonth, appointmentDate, actor, reason, bodySculptOption]
   );
   const booking = bookingResult.rows[0];
 
@@ -135,6 +141,7 @@ export async function recordManualUsage(memberId, input, db) {
         bookingMonth,
         appointmentDate,
         treatmentKey: treatment.treatment_key,
+        bodySculptOption,
         categoryKey: treatment.category_key
       })
     ]
@@ -293,12 +300,16 @@ export async function rescheduleBooking(bookingId, input, db) {
     title: booking.treatment_title,
     category_key: booking.category_key
   };
+  await db.query('SELECT id FROM members WHERE id = $1 FOR UPDATE', [member.id]);
   const previousMonth = formatBookingMonth(booking.booking_month);
   if (bookingMonth !== previousMonth) {
     const availability = await getTreatmentEntitlementsForMonth(member, treatment, bookingMonth, db);
     if ((availability.remaining?.[treatment.category_key] ?? 0) <= 0) {
       throw new AdminUsageError('LIMIT_REACHED', 409);
     }
+    const optionError = getBodySculptBookingError(treatment.treatment_key,
+      booking.body_sculpt_option ?? null, availability);
+    if (optionError) throw new AdminUsageError(optionError, 409);
   }
 
   const updatedResult = await db.query(

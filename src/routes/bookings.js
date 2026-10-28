@@ -1,3 +1,5 @@
+import { reserveBodySculptSlot } from '../services/bodySculptReservation.service.js';
+import { BODY_SCULPT_KEY, BODY_SCULPT_OPTIONS, getBodySculptBookingError, getBodySculptSlotError } from '../utils/bodySculptRules.js';
 import express from "express";
 import { pool } from "../config/pool.js";
 import {
@@ -209,7 +211,7 @@ router.get("/token/:token", async (req, res) => {
 
 router.post("/validate-slot", verifyShopifyAppProxy, requireShopifyCustomer, requireMatchingCustomer(), async (req, res) => {
   try {
-    const { token, appointment_date } = req.body || {};
+    const { token, appointment_date, body_sculpt_option } = req.body || {};
     const shopifyCustomerId = String(
       req.body?.shopify_customer_id || ""
     ).trim();
@@ -334,13 +336,13 @@ router.post("/validate-slot", verifyShopifyAppProxy, requireShopifyCustomer, req
       id: bookingToken.member_id,
       package_key: bookingToken.package_key
     };
-    const entitlements = await getTreatmentEntitlementsForMonth(
+    let entitlements = await getTreatmentEntitlementsForMonth(
       member,
       {
         category_key: bookingToken.category_key,
         treatment_key: bookingToken.treatment_key
       },
-      bookingMonth
+      bookingMonth, pool, { excludeBookingToken: token }
     );
     const remainingForCategory =
       entitlements.remaining?.[bookingToken.category_key] ?? 0;
@@ -349,8 +351,19 @@ router.post("/validate-slot", verifyShopifyAppProxy, requireShopifyCustomer, req
       return res.status(403).json({ ok: false, error: "LIMIT_REACHED" });
     }
 
+    const optionError = getBodySculptSlotError(bookingToken.treatment_key, req.body) ||
+      getBodySculptBookingError(bookingToken.treatment_key, body_sculpt_option, entitlements);
+    if (optionError) return res.status(403).json({ ok: false, error: optionError });
+    if (bookingToken.treatment_key === BODY_SCULPT_KEY) {
+      const reservation = await reserveBodySculptSlot(member, token, bookingMonth, body_sculpt_option);
+      if (reservation.error) return res.status(403).json({ ok: false, error: reservation.error });
+      entitlements = reservation.entitlements;
+    }
+
     return res.json({
       ok: true,
+      ...(bookingToken.treatment_key === BODY_SCULPT_KEY
+        ? { body_sculpt_option, duration_minutes: BODY_SCULPT_OPTIONS[body_sculpt_option].durationMinutes } : {}),
       booking_month: bookingMonth,
       entitlements
     });
@@ -368,7 +381,7 @@ router.post("/consume", verifyShopifyAppProxy, requireShopifyCustomer, requireMa
   const client = await pool.connect();
 
   try {
-    const { token, shopify_customer_id, appointment_date } = req.body || {};
+    const { token, shopify_customer_id, appointment_date, body_sculpt_option } = req.body || {};
     const shopifyCustomerId = String(shopify_customer_id || "").trim();
     const requestedBookingMonth = appointment_date
       ? getBookingMonthForAppointmentDate(appointment_date)
@@ -418,6 +431,8 @@ router.post("/consume", verifyShopifyAppProxy, requireShopifyCustomer, requireMa
         bt.token,
         bt.expires_at,
         bt.used_at,
+        bt.body_sculpt_option,
+        to_char(bt.reserved_booking_month, 'YYYY-MM-DD') AS reserved_booking_month,
         t.category_key,
         t.treatment_key,
         t.salonized_url,
@@ -560,7 +575,7 @@ router.post("/consume", verifyShopifyAppProxy, requireShopifyCustomer, requireMa
         treatment_key: bookingToken.treatment_key
       },
       bookingMonth,
-      client
+      client, { excludeBookingToken: token }
     );
     const remainingForCategory =
       entitlementsBeforeConsume.remaining?.[bookingToken.category_key] ?? 0;
@@ -573,6 +588,18 @@ router.post("/consume", verifyShopifyAppProxy, requireShopifyCustomer, requireMa
       });
     }
 
+    const optionError = getBodySculptSlotError(bookingToken.treatment_key, req.body) || getBodySculptBookingError(
+      bookingToken.treatment_key, bookingToken.body_sculpt_option, entitlementsBeforeConsume
+    );
+    const missingReservation = bookingToken.treatment_key === BODY_SCULPT_KEY &&
+      (!requestedBookingMonth || bookingToken.reserved_booking_month !== requestedBookingMonth);
+    const optionChanged = bookingToken.treatment_key === BODY_SCULPT_KEY &&
+      body_sculpt_option !== bookingToken.body_sculpt_option;
+    if (optionError || optionChanged || missingReservation) {
+      await client.query("ROLLBACK");
+      return res.status(403).json({ ok: false, error: optionError || (optionChanged ? "BODY_SCULPT_OPTION_CHANGED" : "BODY_SCULPT_RESERVATION_REQUIRED") });
+    }
+
     await client.query(
       `
       INSERT INTO bookings (
@@ -582,16 +609,18 @@ router.post("/consume", verifyShopifyAppProxy, requireShopifyCustomer, requireMa
         appointment_date,
         status,
         booking_token,
-        booked_at
+        booked_at,
+        body_sculpt_option
       )
-      VALUES ($1, $2, $3, $4, 'confirmed', $5, NOW())
+      VALUES ($1, $2, $3, $4, 'confirmed', $5, NOW(), $6)
       `,
       [
         bookingToken.member_id,
         bookingToken.treatment_id,
         bookingMonth,
         appointment_date,
-        bookingToken.token
+        bookingToken.token,
+        bookingToken.body_sculpt_option || null
       ]
     );
 

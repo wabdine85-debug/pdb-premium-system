@@ -1,3 +1,4 @@
+import { BODY_SCULPT_KEY, getBodySculptLymphdrainage } from '../utils/bodySculptRules.js';
 import { pool } from '../config/pool.js';
 import {
   PACKAGE_RULES,
@@ -39,7 +40,7 @@ export async function getEntitlements(member, db = pool) {
 /**
  * Berechnet das Kontingent für einen konkreten Kalendermonat.
  */
-export async function getEntitlementsForMonth(member, bookingMonth, db = pool) {
+export async function getEntitlementsForMonth(member, bookingMonth, db = pool, { excludeBookingToken = null } = {}) {
   const rules = PACKAGE_RULES[member?.package_key];
   const entitlementMultiplier = Math.max(
     1,
@@ -58,14 +59,23 @@ export async function getEntitlementsForMonth(member, bookingMonth, db = pool) {
   // Alle Buchungen im aktuellen Monat holen
   const [bookingResult, importedUsageResult] = await Promise.all([
     db.query(`
-    SELECT t.category_key, t.treatment_key
+    SELECT t.category_key, t.treatment_key, b.body_sculpt_option
     FROM bookings b
     JOIN treatments t ON t.id = b.treatment_id
     WHERE b.member_id = $1
     AND b.booking_month = $2
     AND b.status IN ('reserved', 'confirmed')
+    UNION ALL
+    SELECT t.category_key, t.treatment_key, bt.body_sculpt_option
+    FROM booking_tokens bt
+    JOIN treatments t ON t.id = bt.treatment_id
+    WHERE bt.member_id = $1 AND bt.reserved_booking_month = $2
+      AND bt.token IS DISTINCT FROM $3::text
+      AND bt.used_at IS NULL AND bt.expires_at > NOW()
+      AND t.treatment_key = 'private-body-sculpt-intensive'
+      AND bt.body_sculpt_option IS NOT NULL
     `,
-    [member.id, bookingMonth]),
+    [member.id, bookingMonth, excludeBookingToken]),
     db.query(
       `SELECT category_key, used_count
        FROM member_monthly_usage_imports
@@ -125,7 +135,9 @@ export async function getEntitlementsForMonth(member, bookingMonth, db = pool) {
         treatmentKey: selectedTreatmentKey,
         sessionLimit,
         usedSessions,
-        remainingSessions: remaining.private
+        remainingSessions: remaining.private,
+        ...(selectedTreatmentKey === BODY_SCULPT_KEY
+          ? { lymphdrainage: getBodySculptLymphdrainage(privateBookings) } : {})
       };
     }
   }
@@ -172,9 +184,10 @@ export async function getTreatmentEntitlementsForMonth(
   member,
   treatment,
   bookingMonth,
-  db = pool
+  db = pool,
+  options = {}
 ) {
-  const entitlements = await getEntitlementsForMonth(member, bookingMonth, db);
+  const entitlements = await getEntitlementsForMonth(member, bookingMonth, db, options);
 
   const isPrivateTreatment =
     member?.package_key === 'private' && treatment?.category_key === 'private';
@@ -211,7 +224,9 @@ export async function getTreatmentEntitlementsForMonth(
     sessionLimit,
     usedSessions,
     remainingSessions,
-    locked: isLockedToAnotherProtocol
+    locked: isLockedToAnotherProtocol,
+    ...(treatment.treatment_key === BODY_SCULPT_KEY
+      ? { lymphdrainage: treatmentState?.lymphdrainage || getBodySculptLymphdrainage([]) } : {})
   };
   const categoryKey = treatment.category_key;
 

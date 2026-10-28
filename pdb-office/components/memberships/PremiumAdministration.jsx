@@ -108,7 +108,7 @@ export default function PremiumAdministration({ crmMemberships = [] }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [notice, setNotice] = useState("");
-  const [usage, setUsage] = useState({ appointment_date: currentDate(), booking_month: monthFromDate(currentDate()), treatment_key: "", actor: "", reason: "" });
+  const [usage, setUsage] = useState({ body_sculpt_option: "ems", appointment_date: currentDate(), booking_month: monthFromDate(currentDate()), treatment_key: "", actor: "", reason: "" });
   const [confirmUsage, setConfirmUsage] = useState(false);
   const [bookingAction, setBookingAction] = useState(null);
   const [reconciliation, setReconciliation] = useState(null);
@@ -236,7 +236,7 @@ export default function PremiumAdministration({ crmMemberships = [] }) {
     setNotice("");
     setError(null);
     try {
-      await recordPremiumManualUsage(selectedId, usage);
+      await recordPremiumManualUsage(selectedId, { ...usage, body_sculpt_option: usage.treatment_key === "private-body-sculpt-intensive" ? usage.body_sculpt_option : null });
       setNotice("Termin wurde als verbraucht protokolliert.");
       await openMember(selectedId, usage.booking_month);
     } catch (nextError) {
@@ -337,6 +337,7 @@ export default function PremiumAdministration({ crmMemberships = [] }) {
                   <div className="premium-admin__form-grid">
                     <label>Vereinbarter Termin<input type="date" value={usage.appointment_date} onChange={event => setUsage(current => ({ ...current, appointment_date: event.target.value, booking_month: monthFromDate(event.target.value) }))} /></label>
                     <label>Behandlung<select value={usage.treatment_key} onChange={event => setUsage(current => ({ ...current, treatment_key: event.target.value }))}>{(detail.treatments || []).map(treatment => <option key={treatment.treatment_key} value={treatment.treatment_key}>{treatment.title}</option>)}</select></label>
+                    {usage.treatment_key === "private-body-sculpt-intensive" && <label>Terminvariante<select value={usage.body_sculpt_option || "ems"} onChange={event => setUsage(current => ({ ...current, body_sculpt_option: event.target.value }))}><option value="ems">EMS-Sculpt · 30 Minuten</option><option value="ems_lymph">EMS-Sculpt + Lymphdrainage · 60 Minuten</option></select></label>}
                     <label>Bearbeitet von<input value={usage.actor} onChange={event => setUsage(current => ({ ...current, actor: event.target.value }))} placeholder="Name" /></label>
                     <label>Grund<input value={usage.reason} onChange={event => setUsage(current => ({ ...current, reason: event.target.value }))} placeholder="z. B. bereits vor Ort wahrgenommen" /></label>
                   </div>
@@ -347,7 +348,7 @@ export default function PremiumAdministration({ crmMemberships = [] }) {
                   <h5>Verbuchte Termine</h5>
                   {(detail.bookings || []).map(booking => (
                     <div key={booking.id}>
-                      <span><strong>{booking.appointment_date ? `Termin am ${formatDate(booking.appointment_date)}` : "Termindatum fehlt"}</strong> · {booking.treatment_title}<small>Gebucht am {formatDateTime(booking.booked_at)} · Leistungsmonat {formatDate(booking.booking_month)}</small></span>
+                      <span><strong>{booking.appointment_date ? `Termin am ${formatDate(booking.appointment_date)}` : "Termindatum fehlt"}</strong> · {booking.treatment_title}{booking.body_sculpt_option === "ems_lymph" ? " · EMS-Sculpt + Lymphdrainage" : booking.body_sculpt_option === "ems" ? " · EMS-Sculpt" : ""}<small>Gebucht am {formatDateTime(booking.booked_at)} · Leistungsmonat {formatDate(booking.booking_month)}</small></span>
                       <div className="premium-admin__booking-actions">
                         <strong>{booking.status === "cancelled" ? "wieder freigegeben" : booking.source === "admin_manual" ? "manuell" : "online"}</strong>
                         {booking.status !== "cancelled" && <>

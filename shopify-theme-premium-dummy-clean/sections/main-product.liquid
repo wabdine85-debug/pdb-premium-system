@@ -22,6 +22,9 @@
   video_style: section.settings.product_video_style,
   context: 'main-product',
 -%}
+{% if product.handle == 'private-body-sculpt-intensive' %}
+  <script src="{{ 'pdb-premium-body-sculpt.js' | asset_url }}" defer></script>
+{% endif %}
 <script>
   var pdbTags = {{ product.tags | json }};
   var pdbTreatmentTag = pdbTags.find(function(tag) {
@@ -501,12 +504,18 @@ if (window.PDB_PREMIUM_PRODUCT.isPremiumDummy) {
     return values.year + "-" + values.month + "-" + values.day;
   }
 
+  function pdbGetBodySculptFields() {
+    if (window.PDB_PREMIUM_PRODUCT.treatmentKey !== 'private-body-sculpt-intensive') return {};
+    return window.PDBBodySculpt && window.PDBBodySculpt.getSelection(window.appointlyClient);
+  }
+
   async function pdbValidateSelectedPremiumSlot() {
     var token = sessionStorage.getItem("pdb_premium_token");
     var appointmentDate = pdbGetSelectedAppointmentDate();
+    var bodySculptFields = pdbGetBodySculptFields();
 
-    if (!token || !appointmentDate) {
-      alert("Der gewählte Termin konnte nicht sicher geprüft werden. Bitte starte die Buchung erneut.");
+    if (!token || !appointmentDate || !bodySculptFields) {
+      alert(bodySculptFields ? "Der gewählte Termin konnte nicht sicher geprüft werden. Bitte starte die Buchung erneut." : "Bitte wähle genau einen Body-Sculpt-Termin: EMS-Sculpt (30 Minuten) oder EMS-Sculpt + Lymphdrainage (60 Minuten). Falls die Dauer abweicht, kontaktiere bitte das Studio.");
       return false;
     }
 
@@ -514,11 +523,11 @@ if (window.PDB_PREMIUM_PRODUCT.isPremiumDummy) {
       var response = await fetch(PDB_PREMIUM_API_BASE + "/bookings/validate-slot", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+        body: JSON.stringify(Object.assign({
           token: token,
           shopify_customer_id: window.PDB_CUSTOMER.shopifyCustomerId,
           appointment_date: appointmentDate
-        })
+        }, bodySculptFields))
       });
       var data = await response.json();
 
@@ -527,7 +536,11 @@ if (window.PDB_PREMIUM_PRODUCT.isPremiumDummy) {
         return true;
       }
 
-      if (data.error === "APPOINTMENT_MONTH_NOT_ALLOWED") {
+      if (data.error === "LYMPHDRAINAGE_LIMIT_REACHED") {
+        alert("Für diesen Monat sind bereits beide Lymphdrainagen reserviert oder genutzt. Bitte wähle die Variante EMS-Sculpt ohne Lymphdrainage.");
+      } else if (data.error === "BODY_SCULPT_VARIANT_MISMATCH" || data.error === "BODY_SCULPT_OPTION_REQUIRED") {
+        alert("Bitte wähle genau einen Termin: EMS-Sculpt (30 Minuten) oder EMS-Sculpt + Lymphdrainage (60 Minuten).");
+      } else if (data.error === "APPOINTMENT_MONTH_NOT_ALLOWED") {
         alert("Premium-Termine können nur für den aktuellen oder den nächsten Monat gebucht werden.");
       } else if (data.error === "TREATMENT_DATE_TOO_EARLY") {
         var treatmentDate = data.treatment_available_at
@@ -570,8 +583,9 @@ if (window.PDB_PREMIUM_PRODUCT.isPremiumDummy) {
 
     var token = sessionStorage.getItem("pdb_premium_token");
     var appointmentDate = pdbGetSelectedAppointmentDate();
+    var bodySculptFields = pdbGetBodySculptFields();
 
-    if (!token || !appointmentDate) {
+    if (!token || !appointmentDate || !bodySculptFields) {
       alert("Der Termin wurde gebucht, aber das Premium-Kontingent konnte nicht aktualisiert werden. Bitte kontaktiere uns.");
       return;
     }
@@ -582,11 +596,11 @@ if (window.PDB_PREMIUM_PRODUCT.isPremiumDummy) {
       var response = await fetch(PDB_PREMIUM_API_BASE + "/bookings/consume", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+        body: JSON.stringify(Object.assign({
           token: token,
           shopify_customer_id: window.PDB_CUSTOMER.shopifyCustomerId,
           appointment_date: appointmentDate
-        })
+        }, bodySculptFields))
       });
       var data = await response.json();
 

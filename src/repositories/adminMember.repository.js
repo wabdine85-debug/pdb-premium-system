@@ -70,6 +70,7 @@ export async function listAdminMemberBookings(memberId, months, db = pool) {
        b.id,
        b.booking_month,
        b.appointment_date,
+       b.body_sculpt_option,
        b.status,
        b.source,
        b.admin_actor,

@@ -62,7 +62,7 @@ const products = [
   {
     title: "Body Sculpt Intensive",
     handle: "private-body-sculpt-intensive",
-    descriptionHtml: "<p>6 Termine pro Mitgliedschaftsmonat: 4 × EMS-Sculpt und 2 × Lymphdrainage.</p>"
+    descriptionHtml: "<p>4 Termine pro Mitgliedschaftsmonat mit je 1 × EMS-Sculpt (30 Minuten). Bei zwei dieser Termine zusätzlich Lymphdrainage nach Wahl (Kombination: 60 Minuten). Die Auswahl erfolgt bei der Onlinebuchung.</p>"
   },
   {
     title: "Cryo Contour Intensive",

@@ -56,6 +56,13 @@ export async function ensureContractActionSchema(db = pool) {
     CREATE INDEX IF NOT EXISTS contract_action_admin_notifications_due_idx
       ON contract_action_admin_notifications (state, due_at)
   `);
+  await db.query(`ALTER TABLE booking_tokens ADD COLUMN IF NOT EXISTS reserved_booking_month DATE`);
+  await db.query(`ALTER TABLE booking_tokens ADD COLUMN IF NOT EXISTS body_sculpt_option TEXT
+    CHECK (body_sculpt_option IN ('ems', 'ems_lymph'))`);
+  await db.query(`ALTER TABLE bookings ADD COLUMN IF NOT EXISTS body_sculpt_option TEXT
+    CHECK (body_sculpt_option IN ('ems', 'ems_lymph'))`);
+
+
 }
 
 export async function ensureContractActionRateLimitSchema(db = pool) {

@@ -180,8 +180,19 @@ the
 Do not search for a newly created Shopify carrier product directly in an
 existing Appointly service form. In Shopify Admin, open Appointly, go to
 **Services**, click **Neuen Service hinzufügen**, and then select the Shopify
-product from the list shown in that flow. Configure every PRIVATE service with
-a duration of 90 minutes. Body Sculpt Intensive represents one monthly PRIVATE
-protocol with four separately booked 90-minute appointments; the backend locks
+product from the list shown in that flow. Configure the Body Sculpt Intensive service with two existing Shopify variants:
+EMS-Sculpt (30 minutes) and EMS-Sculpt + Lymphdrainage (60 minutes), both NO PAYMENT.
+The protocol grants four EMS appointments and at most two lymphdrainage add-ons per
+calendar month; the backend locks
 the member to that protocol after the first appointment and permits three more
 appointments in the same membership month.
+
+## Body Sculpt booking options
+
+Run `migrations/012_add_body_sculpt_option.sql` before deploying this release (the startup schema repair also adds these nullable columns). Existing booking records are preserved. Body Sculpt has no historical bookings at the pre-release audit.
+
+The native Apntly variant and duration are checked before booking. Successful slot validation holds one appointment and optionally one lymphdrainage until the existing 15-minute token expires or is consumed. Availability checks exclude the caller's own hold and lock the member before creating/changing a hold. Completion repeats checks under the same member lock and replaces the hold with a confirmed booking in one transaction. Abandoned holds expire without a job; they do not create calendar appointments. Cancelling a confirmed booking releases its appointment and optional lymphdrainage. Cross-month administrative moves check both quotas.
+
+The verified Shopify variant IDs live in `src/utils/bodySculptRules.js` and `shopify-theme-premium-dummy-clean/assets/pdb-premium-body-sculpt.js`. If variants are recreated, update both mappings and verify native Apntly service duration. Set the frontend helper asset live before switching the product template. Existing unrelated treatment hooks are preserved.
+
+Validation: `npm test`; `npm --prefix pdb-office run build`; Shopify Theme Check for the changed theme files. Do not publish the repository's old theme snapshot as a complete theme; deploy only the reviewed changed files based on a fresh live pull.

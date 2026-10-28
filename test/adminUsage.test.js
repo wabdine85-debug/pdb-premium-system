@@ -34,7 +34,8 @@ function createUsageDb({ member, treatment, existingBookings = [] }) {
             .filter((booking) => booking.member_id === values[0])
             .filter((booking) => booking.booking_month === values[1])
             .filter((booking) => ['reserved', 'confirmed'].includes(booking.status))
-            .map(() => ({
+            .map(booking => ({
+              body_sculpt_option: booking.body_sculpt_option,
               category_key: treatment.category_key,
               treatment_key: treatment.treatment_key
             }))
@@ -54,6 +55,7 @@ function createUsageDb({ member, treatment, existingBookings = [] }) {
           source: 'admin_manual',
           admin_actor: values[4],
           admin_reason: values[5],
+          body_sculpt_option: values[6] ?? null,
           booked_at: '2026-08-15T12:00:00.000Z',
           cancelled_at: null
         };
@@ -233,6 +235,7 @@ test('adding a missing historical appointment date has its own audit event', asy
   };
   const db = {
     async query(sql, values) {
+      if (sql.includes('SELECT id FROM members') && sql.includes('FOR UPDATE')) return { rows: [{ id: booking.member_id }] };
       if (sql.includes('FROM bookings b') && sql.includes('FOR UPDATE')) return { rows: [booking] };
       if (sql.includes('UPDATE bookings')) {
         return { rows: [{ ...booking, booking_month: values[1], appointment_date: values[2] }] };
